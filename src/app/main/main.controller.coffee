@@ -106,6 +106,9 @@ angular.module('identifiAngular').controller 'MainController', [
       setTimeout () ->
         $scope.$broadcast('rzSliderForceRender')
       , 1000
+      setTimeout () ->
+        $scope.$broadcast('rzSliderForceRender')
+      , 3000 # :---D
       console.log 'Got index', $scope.identifiIndex
       $scope.viewpoint.identity = $scope.identifiIndex.get($scope.viewpoint.type, $scope.viewpoint.value)
       $scope.viewpoint.identity.gun.get('attrs').open (attrs) ->
@@ -223,6 +226,7 @@ angular.module('identifiAngular').controller 'MainController', [
 
     # Create new Message
     $scope.createMessage = (event, params, verifiedAttr) ->
+      $scope.addingMessage = true
       event.stopPropagation() if event
       # Create new Message object
       message = null
@@ -248,12 +252,15 @@ angular.module('identifiAngular').controller 'MainController', [
       message.then (m) ->
         console.log m
         $scope.identifiIndex.addMessage(m)
+      .then ->
         if $scope.filters.type not in [params.type, null]
           $scope.filters.type = params.type
         $scope.resetMsg()
+        $scope.addingMessage = false
       .catch (e) ->
         console.error(e)
         $scope.error = e
+        $scope.addingMessage = false
 
     $scope.addAttribute = ->
       $location.path '#/identities/create/' + $scope.query.term

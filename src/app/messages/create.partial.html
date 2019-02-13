@@ -2,12 +2,12 @@
   <div class="panel-body">
     <form ng-submit="createMessage($event, { type: 'post', comment: newMessage.comment })">
       <div class="form-group">
-        <textarea style="resize: vertical" ng-disabled="loggingIn || !authentication.user" name="comment" class="form-control" id="comment" ng-model="newMessage.comment" placeholder="What's on your mind?"></textarea>
+        <textarea style="resize: vertical" ng-disabled="addingMessage || loggingIn || !authentication.user" name="comment" class="form-control" id="comment" ng-model="newMessage.comment" placeholder="What's on your mind?"></textarea>
       </div>
 
       <div class="row">
         <div class="col-xs-12">
-          <button ng-disabled="loggingIn || !authentication.user || !newMessage.comment" type="submit" class="btn btn-primary" data-style="zoom-out"><span><span class="fa fa-edit"></span> Publish</span><span></span></button>
+          <button ng-disabled="addingMessage || loggingIn || !authentication.user || !newMessage.comment" type="submit" class="btn btn-primary" data-style="zoom-out"><span><span class="fa fa-edit"></span> Publish</span><span></span></button>
         </div>
       </div>
     </form>
