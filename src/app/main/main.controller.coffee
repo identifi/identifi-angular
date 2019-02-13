@@ -103,6 +103,9 @@ angular.module('identifiAngular').controller 'MainController', [
       $scope.ids.list = []
       $scope.msgs.list = []
       $scope.identifiIndex = results
+      setTimeout () ->
+        $scope.$broadcast('rzSliderForceRender')
+      , 1000
       console.log 'Got index', $scope.identifiIndex
       $scope.viewpoint.identity = $scope.identifiIndex.get($scope.viewpoint.type, $scope.viewpoint.value)
       $scope.viewpoint.identity.gun.get('attrs').open (attrs) ->
@@ -217,6 +220,7 @@ angular.module('identifiAngular').controller 'MainController', [
         type: ''
         value: ''
     $scope.resetMsg()
+
     # Create new Message
     $scope.createMessage = (event, params, verifiedAttr) ->
       event.stopPropagation() if event
