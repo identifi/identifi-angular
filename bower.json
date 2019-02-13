@@ -1,6 +1,6 @@
 {
   "name": "identifi-angular",
-  "version": "1.22.32",
+  "version": "1.22.33",
   "dependencies": {
     "jquery": "~3.3.1",
     "angular": "^1.7.6",
