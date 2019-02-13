@@ -217,7 +217,7 @@
                 </div>
               </div>
 
-              <div ng-show="authentication.user && !isCurrentUser" class="panel panel-default panel-success">
+              <div ng-show="!loggingIn && authentication.user && !isCurrentUser" class="panel panel-default panel-success">
                 <div class="panel-body" id="write-feedback">
                   <form ng-controller="MessagesController" ng-submit="createMessage($event, { type: 'rating', rating: newMessage.rating, comment: newMessage.comment })">
                     <div class="form-group">

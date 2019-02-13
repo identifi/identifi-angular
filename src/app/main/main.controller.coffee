@@ -114,6 +114,7 @@ angular.module('identifiAngular').controller 'MainController', [
       setIndex new $window.identifiLib.Index($scope.gun.user($scope.defaultIndexKeyID).get('identifi'), {ipfs: $scope.ipfs})
 
     $scope.loginWithKey = (privateKeySerialized, self) ->
+      $scope.loggingIn = true
       $scope.privateKey = $window.identifiLib.Key.fromJwk(privateKeySerialized)
       localStorageService.set('identifiKey', privateKeySerialized)
       $scope.authentication.user =
@@ -127,6 +128,7 @@ angular.module('identifiAngular').controller 'MainController', [
       $scope.msgs.list = []
       $window.identifiLib.Index.create($scope.gun, $scope.privateKey, {self, ipfs: $scope.ipfs}).then (i) ->
         setIndex(i)
+        $scope.loggingIn = false
         $scope.authentication.identity = $scope.identifiIndex.get('keyID', keyID)
         $scope.authentication.identity.gun.get('attrs').open (val, key, msg, eve) ->
           mva = $window.identifiLib.Identity.getMostVerifiedAttributes(val)
@@ -137,6 +139,9 @@ angular.module('identifiAngular').controller 'MainController', [
             console.log 'great, you got your first upvote!'
             # TODO: notification
           $scope.authentication.identity.data = data
+      .catch (e) ->
+        console.error(e)
+        $scope.loggingIn = false
 
     privateKey = localStorageService.get('identifiKey')
     if privateKey

@@ -37,7 +37,7 @@
           <p class="help-block">Social media profile or other personal url</p>
         </div>
         <button class="btn btn-primary"
-        ng-disabled="!(authentication.user && !(addEntryForm.idName.$invalid || addEntryForm.idEmail.$invalid || addEntryForm.idPhone.$invalid || addEntryForm.idUrl.$invalid))">
+        ng-disabled="loggingIn || !(authentication.user && !(addEntryForm.idName.$invalid || addEntryForm.idEmail.$invalid || addEntryForm.idPhone.$invalid || addEntryForm.idUrl.$invalid))">
           Add public contact</button>
         <p class="help-block">More details can be added afterwards.</p>
       </form>
