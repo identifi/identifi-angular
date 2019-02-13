@@ -6,6 +6,7 @@ angular.module('identifiAngular').controller 'IdentitiesController', [
   '$rootScope'
   '$window'
   '$stateParams'
+  '$transitions'
   '$location'
   '$http'
   '$q'
@@ -15,7 +16,7 @@ angular.module('identifiAngular').controller 'IdentitiesController', [
   'config'
   'localStorageService'
   'focus'
-  ($scope, $state, $rootScope, $window, $stateParams, $location, $http, $q, $timeout, $uibModal, config,
+  ($scope, $state, $rootScope, $window, $stateParams, $transitions, $location, $http, $q, $timeout, $uibModal, config,
   localStorageService, focus) -> #, Authentication
     $scope.newEntry = {}
     $scope.activeTab = 1
@@ -265,7 +266,7 @@ angular.module('identifiAngular').controller 'IdentitiesController', [
       )
       $scope.shareModal.rendered.then ->
         document.activeElement.blur()
-      $scope.$on '$stateChangeStart', ->
+      $transitions.onStart {}, ->
         $scope.shareModal.close()
 
     $scope.openReadQRModal = () ->
@@ -277,7 +278,7 @@ angular.module('identifiAngular').controller 'IdentitiesController', [
       )
       $scope.readQRModal.rendered.then ->
         document.activeElement.blur()
-      $scope.$on '$stateChangeStart', ->
+      $transitions.onStart {}, ->
         $scope.readQRModal.close()
 
     $scope.openCoverPhotoUploadModal = ->
