@@ -257,6 +257,7 @@ angular.module('identifiAngular').controller 'MainController', [
           $scope.filters.type = params.type
         $scope.resetMsg()
         $scope.addingMessage = false
+        $scope.loadMsgs(null)
       .catch (e) ->
         console.error(e)
         $scope.error = e
@@ -299,12 +300,21 @@ angular.module('identifiAngular').controller 'MainController', [
     $scope.$on '$stateChangeStart', ->
       $scope.filters.type = null
 
-    loadMsgs = ->
-      limit = 40
-      cursor = null
-      $scope.msgs.list = []
+    $scope.msgs.list = []
+    $scope.msgs.seen = {}
+    $scope.filteredMsgs = []
+    $scope.loadMsgs = (cursor) ->
+      limit = 30
+      if cursor == undefined and $scope.msgs.list.length
+        cursor = $scope.msgs.list[$scope.msgs.list.length - 1].cursor
+      found = 0
+      $scope.loadingMsgs = true
       resultFound = (msg) ->
         console.log 'got msg', msg
+        found += 1
+        $scope.loadingMsgs = false if found >= limit
+        return if $scope.msgs.seen[msg.getHash()]
+        $scope.msgs.seen[msg.getHash()] = true
         $scope.processMessages [msg]
         $scope.$apply ->
           $scope.msgs.list.push msg
@@ -312,7 +322,7 @@ angular.module('identifiAngular').controller 'MainController', [
 
     $scope.$watch 'identifiIndex', ->
       return unless $scope.identifiIndex
-      loadMsgs()
+      $scope.loadMsgs()
       $scope.search()
 
     $scope.uploadFile = (blob) ->
