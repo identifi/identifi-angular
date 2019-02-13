@@ -11,6 +11,7 @@ angular.module('identifiAngular').controller 'MainController', [
   '$uibModal'
   '$window'
   '$stateParams'
+  '$transitions'
   '$q'
   'focus'
 
@@ -18,7 +19,7 @@ angular.module('identifiAngular').controller 'MainController', [
   #'Menus'
   #'Persona'
   ($scope, $rootScope, $location, $http, $state, config,
-  localStorageService, clipboard, $uibModal, $window, $stateParams, $q, focus) -> # Authentication, Menus, Persona
+  localStorageService, clipboard, $uibModal, $window, $stateParams, $transitions, $q, focus) -> # Authentication, Menus, Persona
     hosts = ['https://identifi.herokuapp.com/gun', 'https://identifi2.herokuapp.com/gun']
     if $window.location.protocol != "https:"
       hosts.push('http://localhost:8765/gun')
@@ -284,7 +285,7 @@ angular.module('identifiAngular').controller 'MainController', [
       $scope.loginModal.rendered.then ->
         document.activeElement.blur()
         focus('newUser')
-      $scope.$on '$stateChangeStart', ->
+      $transitions.onStart {}, ->
         $scope.loginModal.close()
 
     $scope.openUploadModal = (callback, modalButtonText, squarify) ->
@@ -299,10 +300,10 @@ angular.module('identifiAngular').controller 'MainController', [
       )
       $scope.uploadModal.rendered.then ->
         document.activeElement.blur()
-      $scope.$on '$stateChangeStart', ->
+      $transitions.onStart {}, ->
         $scope.uploadModal.close()
 
-    $scope.$on '$stateChangeStart', ->
+    $transitions.onStart {}, ->
       $scope.filters.type = null
 
     $scope.msgs.list = []
@@ -399,7 +400,7 @@ angular.module('identifiAngular').controller 'MainController', [
       )
       $scope.logoutModal.rendered.then ->
         document.activeElement.blur()
-      $scope.$on '$stateChangeStart', ->
+      $transitions.onStart {}, ->
         $scope.logoutModal.close()
 
     $scope.closeLogoutModal = ->
@@ -477,7 +478,7 @@ angular.module('identifiAngular').controller 'MainController', [
       )
       $scope.messageModal.rendered.then ->
         document.activeElement.blur()
-      $scope.$on '$stateChangeStart', ->
+      $transitions.onStart {}, ->
         $scope.messageModal.close()
 
     $scope.filters = $scope.filters or config.defaultFilters

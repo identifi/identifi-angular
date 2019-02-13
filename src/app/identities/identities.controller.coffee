@@ -43,8 +43,9 @@ angular.module('identifiAngular').controller 'IdentitiesController', [
 
     $scope.share = true if $location.search().share
 
-    $scope.$on 'MessageAdded', (event, args) ->
-      $state.reload()
+    if $scope.query.term.length and $state.is 'identities.list'
+      $scope.query.term = ''
+      $scope.search()
 
     $scope.addEntry = (event, entry) ->
       if entry.email
