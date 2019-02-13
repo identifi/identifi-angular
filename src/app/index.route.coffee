@@ -1,6 +1,7 @@
 angular.module 'identifiAngular'
-  .config ($stateProvider, $urlRouterProvider) ->
+  .config ($stateProvider, $urlRouterProvider, $locationProvider) ->
     'ngInject'
+    $locationProvider.hashPrefix('')
     $stateProvider
       .state 'identities',
         url: '/contacts'
