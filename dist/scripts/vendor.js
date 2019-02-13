@@ -91441,7 +91441,7 @@ Gun.on('create', function(root){
 	  node.map(function (value, key) {
 	    var cursorCheck = !cursor || desc && key < cursor || !desc && key > cursor;
 	    if (cursorCheck && key.indexOf(query) === 0) {
-	      if (_Object$keys(seen).length >= limit) {
+	      if (typeof limit === 'number' && _Object$keys(seen).length >= limit) {
 	        return;
 	      }
 	      if (seen.hasOwnProperty(key)) {
@@ -91686,16 +91686,24 @@ Gun.on('create', function(root){
 	    return new Identity(this.gun.get('identitiesBySearchKey').get(attr.uri()), attr);
 	  };
 
-	  Index.prototype._getMsgs = async function _getMsgs(msgIndex, callback, limit, cursor, desc) {
+	  Index.prototype._getMsgs = async function _getMsgs(msgIndex, callback, limit, cursor, desc, filter) {
+	    var results = 0;
 	    async function resultFound(result) {
+	      if (results >= limit) {
+	        return;
+	      }
 	      var msg = await Message.fromSig(result.value);
+	      if (filter && !filter(msg)) {
+	        return;
+	      }
+	      results++;
 	      msg.cursor = result.key;
 	      if (result.value && result.value.ipfsUri) {
 	        msg.ipfsUri = result.value.ipfsUri;
 	      }
 	      callback(msg);
 	    }
-	    searchText(msgIndex, resultFound, '', limit, cursor, desc);
+	    searchText(msgIndex, resultFound, '', undefined, cursor, desc);
 	  };
 
 	  Index.prototype._addIdentityToIndexes = async function _addIdentityToIndexes(id) {
@@ -91719,8 +91727,9 @@ Gun.on('create', function(root){
 
 	  Index.prototype.getSentMsgs = async function getSentMsgs(identity, callback, limit) {
 	    var cursor = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+	    var filter = arguments[4];
 
-	    return this._getMsgs(identity.gun.get('sent'), callback, limit, cursor);
+	    return this._getMsgs(identity.gun.get('sent'), callback, limit, cursor, filter);
 	  };
 
 	  /**
@@ -91732,8 +91741,9 @@ Gun.on('create', function(root){
 
 	  Index.prototype.getReceivedMsgs = async function getReceivedMsgs(identity, callback, limit) {
 	    var cursor = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+	    var filter = arguments[4];
 
-	    return this._getMsgs(identity.gun.get('received'), callback, limit, cursor);
+	    return this._getMsgs(identity.gun.get('received'), callback, limit, cursor, filter);
 	  };
 
 	  Index.prototype._getAttributeTrustDistance = async function _getAttributeTrustDistance(a) {
@@ -92269,10 +92279,12 @@ Gun.on('create', function(root){
 
 
 	  Index.prototype.getMessagesByTimestamp = function getMessagesByTimestamp(callback, limit) {
+	    var cursor = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
+
 	    var _this5 = this;
 
-	    var cursor = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
 	    var desc = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+	    var filter = arguments[4];
 
 	    var seen = {};
 	    var cb = function cb(msg) {
@@ -92282,12 +92294,12 @@ Gun.on('create', function(root){
 	        callback(msg);
 	      }
 	    };
-	    this._getMsgs(this.gun.get('messagesByTimestamp'), cb, limit, cursor);
+	    this._getMsgs(this.gun.get('messagesByTimestamp'), cb, limit, cursor, filter);
 	    if (this.options.indexSync.query.enabled) {
 	      this.gun.get('trustedIndexes').map().once(function (val, key) {
 	        if (val) {
 	          var n = _this5.gun.user(key).get('identifi').get('messagesByTimestamp');
-	          _this5._getMsgs(n, cb, limit, cursor, desc);
+	          _this5._getMsgs(n, cb, limit, cursor, desc, filter);
 	        }
 	      });
 	    }
@@ -92299,10 +92311,12 @@ Gun.on('create', function(root){
 
 
 	  Index.prototype.getMessagesByDistance = function getMessagesByDistance(callback, limit) {
+	    var cursor = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
+
 	    var _this6 = this;
 
-	    var cursor = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
 	    var desc = arguments[3];
+	    var filter = arguments[4];
 
 	    var seen = {};
 	    var cb = function cb(msg) {
@@ -92313,12 +92327,12 @@ Gun.on('create', function(root){
 	        }
 	      }
 	    };
-	    this._getMsgs(this.gun.get('messagesByDistance'), cb, limit, cursor, desc);
+	    this._getMsgs(this.gun.get('messagesByDistance'), cb, limit, cursor, desc, filter);
 	    if (this.options.indexSync.query.enabled) {
 	      this.gun.get('trustedIndexes').map().once(function (val, key) {
 	        if (val) {
 	          var n = _this6.gun.user(key).get('identifi').get('messagesByDistance');
-	          _this6._getMsgs(n, cb, limit, cursor, desc);
+	          _this6._getMsgs(n, cb, limit, cursor, desc, filter);
 	        }
 	      });
 	    }

@@ -252,12 +252,14 @@ angular.module('identifiAngular').controller 'MainController', [
       message.then (m) ->
         console.log m
         $scope.identifiIndex.addMessage(m)
+        $scope.msgs.seen[m.getHash()] = true
+        $scope.processMessages([m])
+        $scope.msgs.list.push(m)
       .then ->
         if $scope.filters.type not in [params.type, null]
           $scope.filters.type = params.type
         $scope.resetMsg()
         $scope.addingMessage = false
-        $scope.loadMsgs(null)
       .catch (e) ->
         console.error(e)
         $scope.error = e
@@ -304,11 +306,25 @@ angular.module('identifiAngular').controller 'MainController', [
     $scope.msgs.seen = {}
     $scope.filteredMsgs = []
     $scope.loadMsgs = (cursor) ->
-      limit = 30
+      limit = 40
       if cursor == undefined and $scope.msgs.list.length
         cursor = $scope.msgs.list[$scope.msgs.list.length - 1].cursor
       found = 0
       $scope.loadingMsgs = true
+      filter = false
+      ###
+      if $scope.filters.type == null
+        filter = (m) ->
+          r = m.signedData.type not in ['verification', 'unverification']
+          console.log 'filterin', r
+          return r
+      else
+        t = $scope.filters.type.split(':')[0]
+        filter = (m) ->
+          r = m.signedData.type == t
+          console.log 'filterin', r
+          return r
+      ###
       resultFound = (msg) ->
         console.log 'got msg', msg
         found += 1
