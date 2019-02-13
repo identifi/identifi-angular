@@ -46,6 +46,7 @@ angular.module('identifiAngular').controller 'MainController', [
       list: []
     $scope.msgs =
       list: []
+      seen: {}
     $scope.phoneRegex = /^\+?\d+$/
 
     $scope.ipfs = new Ipfs(
@@ -102,6 +103,7 @@ angular.module('identifiAngular').controller 'MainController', [
       $scope.query.term = '' if $scope.query.term != ''
       $scope.ids.list = []
       $scope.msgs.list = []
+      $scope.msgs.seen = {}
       $scope.identifiIndex = results
       setTimeout () ->
         $scope.$broadcast('rzSliderForceRender')
@@ -132,6 +134,7 @@ angular.module('identifiAngular').controller 'MainController', [
       $scope.viewpoint = {type: 'keyID', value: keyID}
       $scope.ids.list = []
       $scope.msgs.list = []
+      $scope.msgs.seen = {}
       $window.identifiLib.Index.create($scope.gun, $scope.privateKey, {self, ipfs: $scope.ipfs}).then (i) ->
         setIndex(i)
         $scope.loggingIn = false
