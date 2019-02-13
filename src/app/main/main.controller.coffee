@@ -101,7 +101,6 @@ angular.module('identifiAngular').controller 'MainController', [
         , 1000
 
     setIndex = (results) ->
-      $scope.query.term = '' if $scope.query.term != ''
       $scope.ids.list = []
       $scope.msgs.list = []
       $scope.msgs.seen = {}
@@ -282,6 +281,7 @@ angular.module('identifiAngular').controller 'MainController', [
         size: 'lg'
         scope: $scope
       )
+      $scope.loginModal.result.then (->), (->) # avoid backdrop rejection console error
       $scope.loginModal.rendered.then ->
         document.activeElement.blur()
         focus('newUser')
@@ -298,6 +298,7 @@ angular.module('identifiAngular').controller 'MainController', [
         size: 'lg'
         scope: $scope
       )
+      $scope.uploadModal.result.then (->), (->) # avoid backdrop rejection console error
       $scope.uploadModal.rendered.then ->
         document.activeElement.blur()
       $transitions.onStart {}, ->
@@ -310,7 +311,7 @@ angular.module('identifiAngular').controller 'MainController', [
     $scope.msgs.seen = {}
     $scope.filteredMsgs = []
     $scope.loadMsgs = (cursor) ->
-      limit = 40
+      limit = 20
       if cursor == undefined and $scope.msgs.list.length
         cursor = $scope.msgs.list[$scope.msgs.list.length - 1].cursor
       found = 0
@@ -398,6 +399,7 @@ angular.module('identifiAngular').controller 'MainController', [
         size: 'lg'
         scope: $scope
       )
+      $scope.logoutModal.result.then (->), (->) # avoid backdrop rejection console error
       $scope.logoutModal.rendered.then ->
         document.activeElement.blur()
       $transitions.onStart {}, ->
@@ -476,6 +478,7 @@ angular.module('identifiAngular').controller 'MainController', [
         size: size
         scope: $scope
       )
+      $scope.messageModal.result.then (->), (->) # avoid backdrop rejection console error
       $scope.messageModal.rendered.then ->
         document.activeElement.blur()
       $transitions.onStart {}, ->

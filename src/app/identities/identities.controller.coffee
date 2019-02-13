@@ -225,7 +225,7 @@ angular.module('identifiAngular').controller 'IdentitiesController', [
         $scope.processMessages [msg], { authorIsSelf: true }
         $scope.sent.push msg
 
-      $scope.identifiIndex.getSentMsgs($scope.identity, resultFound, $scope.filters.limit)
+      $scope.identifiIndex.getSentMsgs($scope.identity, resultFound)
 
     $scope.getReceivedMsgs = ->
       return unless $scope.identity and $scope.identifiIndex
@@ -244,7 +244,7 @@ angular.module('identifiAngular').controller 'IdentitiesController', [
             $scope.thumbsDown.push msg
             $scope.hasThumbsDown = true
           $scope.received.push msg
-      $scope.identifiIndex.getReceivedMsgs($scope.identity, resultFound, $scope.filters.limit, cursor)
+      $scope.identifiIndex.getReceivedMsgs($scope.identity, resultFound, undefined, cursor)
 
     $scope.setFilters = (filters) ->
       angular.extend $scope.filters, filters
@@ -264,6 +264,7 @@ angular.module('identifiAngular').controller 'IdentitiesController', [
         size: 'md'
         scope: $scope
       )
+      $scope.shareModal.result.then (->), (->) # avoid backdrop rejection console error
       $scope.shareModal.rendered.then ->
         document.activeElement.blur()
       $transitions.onStart {}, ->
@@ -276,6 +277,7 @@ angular.module('identifiAngular').controller 'IdentitiesController', [
         size: 'md'
         scope: $scope
       )
+      $scope.readQRModal.result.then (->), (->) # avoid backdrop rejection console error
       $scope.readQRModal.rendered.then ->
         document.activeElement.blur()
       $transitions.onStart {}, ->
