@@ -90937,7 +90937,7 @@ Gun.on('create', function(root){
 
 	  Message.prototype.saveToIpfs = async function saveToIpfs(ipfs) {
 	    var s = this.toString();
-	    var r = await ipfs.files.add(ipfs.types.Buffer.from(s));
+	    var r = await ipfs.add(ipfs.types.Buffer.from(s));
 	    if (r.length) {
 	      this.ipfsUri = r[0].hash;
 	    }
@@ -90945,7 +90945,7 @@ Gun.on('create', function(root){
 	  };
 
 	  Message.loadFromIpfs = async function loadFromIpfs(ipfs, uri) {
-	    var f = await ipfs.files.cat(uri);
+	    var f = await ipfs.cat(uri);
 	    var s = ipfs.types.Buffer.from(f).toString('utf8');
 	    return Message.fromString(s);
 	  };
@@ -92322,7 +92322,7 @@ Gun.on('create', function(root){
 	  return Index;
 	}();
 
-	var version$1 = "0.0.81";
+	var version$1 = "0.0.82";
 
 	/*eslint no-useless-escape: "off", camelcase: "off" */
 
