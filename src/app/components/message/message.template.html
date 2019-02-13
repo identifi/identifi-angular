@@ -6,14 +6,14 @@
       <strong>
         <a ui-sref="identities.show({ type: $ctrl.msgData.linkToAuthor.type, value: $ctrl.msgData.linkToAuthor.value })" class="id-link">
           <identicon ipfs="$ctrl.ipfs" identity="$ctrl.msgData.author" class="mar-right5" border="3" width="35"></identicon>
-          <span ng-bind="$ctrl.msgData.author_name||$ctrl.msgData.linkToAuthor.value"></span>
+          <span ng-bind="$ctrl.msgData.author_name"></span>
         </a>
       </strong>
       <span ng-show="!$ctrl.msgData.sameAuthorAndRecipient">
         <small><i class="glyphicon glyphicon-play"></i></small>
         <a ui-sref="identities.show({ type: $ctrl.msgData.linkToRecipient.type, value: $ctrl.msgData.linkToRecipient.value })" class="id-link">
           <identicon ng-if="$ctrl.showRecipient" ipfs="$ctrl.ipfs" identity="$ctrl.msgData.recipient" class="mar-right5" border="3" width="35"></identicon>
-          <span ng-bind="($ctrl.msgData.recipientIsSelf && $ctrl.pageInfo.primaryName)||$ctrl.msgData.recipient_name||$ctrl.msgData.linkToRecipient.value"></span>
+          <span ng-bind="($ctrl.msgData.recipientIsSelf && $ctrl.pageInfo.primaryName)||$ctrl.msgData.recipient_name"></span>
         </a>
       </span>
        - <a ui-sref="messages.show({ id: ($ctrl.msgData.ipfsUri || $ctrl.msgData.hash) })" ng-bind="$ctrl.msgData.signedData.timestamp|date:'medium'" class="text-muted small" style="display:inline-block;"></a>

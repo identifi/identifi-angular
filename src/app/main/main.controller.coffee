@@ -498,6 +498,14 @@ angular.module('identifiAngular').controller 'MainController', [
             i++
           if msg.linkToAuthor.equals(msg.linkToRecipient)
             msg.sameAuthorAndRecipient = true
+          if !msg.author_name
+            msg.author_name = msg.linkToAuthor.value
+            if msg.linkToAuthor.type in ['keyID', 'uuid']
+              msg.author_name = msg.author_name.slice(0, 6) + '...'
+          if !msg.recipient_name
+            msg.recipient_name = msg.linkToRecipient.value
+            if msg.linkToAuthor.type in ['keyID', 'uuid']
+              msg.recipient_name = msg.recipient_name.slice(0, 6) + '...'
           alpha = undefined
           msg.iconStyle = ''
           msg.bgColor = ''
@@ -567,7 +575,9 @@ angular.module('identifiAngular').controller 'MainController', [
             i.primaryName = mva.nickname.attribute.value
             i.hasProperName = true
           else
-            i.primaryName = Object.values(attrs)[0].value
+            a = Object.values(attrs)[0]
+            i.primaryName = a.value
+            i.primaryName = i.primaryName.slice(0,6) + '...' if a.type in ['keyID', 'uuid']
           if i.primaryName
             if mva.nickname and mva.nickname.attribute.value != i.primaryName
               i.nickname = mva.nickname.attribute.value
