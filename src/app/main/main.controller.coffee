@@ -56,7 +56,7 @@ angular.module('identifiAngular').controller 'MainController', [
 
     $scope.capitalizeWords = (s) ->
       if s and s.length
-        return (s.split(' ').map (word) -> word[0].toUpperCase() + word[1..-1].toLowerCase()).join ' '
+        return (s.trim().split(' ').map (word) -> word[0].toUpperCase() + word[1..-1].toLowerCase()).join ' '
       else
         return s
 
@@ -68,7 +68,7 @@ angular.module('identifiAngular').controller 'MainController', [
       $scope.ids.activeKey = -1
       $scope.ids.list = []
       console.log 'search'
-      searchKey = encodeURIComponent((query or $scope.query.term or '').toLowerCase())
+      searchKey = (query or $scope.query.term or '').toLowerCase().trim()
       $scope.searchKey = searchKey
       $scope.previousSearchKey = searchKey
       limit = limit or 10
@@ -635,7 +635,7 @@ angular.module('identifiAngular').controller 'MainController', [
           break
 
     $scope.dropdownSearchSelect = (item) ->
-      $state.go('identities.show', { type: item.linkTo.type, value: item.linkTo.val })
+      $state.go('identities.show', { type: item.linkTo.type, value: item.linkTo.value })
       $scope.query.term = ''
 
     $scope.addGunPeer = (url) ->
