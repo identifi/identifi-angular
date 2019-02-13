@@ -192,7 +192,7 @@ angular.module('identifiAngular').controller 'MainController', [
     $scope.ipfsGet = (uri, getJson) ->
       return new Promise (resolve) ->
         go = ->
-          $scope.ipfs.files.cat(uri).then (file) ->
+          $scope.ipfs.cat(uri).then (file) ->
             file = $scope.ipfs.types.Buffer(file)
             if getJson
               file = JSON.parse(file.toString())
@@ -306,7 +306,7 @@ angular.module('identifiAngular').controller 'MainController', [
         fileReader.onload = (event) ->
           buffer = $scope.ipfs.types.Buffer.from(event.target.result)
           console.log 'buffer', buffer
-          $scope.ipfs.files.add buffer, (err, files) ->
+          $scope.ipfs.add buffer, (err, files) ->
             if err
               reject('adding to ipfs failed', err)
             else

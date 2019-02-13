@@ -91265,7 +91265,7 @@ Gun.on('create', function(root){
 	        var mva = Identity.getMostVerifiedAttributes(attrs);
 	        if (mva.profilePhoto) {
 	          var go = function go() {
-	            ipfs.files.cat(mva.profilePhoto.attribute.value).then(function (file) {
+	            ipfs.cat(mva.profilePhoto.attribute.value).then(function (file) {
 	              var f = ipfs.types.Buffer.from(file).toString('base64');
 	              img.src = 'data:image;base64,' + f;
 	            });
@@ -91466,16 +91466,17 @@ Gun.on('create', function(root){
 
 	// TODO: flush onto IPFS
 	/**
-	* Identifi index root. Contains four indexes: identitiesBySearchKey, identitiesByTrustDistance,
-	* messagesByTimestamp, messagesByDistance.
-	*/
-	/**
+	* Identifi index root. Contains five indexes: identitiesBySearchKey, identitiesByTrustDistance,
+	* messagesByHash, messagesByTimestamp, messagesByDistance. If you want messages saved to IPFS, pass
+	* options.ipfs = instance.
+	*
 	* When you use someone else's index, initialise it using the Index constructor
 	* @param {Object} gun gun node that contains an Identifi index (e.g. user.get('identifi'))
 	* @param {Object} options see default options in example
 	* @example
 	* Default options:
 	*{
+	*  ipfs: undefined,
 	*  indexSync: {
 	*    importOnAdd: {
 	*      enabled: true,
@@ -91541,7 +91542,7 @@ Gun.on('create', function(root){
 	                Message.fromSig(val).then(function (msg) {
 	                  console.log('adding msg ' + msg.hash + ' from trusted index');
 	                  if (_this.options.indexSync.msgTypes.all || _this.options.indexSync.msgTypes.hasOwnProperty(msg.signedData.type)) {
-	                    _this.addMessage(msg, undefined, { checkIfExists: true });
+	                    _this.addMessage(msg, { checkIfExists: true });
 	                  }
 	                });
 	              }
@@ -92074,7 +92075,7 @@ Gun.on('create', function(root){
 	  */
 
 
-	  Index.prototype.addMessages = async function addMessages(msgs, ipfs) {
+	  Index.prototype.addMessages = async function addMessages(msgs) {
 	    var _this3 = this;
 
 	    var msgsByAuthor = {};
@@ -92143,7 +92144,7 @@ Gun.on('create', function(root){
 	      while (author && knownIdentity) {
 	        if (author.indexOf(knownIdentity.key) === 0) {
 	          try {
-	            await util$1.timeoutPromise(_this3.addMessage(msgsByAuthor[author], ipfs), 10000);
+	            await util$1.timeoutPromise(_this3.addMessage(msgsByAuthor[author], { checkIfExists: true }), 10000);
 	          } catch (e) {
 	            console.log('adding failed:', e, _JSON$stringify(msgsByAuthor[author], null, 2));
 	          }
@@ -92171,8 +92172,8 @@ Gun.on('create', function(root){
 	  */
 
 
-	  Index.prototype.addMessage = async function addMessage(msg, ipfs) {
-	    var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+	  Index.prototype.addMessage = async function addMessage(msg) {
+	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
 	    if (msg.constructor.name !== 'Message') {
 	      throw new Error('addMessage failed: param must be a Message, received ' + msg.constructor.name);
@@ -92190,11 +92191,15 @@ Gun.on('create', function(root){
 	    }
 	    var indexKey = Index.getMsgIndexKey(msg);
 	    var obj = { sig: msg.sig, pubKey: msg.pubKey };
-	    if (ipfs) {
-	      var ipfsUri = await msg.saveToIpfs(ipfs);
-	      obj.ipfsUri = ipfsUri;
-	      this.gun.get('messagesByHash').get(ipfsUri).put(obj);
-	      this.gun.get('messagesByHash').get(ipfsUri).put(obj);
+	    if (this.options.ipfs) {
+	      try {
+	        var ipfsUri = await msg.saveToIpfs(this.options.ipfs);
+	        obj.ipfsUri = ipfsUri;
+	        this.gun.get('messagesByHash').get(ipfsUri).put(obj);
+	        this.gun.get('messagesByHash').get(ipfsUri).put(obj);
+	      } catch (e) {
+	        console.error('adding msg ' + msg + ' to ipfs failed: ' + e);
+	      }
 	    }
 	    this.gun.get('messagesByHash').get(hash).put(obj);
 	    this.gun.get('messagesByHash').get(hash).put(obj);
@@ -92317,7 +92322,7 @@ Gun.on('create', function(root){
 	  return Index;
 	}();
 
-	var version$1 = "0.0.80";
+	var version$1 = "0.0.81";
 
 	/*eslint no-useless-escape: "off", camelcase: "off" */
 
