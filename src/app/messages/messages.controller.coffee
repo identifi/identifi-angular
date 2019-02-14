@@ -38,7 +38,7 @@ angular.module('identifiAngular').controller 'MessagesController', [
     $scope.collapseFilters = $window.innerWidth < 992
 
     $scope.setFilters = (filters) ->
-      angular.extend $scope.filters, filters
+      angular.extend $scope.filters, {limit: 10}, filters
 
     # Find existing Message
     $scope.findOne = ->

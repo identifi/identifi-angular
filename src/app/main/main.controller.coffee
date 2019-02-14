@@ -73,7 +73,7 @@ angular.module('identifiAngular').controller 'MainController', [
       searchKey = (query or $scope.query.term or '').toLowerCase().trim()
       $scope.searchKey = searchKey
       $scope.previousSearchKey = searchKey
-      limit = limit or 10
+      limit = limit or 1000
       cursor = false
       if $scope.ids.list.length
         cursor = $scope.ids.list[$scope.ids.list.length - 1].cursor
@@ -94,7 +94,7 @@ angular.module('identifiAngular').controller 'MainController', [
               i.linkTo = linkTo
         $scope.setIdentityNames(i, true)
 
-      $scope.identifiIndex.search(searchKey, undefined, resultFound, limit, cursor)
+      $scope.identifiIndex.search(searchKey, undefined, resultFound, limit)
       return new Promise (resolve) -> # TODO: uib-typeahead is limited, but something better pls
         setTimeout ->
           resolve($scope.ids.list)
@@ -311,7 +311,7 @@ angular.module('identifiAngular').controller 'MainController', [
     $scope.msgs.seen = {}
     $scope.filteredMsgs = []
     $scope.loadMsgs = (cursor) ->
-      limit = 20
+      limit = 1000
       if cursor == undefined and $scope.msgs.list.length
         cursor = $scope.msgs.list[$scope.msgs.list.length - 1].cursor
       found = 0
@@ -333,13 +333,13 @@ angular.module('identifiAngular').controller 'MainController', [
       resultFound = (msg) ->
         console.log 'got msg', msg
         found += 1
-        $scope.loadingMsgs = false if found >= limit
+        # $scope.loadingMsgs = false if found >= limit
         return if $scope.msgs.seen[msg.getHash()]
         $scope.msgs.seen[msg.getHash()] = true
         $scope.processMessages [msg]
         $scope.$apply ->
           $scope.msgs.list.push msg
-      $scope.identifiIndex.getMessagesByTimestamp(resultFound, limit, cursor)
+      $scope.identifiIndex.getMessagesByTimestamp(resultFound, limit)
 
     $scope.$watch 'identifiIndex', ->
       return unless $scope.identifiIndex

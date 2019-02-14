@@ -1,6 +1,6 @@
 {
   "name": "identifi-angular",
-  "version": "1.22.34",
+  "version": "1.22.35",
   "description": "Social networking freedom",
   "author": "Martti Malmi",
   "main": "electron.js",
