@@ -3,4 +3,4 @@ angular.module('identifiAngular')
     defaultFilters:
       type: null
       limit: 10
-      max_distance: 0
+      maxDistance: 0

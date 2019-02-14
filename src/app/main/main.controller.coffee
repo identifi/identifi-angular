@@ -272,7 +272,7 @@ angular.module('identifiAngular').controller 'MainController', [
       $location.path '#/identities/create/' + $scope.query.term
 
     $scope.login = ->
-      $scope.filters.max_distance = -1 # because the user doesn't have a trust index yet
+      $scope.filters.maxDistance = -1 # because the user doesn't have a trust index yet
 
     $scope.openLoginModal = ->
       $scope.loginModal = $uibModal.open(
@@ -409,7 +409,7 @@ angular.module('identifiAngular').controller 'MainController', [
       $scope.logoutModal.close()
 
     $scope.logout = ->
-      $scope.filters.max_distance = 0
+      $scope.filters.maxDistance = 0
       $scope.privateKeySerialized = ''
       $scope.authentication = {}
       localStorageService.clearAll()
@@ -438,10 +438,10 @@ angular.module('identifiAngular').controller 'MainController', [
       else
         if data.type in ['verification', 'unverification']
           return false
-      if $scope.filters.max_distance
-        if $scope.filters.max_distance == 0 and typeof value.authorTrustDistance != 'number'
+      if $scope.filters.maxDistance > -1
+        if typeof msg.authorTrustDistance != 'number'
           return false
-        else if $scope.filters.max_distance > 0 and value.authorTrustDistance > $scope.filters.max_distance
+        if $scope.filters.maxDistance > 0 and msg.authorTrustDistance > $scope.filters.maxDistance
           return false
       return true
 
