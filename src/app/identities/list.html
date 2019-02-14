@@ -3,7 +3,7 @@
     <div class="mar-top25-xs"></div>
     <div ng-if="!query.term" ng-include="'app/main/getstarted.partial.html'"></div>
 
-    <table ng-init="filters.limit = 10" id="search-results" class="table table-hover" infinite-scroll="filters.limit = filters.limit + 1" infinite-scroll-distance="1" infinite-scroll-disabled="!identifiIndex || !ids || !ids.list || ids.list.length < filters.limit || filteredMsgs.length < filters.limit">
+    <table ng-init="filters.limit = 10" id="search-results" class="table table-hover" infinite-scroll="filters.limit = filters.limit + 1" infinite-scroll-distance="1" infinite-scroll-disabled="!identifiIndex || !ids || !ids.list || ids.list.length < filters.limit || filteredIds.length < filters.limit">
       <tbody>
         <tr ng-class="{active: ids.activeKey == -1}" ui-sref="identities.create" class="search-result-row">
           <td class="gravatar-col align-center"><span style="line-height:46px" class="glyphicon glyphicon-plus"></span></td>
@@ -11,7 +11,7 @@
             <a ui-sref="identities.create">Add contact<span ng-if="query.term">: <span ng-bind="capitalizeWords(query.term)"></span></span></a>
           </td>
         </tr>
-        <tr ng-repeat="result in ids.list track by (result.linkTo.value + result.linkTo.type)|orderBy:result.data.trustDistance" id="result{{$index}}" ui-sref="identities.show({ type: result.linkTo.type, value: result.linkTo.value })" class="search-result-row" ng-class="{active: result.active}">
+        <tr ng-repeat="result in ids.list | orderBy:result.data.trustDistance | limitTo:filters.limit as filteredIds track by (result.linkTo.value + result.linkTo.type)" id="result{{$index}}" ui-sref="identities.show({ type: result.linkTo.type, value: result.linkTo.value })" class="search-result-row" ng-class="{active: result.active}">
           <td class="gravatar-col"><identicon identity="result" border="3" width="50" positive-score="result.pos" negative-score="result.neg" ipfs="ipfs"></identicon></td>
           <td>
             <span ng-if="result.data.trustDistance == 0" class="label label-default pull-right">viewpoint</span>
