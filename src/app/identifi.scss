@@ -1270,6 +1270,18 @@ h1 {
   .rz-pointer {
     background-color: #337ab7;
   }
+  .rz-pointer.rz-active:after {
+    background-color: white; // dot on the active selector
+  }
+  .rz-bubble {
+    background-color: #337ab7;
+  }
+}
+
+#newRatingPanel {
+  border-width: 2px;
+  -webkit-transition: border 0.2s; /* Safari */
+  transition: border 0.2s;
 }
 
 .search-result-row {

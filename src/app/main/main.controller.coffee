@@ -218,6 +218,16 @@ angular.module('identifiAngular').controller 'MainController', [
           $scope.ipfs.on 'ready', ->
             go()
 
+    $scope.$watch 'newMessage.rating', (rating) ->
+      if rating > 0
+        alpha = (rating - 0.5) / 3 / 1.25 + 0.2
+        $scope.newMessage.style = {'border-color': 'rgba(223,240,216,' + alpha + ')'};
+      else if rating < 0
+        alpha = (rating + 0.5) / -3 / 1.25 + 0.2
+        $scope.newMessage.style = {'border-color': 'rgba(242,222,222,' + alpha + ')'};
+      else
+        $scope.newMessage.style = {'border-color': '#fcf8e3'};
+
     $scope.resetMsg = ->
       $scope.newMessage =
         rating: 1
