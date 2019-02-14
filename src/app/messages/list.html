@@ -23,7 +23,7 @@
 
         <div ng-include="'app/messages/create.partial.html'"></div>
         <div class="visible-xs visible-sm" ng-include="'app/messages/filters.partial.html'"></div>
-        <div ng-init="filters.limit = 10" infinite-scroll="filters.limit = filters.limit + 1" infinite-scroll-distance="1" infinite-scroll-disabled="!msgs || !msgs.list || msgs.list.length < filters.limit || !identifiIndex">
+        <div ng-init="filters.maxDistance = 0;filters.limit = 10" infinite-scroll="filters.limit = filters.limit + 1" infinite-scroll-distance="1" infinite-scroll-disabled="!msgs || !msgs.list || msgs.list.length < filters.limit || !identifiIndex">
           <message ng-repeat="msg in msgs.list | filter:msgFilter | orderBy:'signedData.timestamp' : true | limitTo:filters.limit as filteredMsgs track by msg.hash" ipfs="ipfs" msg-data="msg" ng-click="openMessage($event, msg, 'lg')"></message>
         </div>
         <div class="alert alert-info text-center" ng-if="!filteredMsgs.length">

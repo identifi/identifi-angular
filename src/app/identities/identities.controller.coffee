@@ -48,6 +48,9 @@ angular.module('identifiAngular').controller 'IdentitiesController', [
       $scope.query.term = ''
       $scope.search()
 
+    if $state.is 'identities.show'
+      $scope.filters.maxDistance = 0
+
     $scope.addEntry = (event, entry) ->
       if entry.email
         linkTo = {type:'email', value: entry.email}
