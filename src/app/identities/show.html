@@ -99,7 +99,8 @@
                     <span class="glyphicon glyphicon-share mar-right5"></span> Share
                   </button>
                   <span ng-if="identity.data.trustDistance == 0" class="label label-default pull-right">viewpoint</span>
-                  <span ng-if="identity.data.trustDistance > 0 && identity.data.trustDistance < 1000" ng-bind="identity.data.trustDistance | ordinal" class="label label-default pull-right"></span>
+                  <span ng-if="identity.data.trustDistance > 0 && identity.data.trustDistance < 99" ng-bind="identity.data.trustDistance | ordinal" class="label label-default pull-right"></span>
+                  <span ng-if="identity.data.trustDistance == 99" class="label label-default pull-right">unconnected</span>
                 </h4>
               </div>
             </div>

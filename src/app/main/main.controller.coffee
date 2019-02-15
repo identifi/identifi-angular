@@ -81,7 +81,6 @@ angular.module('identifiAngular').controller 'MainController', [
 
       resultFound = (i) ->
         return if searchKey != $scope.searchKey
-        console.log 'i', i
         i.gun.on (data) ->
           i.data = data
           i.gun.get('linkTo').on (linkTo) ->
@@ -221,12 +220,12 @@ angular.module('identifiAngular').controller 'MainController', [
     $scope.$watch 'newMessage.rating', (rating) ->
       if rating > 0
         alpha = (rating - 0.5) / 3 / 1.25 + 0.2
-        $scope.newMessage.style = {'border-color': 'rgba(223,240,216,' + alpha + ')'};
+        $scope.newMessage.style = {'border-color': 'rgba(223,240,216,' + alpha + ')'}
       else if rating < 0
         alpha = (rating + 0.5) / -3 / 1.25 + 0.2
-        $scope.newMessage.style = {'border-color': 'rgba(242,222,222,' + alpha + ')'};
+        $scope.newMessage.style = {'border-color': 'rgba(242,222,222,' + alpha + ')'}
       else
-        $scope.newMessage.style = {'border-color': '#fcf8e3'};
+        $scope.newMessage.style = {'border-color': '#fcf8e3'}
 
     $scope.resetMsg = ->
       $scope.newMessage =
@@ -452,6 +451,8 @@ angular.module('identifiAngular').controller 'MainController', [
         if typeof msg.authorTrustDistance != 'number'
           return false
         if $scope.filters.maxDistance > 0 and msg.authorTrustDistance > $scope.filters.maxDistance
+          return false
+        if $scope.filters.maxDistance == 0 and msg.authorTrustDistance == 99
           return false
       return true
 
