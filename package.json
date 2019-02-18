@@ -1,7 +1,7 @@
 {
   "name": "identifi-angular",
-  "version": "1.22.36",
-  "description": "Social networking freedom",
+  "version": "1.22.37",
+  "description": "A social networking application that stores everything on its users' devices which communicate directly with each other - no corporate gatekeepers needed.",
   "author": "Martti Malmi",
   "main": "electron.js",
   "dependencies": {},
