@@ -48,5 +48,9 @@ angular.module 'identifiAngular'
         url: '/settings'
         templateUrl: 'app/main/settings.html'
         title: 'Identifi - Settings'
+      .state 'privacy',
+        url: '/privacy'
+        templateUrl: 'app/main/privacy-policy.html'
+        title: 'Identifi - Privacy policy'
 
     $urlRouterProvider.otherwise ''
