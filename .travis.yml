@@ -3,8 +3,7 @@ node_js:
   - "10"
 script:
   - yarn
-  - yarn global add gulp-cli
-  - yarn global add bower
+  - yarn global add gulp-cli bower
   - bower install
   - gulp build
 cache:

@@ -1,6 +1,9 @@
 # identifi-angular
 
-Angular app that connects to the Identifi API.
+[![Travis](https://img.shields.io/travis/identifi/identifi-angular/master.svg?style=flat-square)](https://travis-ci.org/identifi/identifi-angular)
+[![David](https://img.shields.io/david/identifi/identifi-angular.svg?style=flat-square)](https://david-dm.org/identifi/identifi-angular)
+
+> Angular app that connects to the Identifi API.
 
 Available at:
 * https://identi.fi
