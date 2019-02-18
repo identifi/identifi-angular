@@ -20,7 +20,7 @@ angular.module('identifiAngular').controller 'MainController', [
   #'Persona'
   ($scope, $rootScope, $location, $http, $state, config,
   localStorageService, clipboard, $uibModal, $window, $stateParams, $transitions, $q, focus) -> # Authentication, Menus, Persona
-    hosts = ['https://identifi.herokuapp.com/gun', 'https://identifi2.herokuapp.com/gun']
+    hosts = ['https://gun-us.herokuapp.com/gun', 'https://gun-eu.herokuapp.com/gun']
     if $window.location.protocol != "https:"
       hosts.push('http://localhost:8765/gun')
 
