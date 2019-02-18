@@ -1,0 +1,14 @@
+language: node_js
+node_js:
+  - "10"
+script:
+  - yarn
+  - yarn global add gulp-cli
+  - yarn global add bower
+  - bower install
+  - gulp build
+cache:
+  yarn: true
+  directories:
+    - node_modules
+after_success: 'yarn run coveralls'
