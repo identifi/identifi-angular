@@ -1,21 +1,23 @@
 'use strict';
 
-describe('The main view', function () {
-  var page;
+describe('angularjs homepage todo list', function() {
+  it('should create a new user', function() {
+    browser.get('http://localhost:3000');
 
-  beforeEach(function () {
-    browser.get('/index.html');
-    page = require('./main.po');
+    element(by.id('newUserName')).sendKeys('Test User');
+    element(by.id('createUserBtn')).click();
+
+    var info = element(by.css('alert-info h3'));
+    expect(info.toExist());
+    /*
+    var todoList = element.all(by.repeater('todo in todoList.todos'));
+    expect(todoList.count()).toEqual(3);
+    expect(todoList.get(2).getText()).toEqual('write first protractor test');
+
+    // You wrote your first test, cross it off the list
+    todoList.get(2).element(by.css('input')).click();
+    var completedAmount = element.all(by.css('.done-true'));
+    expect(completedAmount.count()).toEqual(2);
+    */
   });
-
-  it('should include jumbotron with correct data', function() {
-    expect(page.h1El.getText()).toBe('\'Allo, \'Allo!');
-    expect(page.imgEl.getAttribute('src')).toMatch(/assets\/images\/yeoman.png$/);
-    expect(page.imgEl.getAttribute('alt')).toBe('I\'m Yeoman');
-  });
-
-  it('should list more than 5 awesome things', function () {
-    expect(page.thumbnailEls.count()).toBeGreaterThan(5);
-  });
-
 });
