@@ -2,10 +2,7 @@ language: node_js
 node_js:
   - "10"
 script:
-  - yarn
-  - yarn global add gulp-cli bower
-  - bower install
-  - gulp build
+  - yarn build
 cache:
   yarn: true
   directories:

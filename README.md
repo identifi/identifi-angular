@@ -16,8 +16,6 @@ Available at:
 ```
 git clone https://github.com/identifi/identifi-angular.git
 cd identifi-angular
-yarn global add gulp-cli bower
-yarn install
-bower install
-gulp serve
+yarn build
+yarn run serve
 ```

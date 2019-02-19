@@ -6,6 +6,8 @@
   "main": "electron.js",
   "files": "dist",
   "scripts": {
+    "build": "bower install && ./build.sh",
+    "serve": "gulp serve",
     "test": "gulp test",
     "electron": "DEV=true electron .",
     "pack": "electron-builder --dir",
@@ -22,6 +24,7 @@
     }
   },
   "devDependencies": {
+    "bower": "^1.8.8",
     "browser-sync": "~2.24.4",
     "browser-sync-spa": "~1.0.3",
     "chalk": "~2.4.1",
@@ -32,6 +35,7 @@
     "gulp-angular-filesort": "~1.2.1",
     "gulp-angular-templatecache": "~2.2.0",
     "gulp-autoprefixer": "~5.0.0",
+    "gulp-cli": "^2.0.1",
     "gulp-coffee": "~3.0.2",
     "gulp-coffeelint": "~0.6.0",
     "gulp-consolidate": "~0.2.0",

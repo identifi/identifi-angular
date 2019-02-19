@@ -77186,11 +77186,11 @@ angular
 			|| num_is(v)){ // by "number" we mean integers or decimals.
 				return true; // simple values are valid.
 			}
-			return Val.link.is(v) || false; // is the value a soul relation? Then it is valid and return it. If not, everything else remaining is an invalid data type. Custom extensions can be built on top of these primitives to support other types.
+			return Val.rel.is(v) || false; // is the value a soul relation? Then it is valid and return it. If not, everything else remaining is an invalid data type. Custom extensions can be built on top of these primitives to support other types.
 		}
 		Val.link = Val.rel = {_: '#'};
 		;(function(){
-			Val.link.is = function(v){ // this defines whether an object is a soul relation or not, they look like this: {'#': 'UUID'}
+			Val.rel.is = function(v){ // this defines whether an object is a soul relation or not, they look like this: {'#': 'UUID'}
 				if(v && v[rel_] && !v._ && obj_is(v)){ // must be an object.
 					var o = {};
 					obj_map(v, map, o);
@@ -77209,7 +77209,7 @@ angular
 				}
 			}
 		}());
-		Val.link.ify = function(t){ return obj_put({}, rel_, t) } // convert a soul into a relation and return it.
+		Val.rel.ify = function(t){ return obj_put({}, rel_, t) } // convert a soul into a relation and return it.
 		Type.obj.has._ = '.';
 		var rel_ = Val.link._, u;
 		var bi_is = Type.bi.is;
@@ -77395,7 +77395,7 @@ angular
 					env.map = env;
 				}
 				if(env.soul){
-					at.link = Val.link.ify(env.soul);
+					at.rel = Val.rel.ify(env.soul);
 				}
 				env.shell = (as||{}).shell;
 				env.graph = env.graph || {};
@@ -77410,16 +77410,16 @@ angular
 				at.env = env;
 				at.soul = soul;
 				if(Node.ify(at.obj, map, at)){
-					at.link = at.link || Val.link.ify(Node.soul(at.node));
+					at.rel = at.rel || Val.rel.ify(Node.soul(at.node));
 					if(at.obj !== env.shell){
-						env.graph[Val.link.is(at.link)] = at.node;
+						env.graph[Val.rel.is(at.rel)] = at.node;
 					}
 				}
 				return at;
 			}
 			function map(v,k,n){
 				var at = this, env = at.env, is, tmp;
-				if(Node._ === k && obj_has(v,Val.link._)){
+				if(Node._ === k && obj_has(v,Val.rel._)){
 					return n._; // TODO: Bug?
 				}
 				if(!(is = valid(v,k,n, at,env))){ return }
@@ -77428,8 +77428,8 @@ angular
 					if(obj_has(v, Node._) && Node.soul(v)){ // ? for safety ?
 						at.node._ = obj_copy(v._);
 					}
-					at.node = Node.soul.ify(at.node, Val.link.is(at.link));
-					at.link = at.link || Val.link.ify(Node.soul(at.node));
+					at.node = Node.soul.ify(at.node, Val.rel.is(at.rel));
+					at.rel = at.rel || Val.rel.ify(Node.soul(at.node));
 				}
 				if(tmp = env.map){
 					tmp.call(env.as || {}, v,k,n, at);
@@ -77448,14 +77448,14 @@ angular
 				}
 				tmp = node(env, {obj: v, path: at.path.concat(k)});
 				if(!tmp.node){ return }
-				return tmp.link; //{'#': Node.soul(tmp.node)};
+				return tmp.rel; //{'#': Node.soul(tmp.node)};
 			}
 			function soul(id){ var at = this;
-				var prev = Val.link.is(at.link), graph = at.env.graph;
-				at.link = at.link || Val.link.ify(id);
-				at.link[Val.link._] = id;
+				var prev = Val.link.is(at.rel), graph = at.env.graph;
+				at.rel = at.rel || Val.rel.ify(id);
+				at.rel[Val.rel._] = id;
 				if(at.node && at.node[Node._]){
-					at.node[Node._][Val.link._] = id;
+					at.node[Node._][Val.rel._] = id;
 				}
 				if(obj_has(graph, prev)){
 					graph[id] = graph[prev];
@@ -77495,13 +77495,13 @@ angular
 			}
 			function map(v,k){ var tmp, obj;
 				if(Node._ === k){
-					if(obj_empty(v, Val.link._)){
+					if(obj_empty(v, Val.rel._)){
 						return;
 					}
 					this.obj[k] = obj_copy(v);
 					return;
 				}
-				if(!(tmp = Val.link.is(v))){
+				if(!(tmp = Val.rel.is(v))){
 					this.obj[k] = v;
 					return;
 				}
@@ -77793,7 +77793,7 @@ angular
 		var list_is = Gun.list.is;
 		var text = Gun.text, text_is = text.is, text_rand = text.random;
 		var obj = Gun.obj, obj_is = obj.is, obj_has = obj.has, obj_to = obj.to, obj_map = obj.map, obj_copy = obj.copy;
-		var state_lex = Gun.state.lex, _soul = Gun.val.link._, _has = '.', node_ = Gun.node._, rel_is = Gun.val.link.is;
+		var state_lex = Gun.state.lex, _soul = Gun.val.rel._, _has = '.', node_ = Gun.node._, rel_is = Gun.val.link.is;
 		var empty = {}, u;
 
 		console.debug = function(i, s){ return (console.debug.i && i === console.debug.i && console.debug.i++) && (console.log.apply(console, arguments) || s) };
@@ -78055,11 +78055,11 @@ angular
 			if(!(at = next[key])){
 				return;
 			}
-			//if(data && data[_soul] && (tmp = Gun.val.link.is(data)) && (tmp = (cat.root.$.get(tmp)._)) && obj_has(tmp, 'put')){
+			//if(data && data[_soul] && (tmp = Gun.val.rel.is(data)) && (tmp = (cat.root.$.get(tmp)._)) && obj_has(tmp, 'put')){
 			//	data = tmp.put;
 			//}
 			if(at.has){
-				//if(!(data && data[_soul] && Gun.val.link.is(data) === Gun.node.soul(at.put))){
+				//if(!(data && data[_soul] && Gun.val.rel.is(data) === Gun.node.soul(at.put))){
 				if(u === at.put || !Gun.val.link.is(data)){
 					at.put = data;
 				}
@@ -78082,10 +78082,7 @@ angular
 			if(!(at.has || at.soul)){ return }
 			var tmp = at.map, root = at.root;
 			at.map = null;
-			if(at.has){
-				if(at.dub && at.root.stop){ at.dub = null }
-				at.link = null;
-			}
+			if(at.has){ at.link = null }
 			//if(!root.now || !root.now[at.id]){
 			if(!at.pass){
 				if((!msg['@']) && null === tmp){ return }
@@ -78144,7 +78141,7 @@ angular
 		var empty = {}, u;
 		var obj = Gun.obj, obj_has = obj.has, obj_put = obj.put, obj_del = obj.del, obj_to = obj.to, obj_map = obj.map;
 		var text_rand = Gun.text.random;
-		var _soul = Gun.val.link._, node_ = Gun.node._;
+		var _soul = Gun.val.rel._, node_ = Gun.node._;
 	})(USE, './chain');
 
 	;USE(function(module){
@@ -78211,9 +78208,10 @@ angular
 		}
 		function soul(gun, cb, opt, as){
 			var cat = gun._, acks = 0, tmp;
-			if(tmp = cat.soul || cat.link || cat.dub){ return cb(tmp, as, cat), gun }
+			if(tmp = cat.soul){ return cb(tmp, as, cat), gun }
+			if(tmp = cat.link){ return cb(tmp, as, cat), gun }
 			gun.get(function(msg, ev){
-				if(u === msg.put && (tmp = (obj_map(cat.root.opt.peers, function(v,k,t){t(k)})||[]).length) && ++acks < tmp){
+				if(u === msg.put && (tmp = (obj_map(cat.root.opt.peers, function(v,k,t){t(k)})||[]).length) && acks++ <= tmp){
 					return;
 				}
 				ev.rid(msg);
@@ -78317,11 +78315,10 @@ angular
 					if(!soul && Gun.val.is(msg.put)){
 						return Gun.log("The reference you are saving is a", typeof msg.put, '"'+ msg.put +'", not a node (object)!');
 					}
-					gun.put(Gun.val.link.ify(soul), cb, as);
+					gun.put(Gun.val.rel.ify(soul), cb, as);
 				}, true);
 				return gun;
 			}
-			if(at.has && (tmp = Gun.val.link.is(data))){ at.dub = tmp }
 			as.ref = as.ref || (root._ === (tmp = at.back))? gun : tmp.$;
 			if(as.ref._.soul && Gun.val.is(as.data) && at.get){
 				as.data = obj_put({}, at.get, as.data);
@@ -78417,7 +78414,7 @@ angular
 		function soul(id, as, msg, eve){
 			var as = as.as, cat = as.at; as = as.as;
 			var at = ((msg || {}).$ || {})._ || {};
-			id = at.dub = at.dub || id || Gun.node.soul(cat.obj) || Gun.node.soul(msg.put || at.put) || Gun.val.link.is(msg.put || at.put) || (as.via.back('opt.uuid') || Gun.text.random)(); // TODO: BUG!? Do we really want the soul of the object given to us? Could that be dangerous?
+			id = at.dub = at.dub || id || Gun.node.soul(cat.obj) || Gun.node.soul(msg.put || at.put) || Gun.val.rel.is(msg.put || at.put) || (as.via.back('opt.uuid') || Gun.text.random)(); // TODO: BUG!? Do we really want the soul of the object given to us? Could that be dangerous?
 			if(eve){ eve.stun = true }
 			if(!id){ // polyfill async uuid for SEA
 				at.via.back('opt.uuid')(function(err, id){ // TODO: improve perf without anonymous callback
@@ -78476,7 +78473,7 @@ angular
 					if(node_ == at.get){
 						as.soul = (at.put||empty)['#'] || at.dub;
 					}
-					as.soul = as.soul || at.soul || at.link || (opt.uuid || as.via.back('opt.uuid') || Gun.text.random)();
+					as.soul = as.soul || at.soul || at.soul || (opt.uuid || as.via.back('opt.uuid') || Gun.text.random)();
 				}
 				if(!as.soul){ // polyfill async uuid for SEA
 					as.via.back('opt.uuid')(function(err, soul){ // TODO: improve perf without anonymous callback
@@ -78729,7 +78726,7 @@ angular
 					});
 				});
 				setTimeout(function(){
-					root.on('out', {put: send, '#': root.ask(ack)});
+					root.on('out', {put: send, '#': root.ask(ack), I: root.$});
 				},1);
 			}
 
@@ -80512,71 +80509,6 @@ Gun.chain.then = function(cb) {
 		return cb? cb(res.put) : res.put;
 	});
 };
-var Gun = (typeof window !== "undefined")? window.Gun : require('../gun');
-
-Gun.on('create', function(root){
-	this.to.next(root);
-	var opt = root.opt;
-
-	try {
-		var dgram = require("dgram");
-		var process = require("process");
-	} catch (e) {
-		console.log('multicast is not available');
-		return;
-	}
-
-	if(false === opt.multicast){ return }
-	opt.multicast = opt.multicast || {};
-
-  var MULTICAST_ADDR = "233.255.255.255";
-	var MULTICAST_INTERVAL = 1000;
-  var PORT = 20000;
-	var DEFAULT_GUN_PORT = 8765;
-  var ENC = 'utf8';
-
-  socket = dgram.createSocket({ type: "udp4", reuseAddr: true });
-
-  socket.bind(PORT);
-
-  var address;
-  socket.on("listening", function() {
-    socket.addMembership(MULTICAST_ADDR);
-		if (opt.multicast && opt.multicast.port) { // if port is specified, advertise our node
-			console.log(`Advertising this node (port ${opt.multicast.port}) on multicast (${MULTICAST_ADDR})`);
-			setInterval(sendMessage, MULTICAST_INTERVAL);
-		}
-    address = socket.address();
-  });
-
-  function sendMessage() {
-    var msgObj = {
-      gun: {
-        version: Gun.version,
-        port: opt.multicast.port || DEFAULT_GUN_PORT
-      }
-    };
-    var message = Buffer.from(JSON.stringify(msgObj), ENC);
-    socket.send(message, 0, message.length, PORT, MULTICAST_ADDR, function() {
-      // console.info(`Sending message "${message}"`);
-    });
-  }
-
-  socket.on("message", function(message, rinfo) {
-    try {
-      var msgObj = JSON.parse(message.toString(ENC));
-      if (!(msgObj.gun && msgObj.gun.port)) { return }
-      var peer = `http://${rinfo.address}:${msgObj.gun.port}/gun`;
-      if (!root.opt.peers.hasOwnProperty(peer)) {
-        console.log(`peer ${peer} found via multicast`);
-        root.$.opt({peers: [peer]});
-      }
-    } catch (e) {
-      // console.error(`Received multicast from ${rinfo.address}:${rinfo.port} but failed to connect:`, e);
-    }
-  });
-});
-
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('gun')) :
 	typeof define === 'function' && define.amd ? define(['gun'], factory) :
