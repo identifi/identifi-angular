@@ -2,7 +2,7 @@ language: node_js
 node_js:
   - "10"
 script:
-  - yarn build
+  - yarn
 cache:
   yarn: true
   directories:

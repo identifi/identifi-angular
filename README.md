@@ -16,6 +16,6 @@ Available at:
 ```
 git clone https://github.com/identifi/identifi-angular.git
 cd identifi-angular
-yarn build
+yarn
 yarn run serve
 ```

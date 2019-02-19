@@ -6,13 +6,13 @@
   "main": "electron.js",
   "files": "dist",
   "scripts": {
-    "build": "bower install && ./build.sh",
+    "postinstall": "bower install && ./build.sh && electron-builder install-app-deps",
+    "build": "./build.sh",
     "serve": "gulp serve",
     "test": "gulp test",
     "electron": "DEV=true electron .",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder",
-    "postinstall": "electron-builder install-app-deps"
+    "dist": "electron-builder"
   },
   "build": {
     "appId": "fi.identi",
