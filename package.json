@@ -6,8 +6,8 @@
   "main": "electron.js",
   "files": "dist",
   "scripts": {
-    "postinstall": "bower install && ./build.sh && electron-builder install-app-deps",
-    "build": "./build.sh",
+    "postinstall": "bower install && bash build.sh && electron-builder install-app-deps",
+    "build": "bash build.sh",
     "serve": "gulp serve",
     "test": "gulp test",
     "electron": "DEV=true electron .",
