@@ -14,9 +14,9 @@
         <tr ng-repeat="result in ids.list | orderBy:result.data.trustDistance | limitTo:filters.limit as filteredIds track by (result.linkTo.value + result.linkTo.type)" id="result{{$index}}" ui-sref="identities.show({ type: result.linkTo.type, value: result.linkTo.value })" class="search-result-row" ng-class="{active: result.active}">
           <td class="gravatar-col"><identicon identity="result" border="3" width="50" positive-score="result.pos" negative-score="result.neg" ipfs="ipfs"></identicon></td>
           <td>
-            <span ng-if="result.data.trustDistance == 0" class="label label-default pull-right">viewpoint</span>
-            <span ng-if="result.data.trustDistance > 0 && result.data.trustDistance < 99" ng-bind="result.data.trustDistance | ordinal" class="label label-default pull-right"></span>
-            <span ng-if="result.data.trustDistance == 99" class="label label-default pull-right">unconnected</span>
+            <span ng-if="result.data.trustDistance === 0" class="label label-default pull-right">viewpoint</span>
+            <span ng-if="result.data.trustDistance > 0" ng-bind="result.data.trustDistance | ordinal" class="label label-default pull-right"></span>
+            <span ng-if="result.data.trustDistance === false" class="label label-default pull-right">unconnected</span>
             <a ng-bind-html="result.primaryName|highlight:query.term" ui-sref="identities.show({ type: result.linkTo.type, value: result.linkTo.value })"></a>
             <span class="glyphicon glyphicon-ok-sign" style="color:#337ab7" ng-if="result.verified"></span>
             <small ng-if="!(result.mostVerifiedAttributes.type||result.mostVerifiedAttributes.nickname)" class="list-group-item-text">

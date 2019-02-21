@@ -90083,7 +90083,9 @@ Gun.chain.then = function(cb) {
 
 	var Attribute = function () {
 	  /**
-	  * @param {Object|Array} data {name, val} or [name, val]
+	  * Usage: new Attribute(value) or new Attribute(type, value)
+	  * @param {string} a
+	  * @param {string} b
 	  */
 	  function Attribute(a, b) {
 	    _classCallCheck(this, Attribute);
@@ -91147,7 +91149,7 @@ Gun.chain.then = function(cb) {
 	      pie.style.opacity = (data.receivedPositive + data.receivedNegative) / 10 * 0.5 + 0.35;
 
 	      if (showDistance) {
-	        distance.textContent = data.trustDistance < 99 ? Identity._ordinal(data.trustDistance) : '\u2715';
+	        distance.textContent = typeof data.trustDistance === 'number' ? Identity._ordinal(data.trustDistance) : '\u2715';
 	      }
 	    }
 
@@ -91501,8 +91503,63 @@ Gun.chain.then = function(cb) {
 	    return key;
 	  };
 
+	  Index.getMsgIndexKeys = function getMsgIndexKeys(msg) {
+	    var keys = {};
+	    var distance = parseInt(msg.distance);
+	    distance = _Number$isNaN(distance) ? 99 : distance;
+	    distance = ('00' + distance).substring(distance.toString().length); // pad with zeros
+	    var hashSlice = msg.getHash().substr(0, 9);
+	    keys.messagesByHash = [msg.getHash()];
+	    keys.messagesByTimestamp = [Math.floor(Date.parse(msg.timestamp || msg.signedData.timestamp) / 1000) + ':' + hashSlice];
+	    keys.messagesByDistance = [distance + ':' + keys.messagesByTimestamp[0]];
+
+	    keys.messagesByAuthor = [];
+	    var authors = msg.getAuthorArray();
+	    for (var i = 0; i < authors.length; i++) {
+	      keys.messagesByAuthor.push(authors[i].uri() + ':' + msg.signedData.timestamp + ':' + hashSlice);
+	    }
+	    keys.messagesByRecipient = [];
+	    var recipients = msg.getRecipientArray();
+	    for (var _i = 0; _i < recipients.length; _i++) {
+	      keys.messagesByRecipient.push(recipients[_i].uri() + ':' + msg.signedData.timestamp + ':' + hashSlice);
+	    }
+
+	    if (['verification', 'unverification'].indexOf(msg.signedData.type) > -1) {
+	      keys.verificationsByRecipientAndAuthor = [];
+	      for (var _i2 = 0; _i2 < recipients.length; _i2++) {
+	        var r = recipients[_i2];
+	        if (!r.isUniqueType()) {
+	          continue;
+	        }
+	        for (var j = 0; j < authors.length; j++) {
+	          var a = authors[j];
+	          if (!a.isUniqueType()) {
+	            continue;
+	          }
+	          keys.verificationsByRecipientAndAuthor.push(r.uri() + ':' + a.uri());
+	        }
+	      }
+	    } else if (msg.signedData.type === 'rating') {
+	      keys.ratingsByRecipientAndAuthor = [];
+	      for (var _i3 = 0; _i3 < recipients.length; _i3++) {
+	        var _r = recipients[_i3];
+	        if (!_r.isUniqueType()) {
+	          continue;
+	        }
+	        for (var _j = 0; _j < authors.length; _j++) {
+	          var _a = authors[_j];
+	          if (!_a.isUniqueType()) {
+	            continue;
+	          }
+	          keys.ratingsByRecipientAndAuthor.push(_r.uri() + ':' + _a.uri());
+	        }
+	      }
+	    }
+	    return keys;
+	  };
+
 	  Index.prototype.getIdentityIndexKeys = async function getIdentityIndexKeys(identity, hash) {
-	    var indexKeys = [];
+	    var indexKeys = { identitiesByTrustDistance: [], identitiesBySearchKey: [] };
 	    var d = void 0;
 	    if (identity.linkTo && this.viewpoint.equals(identity.linkTo)) {
 	      d = 0;
@@ -91523,30 +91580,34 @@ Gun.chain.then = function(cb) {
 	      var value = encodeURIComponent(v);
 	      var lowerCaseValue = encodeURIComponent(v.toLowerCase());
 	      var name = encodeURIComponent(n);
-	      var key = distance + ':' + value + ':' + name;
-	      var lowerCaseKey = distance + ':' + lowerCaseValue + ':' + name;
+	      var key = value + ':' + name;
+	      var lowerCaseKey = lowerCaseValue + ':' + name;
 	      if (!Attribute.isUniqueType(n)) {
 	        // allow for multiple index keys with same non-unique attribute
 	        key = key + ':' + hash.substr(0, 9);
 	        lowerCaseKey = lowerCaseKey + ':' + hash.substr(0, 9);
 	      }
-	      indexKeys.push(key);
+	      indexKeys.identitiesBySearchKey.push(key);
+	      indexKeys.identitiesByTrustDistance.push(distance + ':' + key);
 	      if (key !== lowerCaseKey) {
-	        indexKeys.push(lowerCaseKey);
+	        indexKeys.identitiesBySearchKey.push(lowerCaseKey);
+	        indexKeys.identitiesByTrustDistance.push(distance + ':' + lowerCaseKey);
 	      }
 	      if (v.indexOf(' ') > -1) {
 	        var words = v.toLowerCase().split(' ');
 	        for (var l = 0; l < words.length; l += 1) {
-	          var k = distance + ':' + encodeURIComponent(words[l]) + ':' + name;
+	          var k = encodeURIComponent(words[l]) + ':' + name;
 	          if (!Attribute.isUniqueType(n)) {
 	            k = k + ':' + hash.substr(0, 9);
 	          }
-	          indexKeys.push(k);
+	          indexKeys.identitiesBySearchKey.push(k);
+	          indexKeys.identitiesByTrustDistance.push(distance + ':' + k);
 	        }
 	      }
 	      if (key.match(/^http(s)?:\/\/.+\/[a-zA-Z0-9_]+$/)) {
 	        var split = key.split('/');
-	        indexKeys.push(split[split.length - 1]);
+	        indexKeys.identitiesBySearchKey.push(split[split.length - 1]);
+	        indexKeys.identitiesByTrustDistance.push(distance + ':' + split[split.length - 1]);
 	      }
 	    }
 
@@ -91626,11 +91687,14 @@ Gun.chain.then = function(cb) {
 	    var hash = Gun.node.soul(id) || 'todo';
 	    var indexKeys = await this.getIdentityIndexKeys(id, hash.substr(0, 6));
 
-	    for (var i = 0; i < indexKeys.length; i++) {
-	      var key = indexKeys[i];
-	      console.log('adding key ' + key);
-	      await this.gun.get('identitiesByTrustDistance').get(key).put(id);
-	      await this.gun.get('identitiesBySearchKey').get(key.substr(key.indexOf(':') + 1)).put(id);
+	    var indexes = _Object$keys(indexKeys);
+	    for (var i = 0; i < indexes.length; i++) {
+	      var index = indexes[i];
+	      for (var j = 0; j < indexKeys[index].length; j++) {
+	        var key = indexKeys[index][j];
+	        console.log('adding key ' + key);
+	        await this.gun.get(index).get(key).put(id);
+	      }
 	    }
 	  };
 
@@ -91693,16 +91757,16 @@ Gun.chain.then = function(cb) {
 	        return;
 	      }
 	    }
-	    for (var _iterator = msg.getAuthorArray(), _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : _getIterator(_iterator);;) {
+	    for (var _iterator = msg.getAuthorArray(), _isArray = Array.isArray(_iterator), _i4 = 0, _iterator = _isArray ? _iterator : _getIterator(_iterator);;) {
 	      var _ref;
 
 	      if (_isArray) {
-	        if (_i >= _iterator.length) break;
-	        _ref = _iterator[_i++];
+	        if (_i4 >= _iterator.length) break;
+	        _ref = _iterator[_i4++];
 	      } else {
-	        _i = _iterator.next();
-	        if (_i.done) break;
-	        _ref = _i.value;
+	        _i4 = _iterator.next();
+	        if (_i4.done) break;
+	        _ref = _i4.value;
 	      }
 
 	      var a = _ref;
@@ -91726,12 +91790,12 @@ Gun.chain.then = function(cb) {
 	    if (msg.signedData.type === 'verification') {
 	      var _loop = function _loop() {
 	        if (_isArray2) {
-	          if (_i2 >= _iterator2.length) return 'break';
-	          _ref2 = _iterator2[_i2++];
+	          if (_i5 >= _iterator2.length) return 'break';
+	          _ref2 = _iterator2[_i5++];
 	        } else {
-	          _i2 = _iterator2.next();
-	          if (_i2.done) return 'break';
-	          _ref2 = _i2.value;
+	          _i5 = _iterator2.next();
+	          if (_i5.done) return 'break';
+	          _ref2 = _i5.value;
 	        }
 
 	        var a = _ref2;
@@ -91752,7 +91816,7 @@ Gun.chain.then = function(cb) {
 	        }
 	      };
 
-	      for (var _iterator2 = msg.getRecipientArray(), _isArray2 = Array.isArray(_iterator2), _i2 = 0, _iterator2 = _isArray2 ? _iterator2 : _getIterator(_iterator2);;) {
+	      for (var _iterator2 = msg.getRecipientArray(), _isArray2 = Array.isArray(_iterator2), _i5 = 0, _iterator2 = _isArray2 ? _iterator2 : _getIterator(_iterator2);;) {
 	        var _ref2;
 
 	        var _ret = _loop();
@@ -91770,14 +91834,19 @@ Gun.chain.then = function(cb) {
 	      id.receivedNegative = id.receivedNegative || 0;
 	      id.receivedNeutral = id.receivedNeutral || 0;
 	      if (msg.isPositive()) {
-	        if (msg.distance + 1 < id.trustDistance) {
+	        if (typeof id.trustDistance !== 'number' || msg.distance + 1 < id.trustDistance) {
 	          recipient.get('trustDistance').put(msg.distance + 1);
 	        }
 	        id.receivedPositive++;
-	      } else if (msg.isNegative()) {
-	        id.receivedNegative++;
 	      } else {
-	        id.receivedNeutral++;
+	        if (msg.distance < id.trustDistance) {
+	          recipient.get('trustDistance').put(false); // TODO: this should take into account the aggregate score of the identity
+	        }
+	        if (msg.isNegative()) {
+	          id.receivedNegative++;
+	        } else {
+	          id.receivedNeutral++;
+	        }
 	      }
 	      recipient.get('receivedPositive').put(id.receivedPositive);
 	      recipient.get('receivedNegative').put(id.receivedNegative);
@@ -91801,11 +91870,15 @@ Gun.chain.then = function(cb) {
 	    recipient.get('received').get(msgIndexKey).put(obj);
 	    recipient.get('received').get(msgIndexKey).put(obj);
 	    var identityIndexKeysAfter = await this.getIdentityIndexKeys(recipient, hash.substr(0, 6));
-	    for (var j = 0; j < identityIndexKeysBefore.length; j++) {
-	      var k = identityIndexKeysBefore[j];
-	      if (identityIndexKeysAfter.indexOf(k) === -1) {
-	        this.gun.get('identitiesByTrustDistance').get(k).put(null);
-	        this.gun.get('identitiesBySearchKey').get(k.substr(k.indexOf(':') + 1)).put(null);
+	    var indexesBefore = _Object$keys(identityIndexKeysBefore);
+	    for (var i = 0; i < indexesBefore.length; i++) {
+	      var index = indexesBefore[i];
+	      for (var j = 0; j < identityIndexKeysBefore[index].length; j++) {
+	        var key = identityIndexKeysBefore[index][j];
+	        if (!identityIndexKeysAfter[index] || identityIndexKeysAfter[index].indexOf(key) === -1) {
+	          console.log('removing stale key ' + key + ' from index ' + index);
+	          this.gun.get(index).get(key).put(null);
+	        }
 	      }
 	    }
 	  };
@@ -91854,6 +91927,10 @@ Gun.chain.then = function(cb) {
 	    }
 	  };
 
+	  Index.prototype.removeTrustedIndex = async function removeTrustedIndex(gunUri) {
+	    this.gun.get('trustedIndexes').get(gunUri).put(null);
+	  };
+
 	  Index.prototype.addTrustedIndex = async function addTrustedIndex(gunUri) {
 	    var _this2 = this;
 
@@ -91893,21 +91970,21 @@ Gun.chain.then = function(cb) {
 	    var recipientIdentities = {};
 	    var authorIdentities = {};
 	    var selfAuthored = false;
-	    for (var _iterator3 = msg.getAuthorArray(), _isArray3 = Array.isArray(_iterator3), _i3 = 0, _iterator3 = _isArray3 ? _iterator3 : _getIterator(_iterator3);;) {
+	    for (var _iterator3 = msg.getAuthorArray(), _isArray3 = Array.isArray(_iterator3), _i6 = 0, _iterator3 = _isArray3 ? _iterator3 : _getIterator(_iterator3);;) {
 	      var _ref3;
 
 	      if (_isArray3) {
-	        if (_i3 >= _iterator3.length) break;
-	        _ref3 = _iterator3[_i3++];
+	        if (_i6 >= _iterator3.length) break;
+	        _ref3 = _iterator3[_i6++];
 	      } else {
-	        _i3 = _iterator3.next();
-	        if (_i3.done) break;
-	        _ref3 = _i3.value;
+	        _i6 = _iterator3.next();
+	        if (_i6.done) break;
+	        _ref3 = _i6.value;
 	      }
 
-	      var _a2 = _ref3;
+	      var _a3 = _ref3;
 
-	      var _id = this.get(_a2);
+	      var _id = this.get(_a3);
 	      var td = await util$1.timeoutPromise(_id.gun.get('trustDistance').then(), GUN_TIMEOUT);
 	      if (!isNaN(td)) {
 	        authorIdentities[_id.gun['_'].link] = _id;
@@ -91923,53 +92000,57 @@ Gun.chain.then = function(cb) {
 	    if (!_Object$keys(authorIdentities).length) {
 	      return; // unknown author, do nothing
 	    }
-	    for (var _iterator4 = msg.getRecipientArray(), _isArray4 = Array.isArray(_iterator4), _i4 = 0, _iterator4 = _isArray4 ? _iterator4 : _getIterator(_iterator4);;) {
+	    for (var _iterator4 = msg.getRecipientArray(), _isArray4 = Array.isArray(_iterator4), _i7 = 0, _iterator4 = _isArray4 ? _iterator4 : _getIterator(_iterator4);;) {
 	      var _ref4;
 
 	      if (_isArray4) {
-	        if (_i4 >= _iterator4.length) break;
-	        _ref4 = _iterator4[_i4++];
+	        if (_i7 >= _iterator4.length) break;
+	        _ref4 = _iterator4[_i7++];
 	      } else {
-	        _i4 = _iterator4.next();
-	        if (_i4.done) break;
-	        _ref4 = _i4.value;
+	        _i7 = _iterator4.next();
+	        if (_i7.done) break;
+	        _ref4 = _i7.value;
 	      }
 
-	      var _a3 = _ref4;
+	      var _a4 = _ref4;
 
-	      var _id2 = this.get(_a3);
+	      var _id2 = this.get(_a4);
 	      var _td = await util$1.timeoutPromise(_id2.gun.get('trustDistance').then(), GUN_TIMEOUT);
 
 	      if (!isNaN(_td)) {
 	        recipientIdentities[_id2.gun['_'].link] = _id2;
 	      }
-	      if (selfAuthored && _a3.type === 'keyID' && _a3.value !== this.viewpoint.value && msg.isPositive()) {
+	      if (selfAuthored && _a4.type === 'keyID' && _a4.value !== this.viewpoint.value) {
 	        // TODO: not if already added - causes infinite loop?
-	        this.addTrustedIndex(_a3.value);
+	        if (msg.isPositive()) {
+	          this.addTrustedIndex(_a4.value);
+	        } else {
+	          this.removeTrustedIndex(_a4.value);
+	        }
 	      }
 	    }
 	    if (!_Object$keys(recipientIdentities).length) {
 	      // recipient is previously unknown
 	      var attrs = {};
-	      for (var _iterator5 = msg.getRecipientArray(), _isArray5 = Array.isArray(_iterator5), _i5 = 0, _iterator5 = _isArray5 ? _iterator5 : _getIterator(_iterator5);;) {
+	      for (var _iterator5 = msg.getRecipientArray(), _isArray5 = Array.isArray(_iterator5), _i8 = 0, _iterator5 = _isArray5 ? _iterator5 : _getIterator(_iterator5);;) {
 	        var _ref5;
 
 	        if (_isArray5) {
-	          if (_i5 >= _iterator5.length) break;
-	          _ref5 = _iterator5[_i5++];
+	          if (_i8 >= _iterator5.length) break;
+	          _ref5 = _iterator5[_i8++];
 	        } else {
-	          _i5 = _iterator5.next();
-	          if (_i5.done) break;
-	          _ref5 = _i5.value;
+	          _i8 = _iterator5.next();
+	          if (_i8.done) break;
+	          _ref5 = _i8.value;
 	        }
 
-	        var _a = _ref5;
+	        var _a2 = _ref5;
 
-	        attrs[_a.uri()] = _a;
+	        attrs[_a2.uri()] = _a2;
 	      }
 	      var linkTo = Identity.getLinkTo(attrs);
 	      var random = Math.floor(Math.random() * _Number$MAX_SAFE_INTEGER); // TODO: bubblegum fix
-	      var id = await Identity.create(this.gun.get('identities').get(random).put({}), { attrs: attrs, linkTo: linkTo, trustDistance: 99 }, true);
+	      var id = await Identity.create(this.gun.get('identities').get(random).put({}), { attrs: attrs, linkTo: linkTo, trustDistance: false }, true);
 	      // {a:1} because inserting {} causes a "no signature on data" error from gun
 
 	      // TODO: take msg author trust into account
@@ -92000,22 +92081,22 @@ Gun.chain.then = function(cb) {
 	    if (Array.isArray(msgs)) {
 	      console.log('sorting ' + msgs.length + ' messages onto a search tree...');
 	      for (var i = 0; i < msgs.length; i++) {
-	        for (var _iterator6 = msgs[i].getAuthorArray(), _isArray6 = Array.isArray(_iterator6), _i6 = 0, _iterator6 = _isArray6 ? _iterator6 : _getIterator(_iterator6);;) {
+	        for (var _iterator6 = msgs[i].getAuthorArray(), _isArray6 = Array.isArray(_iterator6), _i9 = 0, _iterator6 = _isArray6 ? _iterator6 : _getIterator(_iterator6);;) {
 	          var _ref6;
 
 	          if (_isArray6) {
-	            if (_i6 >= _iterator6.length) break;
-	            _ref6 = _iterator6[_i6++];
+	            if (_i9 >= _iterator6.length) break;
+	            _ref6 = _iterator6[_i9++];
 	          } else {
-	            _i6 = _iterator6.next();
-	            if (_i6.done) break;
-	            _ref6 = _i6.value;
+	            _i9 = _iterator6.next();
+	            if (_i9.done) break;
+	            _ref6 = _i9.value;
 	          }
 
-	          var _a4 = _ref6;
+	          var _a5 = _ref6;
 
-	          if (_a4.isUniqueType()) {
-	            var key = _a4.uri() + ':' + msgs[i].getHash();
+	          if (_a5.isUniqueType()) {
+	            var key = _a5.uri() + ':' + msgs[i].getHash();
 	            msgsByAuthor[key] = msgs[i];
 	          }
 	        }
@@ -92107,8 +92188,16 @@ Gun.chain.then = function(cb) {
 	    if (msg.distance === undefined) {
 	      return false; // do not save messages from untrusted author
 	    }
-	    var indexKey = Index.getMsgIndexKey(msg);
 	    var obj = { sig: msg.sig, pubKey: msg.pubKey };
+	    var indexKeys = Index.getMsgIndexKeys(msg);
+	    for (var index in indexKeys) {
+	      for (var i = 0; i < indexKeys[index].length; i++) {
+	        var key = indexKeys[index][i];
+	        console.log('adding to index ' + index + ' message key ' + key);
+	        this.gun.get(index).get(key).put(obj);
+	        this.gun.get(index).get(key).put(obj); // umm, what? doesn't work unless I write it twice
+	      }
+	    }
 	    if (this.options.ipfs) {
 	      try {
 	        var ipfsUri = await msg.saveToIpfs(this.options.ipfs);
@@ -92119,13 +92208,6 @@ Gun.chain.then = function(cb) {
 	        console.error('adding msg ' + msg + ' to ipfs failed: ' + e);
 	      }
 	    }
-	    this.gun.get('messagesByHash').get(hash).put(obj);
-	    this.gun.get('messagesByHash').get(hash).put(obj);
-	    this.gun.get('messagesByDistance').get(indexKey).put(obj);
-	    this.gun.get('messagesByDistance').get(indexKey).put(obj); // umm, what? doesn't work unless I write it twice
-	    indexKey = indexKey.substr(indexKey.indexOf(':') + 1); // remove distance from key
-	    this.gun.get('messagesByTimestamp').get(indexKey).put(obj);
-	    this.gun.get('messagesByTimestamp').get(indexKey).put(obj);
 	    await this._updateIdentityIndexesByMsg(msg);
 	    return true;
 	  };
@@ -92263,7 +92345,7 @@ Gun.chain.then = function(cb) {
 	  return Index;
 	}();
 
-	var version$1 = "0.0.86";
+	var version$1 = "0.0.87";
 
 	/*eslint no-useless-escape: "off", camelcase: "off" */
 
