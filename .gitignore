@@ -9,3 +9,4 @@ coverage/
 dist.pem
 dist.zip
 yarn-error.log
+package-lock.json
