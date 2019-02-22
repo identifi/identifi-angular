@@ -91438,6 +91438,16 @@ Gun.chain.then = function(cb) {
 	        }
 	      }
 	    }, options);
+	    if (options.viewpoint) {
+	      this.viewpoint = options.viewpoint;
+	    } else {
+	      this.gun.get('viewpoint').on(function (val, key, msg, eve) {
+	        if (val) {
+	          _this.viewpoint = new Attribute(val);
+	          eve.off();
+	        }
+	      });
+	    }
 	    if (this.options.indexSync.subscribe.enabled) {
 	      setTimeout(function () {
 	        _this.gun.get('trustedIndexes').map().once(function (val, uri) {
@@ -91478,20 +91488,19 @@ Gun.chain.then = function(cb) {
 	    }
 	    var user = gun.user();
 	    user.auth(keypair);
+	    options.viewpoint = new Attribute('keyID', Key.getId(keypair));
 	    var i = new Index(user.get('identifi'), options);
-	    i.viewpoint = new Attribute('keyID', Key.getId(keypair));
-	    i.gun.get('viewpoint').put(i.viewpoint);
-	    var uri = i.viewpoint.uri();
+	    i.gun.get('viewpoint').put(options.viewpoint);
+	    var uri = options.viewpoint.uri();
 	    var g = i.gun.get('identitiesBySearchKey').get(uri);
-	    var id = Identity.create(g, { trustDistance: 0, linkTo: i.viewpoint });
+	    var id = Identity.create(g, { trustDistance: 0, linkTo: options.viewpoint });
 	    i._addIdentityToIndexes(id.gun);
 	    if (options.self) {
-	      var recipient = _Object$assign(options.self, { keyID: i.viewpoint.value });
+	      var recipient = _Object$assign(options.self, { keyID: options.viewpoint.value });
 	      Message.createVerification({ recipient: recipient }, keypair).then(function (msg) {
 	        return i.addMessage(msg);
 	      });
 	    }
-
 	    return i;
 	  };
 
@@ -92345,7 +92354,7 @@ Gun.chain.then = function(cb) {
 	  return Index;
 	}();
 
-	var version$1 = "0.0.87";
+	var version$1 = "0.0.88";
 
 	/*eslint no-useless-escape: "off", camelcase: "off" */
 
