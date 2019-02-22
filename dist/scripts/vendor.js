@@ -91494,13 +91494,14 @@ Gun.chain.then = function(cb) {
 	    var uri = options.viewpoint.uri();
 	    var g = i.gun.get('identitiesBySearchKey').get(uri);
 	    var id = Identity.create(g, { trustDistance: 0, linkTo: options.viewpoint });
-	    i._addIdentityToIndexes(id.gun);
-	    if (options.self) {
-	      var recipient = _Object$assign(options.self, { keyID: options.viewpoint.value });
-	      Message.createVerification({ recipient: recipient }, keypair).then(function (msg) {
-	        return i.addMessage(msg);
-	      });
-	    }
+	    i._addIdentityToIndexes(id.gun).then(function () {
+	      if (options.self) {
+	        var recipient = _Object$assign(options.self, { keyID: options.viewpoint.value });
+	        Message.createVerification({ recipient: recipient }, keypair).then(function (msg) {
+	          return i.addMessage(msg);
+	        });
+	      }
+	    });
 	    return i;
 	  };
 
@@ -92059,7 +92060,7 @@ Gun.chain.then = function(cb) {
 	      }
 	      var linkTo = Identity.getLinkTo(attrs);
 	      var random = Math.floor(Math.random() * _Number$MAX_SAFE_INTEGER); // TODO: bubblegum fix
-	      var id = await Identity.create(this.gun.get('identities').get(random).put({}), { attrs: attrs, linkTo: linkTo, trustDistance: false }, true);
+	      var id = Identity.create(this.gun.get('identities').get(random).put({}), { attrs: attrs, linkTo: linkTo, trustDistance: false });
 	      // {a:1} because inserting {} causes a "no signature on data" error from gun
 
 	      // TODO: take msg author trust into account
