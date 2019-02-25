@@ -91493,15 +91493,23 @@ Gun.chain.then = function(cb) {
 	    i.gun.get('viewpoint').put(options.viewpoint);
 	    var uri = options.viewpoint.uri();
 	    var g = i.gun.get('identitiesBySearchKey').get(uri);
-	    var id = Identity.create(g, { trustDistance: 0, linkTo: options.viewpoint });
-	    i._addIdentityToIndexes(id.gun).then(function () {
-	      if (options.self) {
-	        var recipient = _Object$assign(options.self, { keyID: options.viewpoint.value });
-	        Message.createVerification({ recipient: recipient }, keypair).then(function (msg) {
-	          return i.addMessage(msg);
-	        });
+	    var attrs = {};
+	    attrs[options.viewpoint.uri()] = options.viewpoint;
+	    if (options.self) {
+	      var keys = _Object$keys(options.self);
+	      for (var _i = 0; _i < keys.length; _i++) {
+	        var a = new Attribute(keys[_i], options.self[keys[_i]]);
+	        attrs[a.uri()] = a;
 	      }
-	    });
+	    }
+	    var id = Identity.create(g, { trustDistance: 0, linkTo: options.viewpoint, attrs: attrs });
+	    await i._addIdentityToIndexes(id.gun);
+	    if (options.self) {
+	      var recipient = _Object$assign(options.self, { keyID: options.viewpoint.value });
+	      Message.createVerification({ recipient: recipient }, keypair).then(function (msg) {
+	        i.addMessage(msg);
+	      });
+	    }
 	    return i;
 	  };
 
@@ -91530,14 +91538,14 @@ Gun.chain.then = function(cb) {
 	    }
 	    keys.messagesByRecipient = [];
 	    var recipients = msg.getRecipientArray();
-	    for (var _i = 0; _i < recipients.length; _i++) {
-	      keys.messagesByRecipient.push(recipients[_i].uri() + ':' + msg.signedData.timestamp + ':' + hashSlice);
+	    for (var _i2 = 0; _i2 < recipients.length; _i2++) {
+	      keys.messagesByRecipient.push(recipients[_i2].uri() + ':' + msg.signedData.timestamp + ':' + hashSlice);
 	    }
 
 	    if (['verification', 'unverification'].indexOf(msg.signedData.type) > -1) {
 	      keys.verificationsByRecipientAndAuthor = [];
-	      for (var _i2 = 0; _i2 < recipients.length; _i2++) {
-	        var r = recipients[_i2];
+	      for (var _i3 = 0; _i3 < recipients.length; _i3++) {
+	        var r = recipients[_i3];
 	        if (!r.isUniqueType()) {
 	          continue;
 	        }
@@ -91551,8 +91559,8 @@ Gun.chain.then = function(cb) {
 	      }
 	    } else if (msg.signedData.type === 'rating') {
 	      keys.ratingsByRecipientAndAuthor = [];
-	      for (var _i3 = 0; _i3 < recipients.length; _i3++) {
-	        var _r = recipients[_i3];
+	      for (var _i4 = 0; _i4 < recipients.length; _i4++) {
+	        var _r = recipients[_i4];
 	        if (!_r.isUniqueType()) {
 	          continue;
 	        }
@@ -91767,16 +91775,16 @@ Gun.chain.then = function(cb) {
 	        return;
 	      }
 	    }
-	    for (var _iterator = msg.getAuthorArray(), _isArray = Array.isArray(_iterator), _i4 = 0, _iterator = _isArray ? _iterator : _getIterator(_iterator);;) {
+	    for (var _iterator = msg.getAuthorArray(), _isArray = Array.isArray(_iterator), _i5 = 0, _iterator = _isArray ? _iterator : _getIterator(_iterator);;) {
 	      var _ref;
 
 	      if (_isArray) {
-	        if (_i4 >= _iterator.length) break;
-	        _ref = _iterator[_i4++];
+	        if (_i5 >= _iterator.length) break;
+	        _ref = _iterator[_i5++];
 	      } else {
-	        _i4 = _iterator.next();
-	        if (_i4.done) break;
-	        _ref = _i4.value;
+	        _i5 = _iterator.next();
+	        if (_i5.done) break;
+	        _ref = _i5.value;
 	      }
 
 	      var a = _ref;
@@ -91800,12 +91808,12 @@ Gun.chain.then = function(cb) {
 	    if (msg.signedData.type === 'verification') {
 	      var _loop = function _loop() {
 	        if (_isArray2) {
-	          if (_i5 >= _iterator2.length) return 'break';
-	          _ref2 = _iterator2[_i5++];
+	          if (_i6 >= _iterator2.length) return 'break';
+	          _ref2 = _iterator2[_i6++];
 	        } else {
-	          _i5 = _iterator2.next();
-	          if (_i5.done) return 'break';
-	          _ref2 = _i5.value;
+	          _i6 = _iterator2.next();
+	          if (_i6.done) return 'break';
+	          _ref2 = _i6.value;
 	        }
 
 	        var a = _ref2;
@@ -91826,7 +91834,7 @@ Gun.chain.then = function(cb) {
 	        }
 	      };
 
-	      for (var _iterator2 = msg.getRecipientArray(), _isArray2 = Array.isArray(_iterator2), _i5 = 0, _iterator2 = _isArray2 ? _iterator2 : _getIterator(_iterator2);;) {
+	      for (var _iterator2 = msg.getRecipientArray(), _isArray2 = Array.isArray(_iterator2), _i6 = 0, _iterator2 = _isArray2 ? _iterator2 : _getIterator(_iterator2);;) {
 	        var _ref2;
 
 	        var _ret = _loop();
@@ -91980,16 +91988,16 @@ Gun.chain.then = function(cb) {
 	    var recipientIdentities = {};
 	    var authorIdentities = {};
 	    var selfAuthored = false;
-	    for (var _iterator3 = msg.getAuthorArray(), _isArray3 = Array.isArray(_iterator3), _i6 = 0, _iterator3 = _isArray3 ? _iterator3 : _getIterator(_iterator3);;) {
+	    for (var _iterator3 = msg.getAuthorArray(), _isArray3 = Array.isArray(_iterator3), _i7 = 0, _iterator3 = _isArray3 ? _iterator3 : _getIterator(_iterator3);;) {
 	      var _ref3;
 
 	      if (_isArray3) {
-	        if (_i6 >= _iterator3.length) break;
-	        _ref3 = _iterator3[_i6++];
+	        if (_i7 >= _iterator3.length) break;
+	        _ref3 = _iterator3[_i7++];
 	      } else {
-	        _i6 = _iterator3.next();
-	        if (_i6.done) break;
-	        _ref3 = _i6.value;
+	        _i7 = _iterator3.next();
+	        if (_i7.done) break;
+	        _ref3 = _i7.value;
 	      }
 
 	      var _a3 = _ref3;
@@ -92010,16 +92018,16 @@ Gun.chain.then = function(cb) {
 	    if (!_Object$keys(authorIdentities).length) {
 	      return; // unknown author, do nothing
 	    }
-	    for (var _iterator4 = msg.getRecipientArray(), _isArray4 = Array.isArray(_iterator4), _i7 = 0, _iterator4 = _isArray4 ? _iterator4 : _getIterator(_iterator4);;) {
+	    for (var _iterator4 = msg.getRecipientArray(), _isArray4 = Array.isArray(_iterator4), _i8 = 0, _iterator4 = _isArray4 ? _iterator4 : _getIterator(_iterator4);;) {
 	      var _ref4;
 
 	      if (_isArray4) {
-	        if (_i7 >= _iterator4.length) break;
-	        _ref4 = _iterator4[_i7++];
+	        if (_i8 >= _iterator4.length) break;
+	        _ref4 = _iterator4[_i8++];
 	      } else {
-	        _i7 = _iterator4.next();
-	        if (_i7.done) break;
-	        _ref4 = _i7.value;
+	        _i8 = _iterator4.next();
+	        if (_i8.done) break;
+	        _ref4 = _i8.value;
 	      }
 
 	      var _a4 = _ref4;
@@ -92042,16 +92050,16 @@ Gun.chain.then = function(cb) {
 	    if (!_Object$keys(recipientIdentities).length) {
 	      // recipient is previously unknown
 	      var attrs = {};
-	      for (var _iterator5 = msg.getRecipientArray(), _isArray5 = Array.isArray(_iterator5), _i8 = 0, _iterator5 = _isArray5 ? _iterator5 : _getIterator(_iterator5);;) {
+	      for (var _iterator5 = msg.getRecipientArray(), _isArray5 = Array.isArray(_iterator5), _i9 = 0, _iterator5 = _isArray5 ? _iterator5 : _getIterator(_iterator5);;) {
 	        var _ref5;
 
 	        if (_isArray5) {
-	          if (_i8 >= _iterator5.length) break;
-	          _ref5 = _iterator5[_i8++];
+	          if (_i9 >= _iterator5.length) break;
+	          _ref5 = _iterator5[_i9++];
 	        } else {
-	          _i8 = _iterator5.next();
-	          if (_i8.done) break;
-	          _ref5 = _i8.value;
+	          _i9 = _iterator5.next();
+	          if (_i9.done) break;
+	          _ref5 = _i9.value;
 	        }
 
 	        var _a2 = _ref5;
@@ -92091,16 +92099,16 @@ Gun.chain.then = function(cb) {
 	    if (Array.isArray(msgs)) {
 	      console.log('sorting ' + msgs.length + ' messages onto a search tree...');
 	      for (var i = 0; i < msgs.length; i++) {
-	        for (var _iterator6 = msgs[i].getAuthorArray(), _isArray6 = Array.isArray(_iterator6), _i9 = 0, _iterator6 = _isArray6 ? _iterator6 : _getIterator(_iterator6);;) {
+	        for (var _iterator6 = msgs[i].getAuthorArray(), _isArray6 = Array.isArray(_iterator6), _i10 = 0, _iterator6 = _isArray6 ? _iterator6 : _getIterator(_iterator6);;) {
 	          var _ref6;
 
 	          if (_isArray6) {
-	            if (_i9 >= _iterator6.length) break;
-	            _ref6 = _iterator6[_i9++];
+	            if (_i10 >= _iterator6.length) break;
+	            _ref6 = _iterator6[_i10++];
 	          } else {
-	            _i9 = _iterator6.next();
-	            if (_i9.done) break;
-	            _ref6 = _i9.value;
+	            _i10 = _iterator6.next();
+	            if (_i10.done) break;
+	            _ref6 = _i10.value;
 	          }
 
 	          var _a5 = _ref6;

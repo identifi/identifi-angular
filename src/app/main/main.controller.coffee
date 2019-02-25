@@ -117,10 +117,12 @@ angular.module('identifiAngular').controller 'MainController', [
         $scope.viewpoint.mostVerifiedAttributes = $window.identifiLib.Identity.getMostVerifiedAttributes(attrs)
 
     $scope.loadDefaultIndex = ->
+      $scope.identifiIndex = null
       $scope.viewpoint = {type: 'keyID', value: $scope.defaultIndexKeyID}
       setIndex new $window.identifiLib.Index($scope.gun.user($scope.defaultIndexKeyID).get('identifi'), {ipfs: $scope.ipfs})
 
     $scope.loginWithKey = (privateKeySerialized, self) ->
+      $scope.identifiIndex = null
       $scope.loggingIn = true
       $scope.privateKey = $window.identifiLib.Key.fromJwk(privateKeySerialized)
       localStorageService.set('identifiKey', privateKeySerialized)
