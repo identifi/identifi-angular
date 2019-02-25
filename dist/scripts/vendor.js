@@ -90886,7 +90886,7 @@ Gun.chain.then = function(cb) {
 	    this.linkTo = linkTo;
 	  }
 
-	  Identity.create = function create(gun, data) {
+	  Identity.create = async function create(gun, data) {
 	    if (!data.linkTo && !data.attrs) {
 	      throw new Error('You must specify either data.linkTo or data.attrs');
 	    }
@@ -90899,7 +90899,7 @@ Gun.chain.then = function(cb) {
 	    } else {
 	      data.linkTo = Identity.getLinkTo(data.attrs);
 	    }
-	    gun.put(data);
+	    await gun.put(data);
 	    return new Identity(gun, data.linkTo);
 	  };
 
@@ -91502,7 +91502,7 @@ Gun.chain.then = function(cb) {
 	        attrs[a.uri()] = a;
 	      }
 	    }
-	    var id = Identity.create(g, { trustDistance: 0, linkTo: options.viewpoint, attrs: attrs });
+	    var id = await Identity.create(g, { trustDistance: 0, linkTo: options.viewpoint, attrs: attrs });
 	    await i._addIdentityToIndexes(id.gun);
 	    if (options.self) {
 	      var recipient = _Object$assign(options.self, { keyID: options.viewpoint.value });
@@ -92068,7 +92068,8 @@ Gun.chain.then = function(cb) {
 	      }
 	      var linkTo = Identity.getLinkTo(attrs);
 	      var random = Math.floor(Math.random() * _Number$MAX_SAFE_INTEGER); // TODO: bubblegum fix
-	      var id = Identity.create(this.gun.get('identities').get(random).put({}), { attrs: attrs, linkTo: linkTo, trustDistance: false });
+	      var trustDistance = msg.isPositive() && typeof msg.distance === 'number' ? msg.distance + 1 : false;
+	      var id = await Identity.create(this.gun.get('identities').get(random).put({}), { attrs: attrs, linkTo: linkTo, trustDistance: trustDistance });
 	      // {a:1} because inserting {} causes a "no signature on data" error from gun
 
 	      // TODO: take msg author trust into account

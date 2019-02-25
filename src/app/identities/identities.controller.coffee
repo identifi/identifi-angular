@@ -304,7 +304,8 @@ angular.module('identifiAngular').controller 'IdentitiesController', [
       if !$scope.isUniqueType
         $state.go 'identities.list', { search: $scope.idValue }
         $scope.tabs[2].active = true if $scope.tabs
-      $scope.setPageTitle $scope.idValue
+      if $state.is 'identities.show'
+        $scope.setPageTitle $scope.idValue
       $scope.identity = $scope.identifiIndex.get($scope.idType, $scope.idValue)
       $scope.setIdentityNames($scope.identity, false, true)
       $scope.identity.gun.on (data) ->
