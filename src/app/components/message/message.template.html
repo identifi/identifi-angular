@@ -29,6 +29,11 @@
       </small>
     </p>
 
-    <p style="white-space: pre-line;" ng-bind-html="$ctrl.msgData.signedData.comment|linky"></p>
+    <p style="white-space: pre-line;"
+    hm-read-more
+    hm-limit="280"
+    hm-text="{{ $ctrl.msgData.signedData.comment|linky }}"
+    hm-more-text="Show more"
+    hm-less-text="Show less"></p>
   </div>
 </div>
