@@ -50,6 +50,12 @@ angular.module('identifiAngular').controller 'MainController', [
       seen: {}
     $scope.phoneRegex = /^\+?\d+$/
 
+    $scope.addFiles = (files) ->
+      if $scope.files
+        $scope.files.concat files
+      else
+        $scope.files = files
+
     $scope.ipfs = new Ipfs(
       init: true
       start: true
@@ -69,7 +75,6 @@ angular.module('identifiAngular').controller 'MainController', [
       return unless $scope.identifiIndex
       $scope.ids.activeKey = -1
       $scope.ids.list = []
-      console.log 'search'
       searchKey = (query or $scope.query.term or '').toLowerCase().trim()
       $scope.searchKey = searchKey
       $scope.previousSearchKey = searchKey
@@ -204,13 +209,15 @@ angular.module('identifiAngular').controller 'MainController', [
       if (title)
         $rootScope.pageTitle += ' - ' + title
 
-    $scope.ipfsGet = (uri, getJson) ->
+    $scope.ipfsGet = (uri, options) ->
       return new Promise (resolve) ->
         go = ->
           $scope.ipfs.cat(uri).then (file) ->
             file = $scope.ipfs.types.Buffer(file)
-            if getJson
+            if options.getJson
               file = JSON.parse(file.toString())
+            if options.base64img
+              file = 'data:image;base64,' + file.toString('base64')
             resolve file
 
         if $scope.ipfsReady
@@ -236,48 +243,59 @@ angular.module('identifiAngular').controller 'MainController', [
       $scope.newVerification =
         type: ''
         value: ''
+      $scope.files = []
     $scope.resetMsg()
 
     # Create new Message
-    $scope.createMessage = (event, params, verifiedAttr) ->
+    $scope.createMessage = (event, msg, options = {}) ->
       $scope.addingMessage = true
       event.stopPropagation() if event
-      # Create new Message object
-      message = null
-      params.recipient = params.recipient || {}
-      if $state.is 'identities.show'
-        if verifiedAttr and $stateParams.type == verifiedAttr.type
-          params.recipient[$stateParams.type] = [$stateParams.value, verifiedAttr.value]
-        else
-          params.recipient[$stateParams.type] = $stateParams.value
-          params.recipient[verifiedAttr.type] = verifiedAttr.value if verifiedAttr
-      else unless $state.is 'identities.create'
-        params.recipient.keyID = $scope.authentication.user.idValue
-      if params.type == 'rating'
-        params.maxRating |= 3
-        params.minRating |= -3
-        message = $window.identifiLib.Message.createRating(params, $scope.privateKey)
-      else if params.type == 'verification'
-        message = $window.identifiLib.Message.createVerification(params, $scope.privateKey)
-      else
-        message = $window.identifiLib.Message.create(params, $scope.privateKey)
-      options = {}
 
-      message.then (m) ->
-        console.log m
-        $scope.identifiIndex.addMessage(m)
-        $scope.msgs.seen[m.getHash()] = true
-        $scope.processMessages([m])
-        $scope.msgs.list.push(m)
-      .then ->
-        if $scope.filters.type not in [params.type, null]
-          $scope.filters.type = params.type
-        $scope.resetMsg()
-        $scope.addingMessage = false
-      .catch (e) ->
-        console.error(e)
-        $scope.error = e
-        $scope.addingMessage = false
+      fileUploads = []
+      if options.files # upload to ipfs
+        msg.attachments = []
+        for file in options.files
+          p = $scope.uploadFile(file).then (res) ->
+            if res and res.length and res.length > 0 and res[0].path
+              msg.attachments.push({uri: '/ipfs/' + res[0].path})
+          fileUploads.push p
+
+      Promise.all(fileUploads).then ->
+        # Create new Message object
+        message = null
+        msg.recipient = msg.recipient || {}
+        if $state.is 'identities.show'
+          if options.verifiedAttr and $stateParams.type == options.verifiedAttr.type
+            msg.recipient[$stateParams.type] = [$stateParams.value, options.verifiedAttr.value]
+          else
+            msg.recipient[$stateParams.type] = $stateParams.value
+            msg.recipient[options.verifiedAttr.type] = options.verifiedAttr.value if options.verifiedAttr
+        else unless $state.is 'identities.create'
+          msg.recipient.keyID = $scope.authentication.user.idValue
+        if msg.type == 'rating'
+          msg.maxRating |= 3
+          msg.minRating |= -3
+          message = $window.identifiLib.Message.createRating(msg, $scope.privateKey)
+        else if msg.type == 'verification'
+          message = $window.identifiLib.Message.createVerification(msg, $scope.privateKey)
+        else
+          message = $window.identifiLib.Message.create(msg, $scope.privateKey)
+        options = {}
+
+        message.then (m) ->
+          $scope.identifiIndex.addMessage(m)
+          $scope.msgs.seen[m.getHash()] = true
+          $scope.processMessages([m])
+        .then (messages) ->
+          $scope.msgs.list.push(messages[0])
+          if $scope.filters.type not in [msg.type, null]
+            $scope.filters.type = msg.type
+          $scope.resetMsg() # why not resetting uploaded files? D:
+          $scope.addingMessage = false
+        .catch (e) ->
+          console.error(e)
+          $scope.error = e
+          $scope.addingMessage = false
 
     $scope.addAttribute = ->
       $location.path '#/identities/create/' + $scope.query.term
@@ -359,11 +377,9 @@ angular.module('identifiAngular').controller 'MainController', [
 
     $scope.uploadFile = (blob) ->
       return new Promise (resolve, reject) ->
-        console.log 'uploading', blob
         fileReader = new FileReader()
         fileReader.onload = (event) ->
           buffer = $scope.ipfs.types.Buffer.from(event.target.result)
-          console.log 'buffer', buffer
           $scope.ipfs.add buffer, (err, files) ->
             if err
               reject('adding to ipfs failed', err)
@@ -393,7 +409,6 @@ angular.module('identifiAngular').controller 'MainController', [
       $window.identifiLib.Key.generate().then (key) ->
         $scope.$apply ->
           $scope.privateKey = key
-          console.log $scope.privateKey
           $scope.privateKeySerialized = $window.identifiLib.Key.toJwk($scope.privateKey)
 
     $scope.downloadText = (text) ->
@@ -522,6 +537,13 @@ angular.module('identifiAngular').controller 'MainController', [
             $scope.$apply -> msg.recipient_name = mva.name.attribute.value
           else if mva.nickname
             $scope.$apply -> msg.recipient_name = mva.nickname.attribute.value
+        if msg.signedData.attachments
+          msg.attachments = []
+          for attachment in msg.signedData.attachments
+            if attachment.uri
+              $scope.ipfsGet(attachment.uri, {base64img: true}).then (src) ->
+                $scope.$apply ->
+                  msg.attachments.push {src, uri: attachment.uri}
         $scope.$apply ->
           # TODO: make sure message signature is checked
           i = undefined
@@ -599,6 +621,8 @@ angular.module('identifiAngular').controller 'MainController', [
       angular.forEach messages, (msg, key) ->
         msg[k] = v for k, v of msgOptions
         processMessage(msg)
+
+      return messages
 
     # Collapsing the menu after navigation
     $scope.$on '$stateChangeSuccess', ->

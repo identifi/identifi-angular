@@ -318,10 +318,10 @@
                               <input class="form-control linkedComment" type="text" placeholder="comment" disabled>
                             -->
                             <div class="pull-right" ng-if="!a.isCurrent">
-                              <button autocomplete="off" name="confirm" class="btn btn-default btn-confirm" ng-click="createMessage($event, { type: 'verification' }, a)" ng-disabled="!authentication.user" uib-tooltip="Verify" data-style="zoom-out">
+                              <button autocomplete="off" name="confirm" class="btn btn-default btn-confirm" ng-click="createMessage($event, { type: 'verification' }, {verifiedAttr: a})" ng-disabled="!authentication.user" uib-tooltip="Verify" data-style="zoom-out">
                                 <span class="positive glyphicon glyphicon-ok"></span> {{a.conf}}
                               </button>
-                              <button autocomplete="off" name="unverify" class="btn btn-default btn-unverify" ng-click="createMessage($event, { type: 'unverification' }, a)" ng-disabled="!authentication.user" uib-tooltip="Unverify" data-style="zoom-out">
+                              <button autocomplete="off" name="unverify" class="btn btn-default btn-unverify" ng-click="createMessage($event, { type: 'unverification' }, {verifiedAttr: a})" ng-disabled="!authentication.user" uib-tooltip="Unverify" data-style="zoom-out">
                                 <span class="negative glyphicon glyphicon-remove"></span> {{a.ref}}
                               </button>
                             </div>
@@ -357,7 +357,7 @@
                           <input id="addValue" ng-change="guessAttributeType()" ng-model="newVerification.value" class="form-control" name="linkedValue" type="text" placeholder="value (e.g. alice@example.com)" ng-disabled="!authentication.user">
                           <input id="addType" ng-model="newVerification.type" class="form-control" name="linkedType" type="text" placeholder="type (e.g. email)" ng-disabled="!authentication.user">
                         <!--<td><input id="addComment" class="form-control" name="linkedComment" type="text" placeholder="comment" disabled></td> -->
-                          <button autocomplete="off" id="addButton" ng-click="createMessage($event, { type: 'verification' }, newVerification)" class="btn btn-default" data-style="zoom-out" ng-disabled="!authentication.user || !(newVerification.type && newVerification.value)"><span class="glyphicon glyphicon-plus"></span> Add</button>
+                          <button autocomplete="off" id="addButton" ng-click="createMessage($event, { type: 'verification' }, {verifiedAttr: newVerification})" class="btn btn-default" data-style="zoom-out" ng-disabled="!authentication.user || !(newVerification.type && newVerification.value)"><span class="glyphicon glyphicon-plus"></span> Add</button>
                         </td>
                       </tr>
                   </tbody>

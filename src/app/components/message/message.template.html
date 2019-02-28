@@ -29,7 +29,12 @@
       </small>
     </p>
 
+    <p ng-if="$ctrl.msgData.attachments">
+      <img ng-repeat="attachment in $ctrl.msgData.attachments" alt="{{attachment.uri}}" src="{{attachment.src}}" style="max-width: 150px; max-height: 150px; margin-right: 15px; margin-bottom: 15px">
+    </p>
+
     <p style="white-space: pre-line;"
+    ng-if="$ctrl.msgData.signedData.comment"
     hm-read-more
     hm-limit="280"
     hm-text="{{ $ctrl.msgData.signedData.comment|linky }}"
