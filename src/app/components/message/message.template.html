@@ -29,8 +29,15 @@
       </small>
     </p>
 
+    <p>
+      <span ng-repeat="attachment in $ctrl.msgData.attachments">
+        <img ng-show="attachment.type && attachment.type.substr(0,5) == 'image'" alt="{{attachment.uri}}" src="{{attachment.src}}" ng-style="{'max-width': $ctrl.msgData.attachments.length > 1 ? '150px' : '100%', 'max-height': $ctrl.msgData.attachments.length > 1 ? '150px' : '400px'}" style="margin-right: 15px; margin-bottom: 15px">
+        <video ng-show="attachment.type && attachment.type.substr(0,5) == 'video'" controls alt="{{attachment.uri}}" src="{{attachment.src}}" style="max-width: 100%; margin-right: 15px; margin-bottom: 15px">
+        <audio ng-show="attachment.type && attachment.type.substr(0,5) == 'audio'" controls alt="{{attachment.uri}}" src="{{attachment.src}}" style="max-width: 100%; margin-right: 15px; margin-bottom: 15px">
+      </span>
+    </p>
+
     <p ng-if="$ctrl.msgData.attachments">
-      <img ng-repeat="attachment in $ctrl.msgData.attachments" alt="{{attachment.uri}}" src="{{attachment.src}}" ng-style="{'max-width': $ctrl.msgData.attachments.length > 1 ? '150px' : '100%', 'max-height': $ctrl.msgData.attachments.length > 1 ? '150px' : '400px'}" style="margin-right: 15px; margin-bottom: 15px">
     </p>
 
     <p style="white-space: pre-line;"

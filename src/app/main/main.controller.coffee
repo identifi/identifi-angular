@@ -48,13 +48,6 @@ angular.module('identifiAngular').controller 'MainController', [
     $scope.msgs =
       list: []
       seen: {}
-    $scope.phoneRegex = /^\+?\d+$/
-
-    $scope.addFiles = (files) ->
-      if $scope.files
-        $scope.files.concat files
-      else
-        $scope.files = files
 
     $scope.ipfs = new Ipfs(
       init: true
@@ -216,8 +209,9 @@ angular.module('identifiAngular').controller 'MainController', [
             file = $scope.ipfs.types.Buffer(file)
             if options.getJson
               file = JSON.parse(file.toString())
-            if options.base64img
-              file = 'data:image;base64,' + file.toString('base64')
+            if options.base64type
+              console.log options.base64type
+              file = 'data:' + options.base64type + ';base64,' + file.toString('base64')
             resolve file
 
         if $scope.ipfsReady
@@ -240,10 +234,10 @@ angular.module('identifiAngular').controller 'MainController', [
       $scope.newMessage =
         rating: 1
         comment: ''
+        files: []
       $scope.newVerification =
         type: ''
         value: ''
-      $scope.files = []
     $scope.resetMsg()
 
     # Create new Message
@@ -254,15 +248,21 @@ angular.module('identifiAngular').controller 'MainController', [
       fileUploads = []
       if options.files # upload to ipfs
         msg.attachments = []
-        for file in options.files
-          p = $scope.uploadFile(file).then (res) ->
+        addFile = (file) ->
+          $scope.uploadFile(file).then (res) ->
             if res and res.length and res.length > 0 and res[0].path
-              msg.attachments.push({uri: '/ipfs/' + res[0].path})
-          fileUploads.push p
+              msg.attachments.push
+                uri: '/ipfs/' + res[0].path
+                size: file.size
+                type: file.type
+                name: file.name
+        fileUploads.push addFile(file) for file in options.files
 
       Promise.all(fileUploads).then ->
+        console.log 'msg.attachments', msg.attachments
         # Create new Message object
         message = null
+        delete msg.files if msg.files
         msg.recipient = msg.recipient || {}
         if $state.is 'identities.show'
           if options.verifiedAttr and $stateParams.type == options.verifiedAttr.type
@@ -291,6 +291,7 @@ angular.module('identifiAngular').controller 'MainController', [
           if $scope.filters.type not in [msg.type, null]
             $scope.filters.type = msg.type
           $scope.resetMsg() # why not resetting uploaded files? D:
+          options.files = [] if options.files
           $scope.addingMessage = false
         .catch (e) ->
           console.error(e)
@@ -541,9 +542,10 @@ angular.module('identifiAngular').controller 'MainController', [
           msg.attachments = []
           for attachment in msg.signedData.attachments
             if attachment.uri
-              $scope.ipfsGet(attachment.uri, {base64img: true}).then (src) ->
+              attachment.type = attachment.type or 'image'
+              $scope.ipfsGet(attachment.uri, {base64type: attachment.type}).then (src) ->
                 $scope.$apply ->
-                  msg.attachments.push {src, uri: attachment.uri}
+                  msg.attachments.push Object.assign {src}, attachment
         $scope.$apply ->
           # TODO: make sure message signature is checked
           i = undefined

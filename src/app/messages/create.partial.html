@@ -1,18 +1,18 @@
 <div class="panel panel-default panel-default"
 ngf-drop
 ngf-keep="'distinct'"
-ng-disabled="addingMessage || loggingIn || !authentication.user"
-ng-model="files"
+ngf-drop-disabled="addingMessage || loggingIn || !authentication.user"
+ng-model="newMessage.files"
 ngf-drag-over-class="'dragover'"
 ngf-multiple="true"
 >
   <div class="panel-body">
-    <form ng-submit="createMessage($event, { type: 'post', comment: newMessage.comment }, { files: files })">
-      <div class="row" ng-if="files && files.length">
+    <form ng-submit="createMessage($event, { type: 'post', comment: newMessage.comment }, { files: newMessage.files })">
+      <div class="row" ng-if="newMessage.files && newMessage.files.length">
         <div class="col-xs-12">
           <p>
-            <span ng-repeat="file in files">
-              <img ngf-thumbnail="file || '/thumb.jpg'" ng-style="{'max-width': files.length > 1 ? '150px' : '100%', 'max-height': files.length > 1 ? '150px' : '400px'}" style="margin-right: 15px; margin-bottom: 15px;">
+            <span ng-repeat="file in newMessage.files">
+              <img ngf-thumbnail="file || '/thumb.jpg'" ng-style="{'max-width': newMessage.files.length > 1 ? '150px' : '100%', 'max-height': newMessage.files.length > 1 ? '150px' : '400px'}" style="margin-right: 15px; margin-bottom: 15px;">
               <audio controls ngf-src="file"></audio>
               <video controls ngf-src="file" style="max-width: 100%; max-height: 400px;"></video>
             </span>
@@ -32,8 +32,8 @@ ngf-multiple="true"
 
       <div class="row">
         <div class="col-xs-12">
-          <button ng-disabled="addingMessage || loggingIn || !authentication.user || !(newMessage.comment || files.length)" type="submit" class="btn btn-primary" data-style="zoom-out"><span><span class="fa fa-edit"></span> Publish</span><span></span></button>
-          <button ngf-select ng-model="files" ngf-multiple="true" href="" ng-disabled="addingMessage || loggingIn || !authentication.user" class="btn btn-default pull-right" data-style="zoom-out"><span class="fa fa-paperclip"></span> Add files</button>
+          <button ng-disabled="addingMessage || loggingIn || !authentication.user || !(newMessage.comment || newMessage.files.length)" type="submit" class="btn btn-primary" data-style="zoom-out"><span><span class="fa fa-edit"></span> Publish</span><span></span></button>
+          <button ngf-select ng-model="newMessage.files" ngf-multiple="true" href="" ng-disabled="addingMessage || loggingIn || !authentication.user" class="btn btn-default pull-right" data-style="zoom-out"><span class="fa fa-paperclip"></span> Add files</button>
         </div>
       </div>
     </form>
