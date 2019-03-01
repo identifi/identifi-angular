@@ -47,5 +47,11 @@
     hm-text="{{ $ctrl.msgData.signedData.comment|linky }}"
     hm-more-text="Show more"
     hm-less-text="Show less"></p>
+
+    <span class="pull-right" ng-if="$ctrl.msgData.signedData.type == 'post'">
+      <a class="msg-reaction" href=""><i class="glyphicon glyphicon-comment"></i></a>
+      <a class="msg-reaction" href=""><i class="glyphicon glyphicon-retweet"></i></a>
+      <a class="msg-reaction" href=""><i class="glyphicon glyphicon-heart-empty"></i></a>
+    </span>
   </div>
 </div>

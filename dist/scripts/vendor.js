@@ -91712,7 +91712,6 @@ Gun.chain.then = function(cb) {
 	        var key = indexKeys[index][j];
 	        console.log('adding key ' + key);
 	        await this.gun.get(index).get(key).put(id);
-	        await this.gun.get(index).get(key).put(id);
 	      }
 	    }
 	  };
@@ -92365,7 +92364,7 @@ Gun.chain.then = function(cb) {
 	  return Index;
 	}();
 
-	var version$1 = "0.0.89";
+	var version$1 = "0.0.88";
 
 	/*eslint no-useless-escape: "off", camelcase: "off" */
 
