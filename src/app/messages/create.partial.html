@@ -1,4 +1,11 @@
-<div class="panel panel-default panel-default">
+<div class="panel panel-default panel-default"
+ngf-drop
+ngf-keep="'distinct'"
+ng-disabled="addingMessage || loggingIn || !authentication.user"
+ng-model="files"
+ngf-drag-over-class="'dragover'"
+ngf-multiple="true"
+>
   <div class="panel-body">
     <form ng-submit="createMessage($event, { type: 'post', comment: newMessage.comment }, { files: files })">
       <div class="row" ng-if="files && files.length">
@@ -15,14 +22,12 @@
 
       <div class="form-group">
         <textarea
-          ngf-drop="addFiles($files)"
           style="resize: vertical"
           ng-disabled="addingMessage || loggingIn || !authentication.user"
           name="comment" class="form-control" id="comment"
           ng-model="newMessage.comment"
           placeholder="What's on your mind?"
-          ngf-drag-over-class="'dragover'"
-          ngf-multiple="true"></textarea>
+          ></textarea>
       </div>
 
       <div class="row">

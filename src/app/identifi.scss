@@ -1623,6 +1623,10 @@ a {
     position: relative;
 }
 
+.dragover {
+  border: 2px dashed #31708f;
+}
+
 /* style icon */
 .inner-addon .glyphicon, .inner-addon .fa {
   position: absolute;
