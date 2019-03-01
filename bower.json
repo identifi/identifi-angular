@@ -69,5 +69,10 @@
         "src/jsqrcode-combined.min.js"
       ]
     }
+  },
+  "resolutions": {
+    "angular": "1.7.7",
+    "angular-sanitize": "~1.7.6",
+    "angular-animate": "~1.7.6"
   }
 }
