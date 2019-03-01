@@ -12,7 +12,7 @@ ngf-multiple="true"
         <div class="col-xs-12">
           <p>
             <span ng-repeat="file in newMessage.files">
-              <img ngf-thumbnail="file || '/thumb.jpg'" ng-style="{'max-width': newMessage.files.length > 1 ? '150px' : '100%', 'max-height': newMessage.files.length > 1 ? '150px' : '400px'}" style="margin-right: 15px; margin-bottom: 15px;">
+              <img ngf-thumbnail="file || '/thumb.jpg'" ng-style="{'max-width': newMessage.files.length > 1 ? '150px' : '100%', 'max-height': newMessage.files.length > 1 ? '150px' : '450px'}" style="margin-right: 15px; margin-bottom: 15px;">
               <audio controls ngf-src="file"></audio>
               <video controls ngf-src="file" style="max-width: 100%; max-height: 400px;"></video>
             </span>

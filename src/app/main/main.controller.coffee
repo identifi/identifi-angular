@@ -412,12 +412,15 @@ angular.module('identifiAngular').controller 'MainController', [
           $scope.privateKey = key
           $scope.privateKeySerialized = $window.identifiLib.Key.toJwk($scope.privateKey)
 
-    $scope.downloadText = (text) ->
+    $scope.download = (filename, data, type, charset = 'utf-8') ->
       hiddenElement = document.createElement('a')
-      hiddenElement.href = 'data:text/csv;charset=utf-8,' + encodeURI(text)
+      hiddenElement.href = "data:#{type};charset=#{charset},#{encodeURI(data)}"
       hiddenElement.target = '_blank'
-      hiddenElement.download = 'identifi_private_key.txt'
+      hiddenElement.download = filename
       hiddenElement.click()
+
+    $scope.downloadText = (text) ->
+      $scope.download('identifi_private_key.txt', text, 'text/csv', 'utf-8')
 
     $scope.openLogoutModal = ->
       $scope.logoutModal = $uibModal.open(
@@ -540,12 +543,14 @@ angular.module('identifiAngular').controller 'MainController', [
             $scope.$apply -> msg.recipient_name = mva.nickname.attribute.value
         if msg.signedData.attachments
           msg.attachments = []
-          for attachment in msg.signedData.attachments
+          addAttachment = (attachment) ->
             if attachment.uri
-              attachment.type = attachment.type or 'image'
-              $scope.ipfsGet(attachment.uri, {base64type: attachment.type}).then (src) ->
+              type = attachment.type or 'image'
+              typeSubstr = attachment.type.substr(0,5)
+              $scope.ipfsGet(attachment.uri, {base64type: type}).then (src) ->
                 $scope.$apply ->
-                  msg.attachments.push Object.assign {src}, attachment
+                  msg.attachments.push Object.assign {src, type, typeSubstr}, attachment
+          addAttachment(attachment) for attachment in msg.signedData.attachments
         $scope.$apply ->
           # TODO: make sure message signature is checked
           i = undefined
