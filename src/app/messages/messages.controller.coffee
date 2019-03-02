@@ -68,4 +68,13 @@ angular.module('identifiAngular').controller 'MessagesController', [
       if $state.is('messages.show')
         $scope.findOne()
     $scope.$watch 'identifiIndex', load
+
+    $scope.like = (msg) ->
+      console.log 'msg liked', msg
+
+    $scope.share = (msg) ->
+      console.log 'msg shared', msg
+
+    $scope.replyTo = (msg, reply) ->
+      console.log 'msg replied to', reply, msg
 ]

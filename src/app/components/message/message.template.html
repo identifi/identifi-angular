@@ -49,9 +49,16 @@
     hm-less-text="Show less"></p>
 
     <span class="pull-right" ng-if="$ctrl.msgData.signedData.type == 'post'">
-      <a class="msg-reaction" href=""><i class="glyphicon glyphicon-comment"></i></a>
-      <a class="msg-reaction" href=""><i class="glyphicon glyphicon-retweet"></i></a>
-      <a class="msg-reaction" href=""><i class="glyphicon glyphicon-heart-empty"></i></a>
+      <a class="msg-reaction" href="" ng-click="$ctrl.msgData.showCommentField = !$ctrl.msgData.showCommentField"><i class="glyphicon glyphicon-comment"></i></a>
+      <a class="msg-reaction" href="" ng-click="share($ctrl.msgData)"><i class="glyphicon glyphicon-retweet"></i></a>
+      <a class="msg-reaction" href="" ng-click="like($ctrl.msgData)"><i class="glyphicon glyphicon-heart-empty"></i></a>
     </span>
+
+    <form class="form-inline" ng-submit="replyTo($ctrl.msgData, reply)" ng-show="$ctrl.msgData.showCommentField">
+      <div class="form-group">
+        <input focus-on="addNameFocus" type="text" class="form-control" ng-model="reply" placeholder="Write a reply">
+      </div>
+      <button type="submit" class="btn btn-primary">Post</button>
+    </form>
   </div>
 </div>
