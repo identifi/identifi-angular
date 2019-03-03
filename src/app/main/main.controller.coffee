@@ -198,7 +198,7 @@ angular.module('identifiAngular').controller 'MainController', [
           $scope.uploadModal.close()
 
     $scope.setPageTitle = (title) ->
-      $rootScope.pageTitle = 'Identifi'
+      $rootScope.pageTitle = 'Iris'
       if (title)
         $rootScope.pageTitle += ' - ' + title
 
