@@ -1646,13 +1646,19 @@ a {
 .msg-reaction {
   color: inherit;
   margin-left: 45px;
+  width:60px;
+  text-align: right;
+  display: inline-block;
   padding: 15px;
   text-decoration: none;
-  &.active {
+  &.active, &.active:focus {
     color: #23527c;
   }
   &:hover, &:focus, &:active {
     text-decoration: none;
+  }
+  &:focus {
+    color: inherit;
   }
 }
 
