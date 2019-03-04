@@ -54778,15 +54778,15 @@ angular.module('ngResource', ['ng']).
  *         This causes it to be incompatible with plugins that depend on @uirouter/core.
  *         We recommend switching to the ui-router-core.js and ui-router-angularjs.js bundles instead.
  *         For more information, see https://ui-router.github.io/blog/uirouter-for-angularjs-umd-bundles
- * @version v1.0.20
+ * @version v1.0.22
  * @link https://ui-router.github.io
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('angular')) :
     typeof define === 'function' && define.amd ? define(['exports', 'angular'], factory) :
-    (factory((global['@uirouter/angularjs'] = {}),global.angular));
-}(this, (function (exports,ng_from_import) { 'use strict';
+    (global = global || self, factory(global['@uirouter/angularjs'] = {}, global.angular));
+}(this, function (exports, ng_from_import) { 'use strict';
 
     /** @publicapi @module ng1 */ /** */
     /** @hidden */ var ng_from_global = angular;
@@ -56980,7 +56980,9 @@ angular.module('ngResource', ['ng']).
          */
         PathUtils.applyViewConfigs = function ($view, path, states) {
             // Only apply the viewConfigs to the nodes for the given states
-            path.filter(function (node) { return inArray(states, node.state); }).forEach(function (node) {
+            path
+                .filter(function (node) { return inArray(states, node.state); })
+                .forEach(function (node) {
                 var viewDecls = values(node.state.views || {});
                 var subPath = PathUtils.subPath(path, function (n) { return n === node; });
                 var viewConfigs = viewDecls.map(function (view) { return $view.createViewConfig(subPath, view); });
@@ -57464,15 +57466,18 @@ angular.module('ngResource', ['ng']).
     }
     var getUrlBuilder = function ($urlMatcherFactoryProvider, root$$1) {
         return function urlBuilder(stateObject) {
-            var state = stateObject.self;
+            var stateDec = stateObject.self;
             // For future states, i.e., states whose name ends with `.**`,
             // match anything that starts with the url prefix
-            if (state && state.url && state.name && state.name.match(/\.\*\*$/)) {
-                state.url += '{remainder:any}'; // match any path (.*)
+            if (stateDec && stateDec.url && stateDec.name && stateDec.name.match(/\.\*\*$/)) {
+                var newStateDec = {};
+                copy(stateDec, newStateDec);
+                newStateDec.url += '{remainder:any}'; // match any path (.*)
+                stateDec = newStateDec;
             }
             var parent = stateObject.parent;
-            var parsed = parseUrl(state.url);
-            var url = !parsed ? state.url : $urlMatcherFactoryProvider.compile(parsed.val, { state: state });
+            var parsed = parseUrl(stateDec.url);
+            var url = !parsed ? stateDec.url : $urlMatcherFactoryProvider.compile(parsed.val, { state: stateDec });
             if (!url)
                 return null;
             if (!$urlMatcherFactoryProvider.isMatcher(url))
@@ -58334,7 +58339,7 @@ angular.module('ngResource', ['ng']).
      * - If a function, matchState calls the function with the state and returns true if the function's result is truthy.
      * @returns {boolean}
      */
-    function matchState(state, criterion) {
+    function matchState(state, criterion, transition) {
         var toMatch = isString(criterion) ? [criterion] : criterion;
         function matchGlobs(_state) {
             var globStrings = toMatch;
@@ -58347,7 +58352,7 @@ angular.module('ngResource', ['ng']).
             return false;
         }
         var matchFn = (isFunction(toMatch) ? toMatch : matchGlobs);
-        return !!matchFn(state);
+        return !!matchFn(state, transition);
     }
     /**
      * @internalapi
@@ -58382,10 +58387,10 @@ angular.module('ngResource', ['ng']).
          * with `entering: (state) => true` which only matches when a state is actually
          * being entered.
          */
-        RegisteredHook.prototype._matchingNodes = function (nodes, criterion) {
+        RegisteredHook.prototype._matchingNodes = function (nodes, criterion, transition) {
             if (criterion === true)
                 return nodes;
-            var matching = nodes.filter(function (node) { return matchState(node.state, criterion); });
+            var matching = nodes.filter(function (node) { return matchState(node.state, criterion, transition); });
             return matching.length ? matching : null;
         };
         /**
@@ -58420,7 +58425,7 @@ angular.module('ngResource', ['ng']).
          * };
          * ```
          */
-        RegisteredHook.prototype._getMatchingNodes = function (treeChanges) {
+        RegisteredHook.prototype._getMatchingNodes = function (treeChanges, transition) {
             var _this = this;
             var criteria = extend(this._getDefaultMatchCriteria(), this.matchCriteria);
             var paths = values(this.tranSvc._pluginapi._getPathTypes());
@@ -58430,7 +58435,7 @@ angular.module('ngResource', ['ng']).
                 var isStateHook = pathtype.scope === exports.TransitionHookScope.STATE;
                 var path = treeChanges[pathtype.name] || [];
                 var nodes = isStateHook ? path : [tail(path)];
-                mn[pathtype.name] = _this._matchingNodes(nodes, criteria[pathtype.name]);
+                mn[pathtype.name] = _this._matchingNodes(nodes, criteria[pathtype.name], transition);
                 return mn;
             }, {});
         };
@@ -58440,8 +58445,8 @@ angular.module('ngResource', ['ng']).
          * @returns an IMatchingNodes object, or null. If an IMatchingNodes object is returned, its values
          * are the matching [[PathNode]]s for each [[HookMatchCriterion]] (to, from, exiting, retained, entering)
          */
-        RegisteredHook.prototype.matches = function (treeChanges) {
-            var matches = this._getMatchingNodes(treeChanges);
+        RegisteredHook.prototype.matches = function (treeChanges, transition) {
+            var matches = this._getMatchingNodes(treeChanges, transition);
             // Check if all the criteria matched the TreeChanges object
             var allMatched = values(matches).every(identity);
             return allMatched ? matches : null;
@@ -58510,7 +58515,7 @@ angular.module('ngResource', ['ng']).
             var transition = this.transition;
             var treeChanges = transition.treeChanges();
             // Find all the matching registered hooks for a given hook type
-            var matchingHooks = this.getMatchingHooks(hookType, treeChanges);
+            var matchingHooks = this.getMatchingHooks(hookType, treeChanges, transition);
             if (!matchingHooks)
                 return [];
             var baseHookOptions = {
@@ -58519,7 +58524,7 @@ angular.module('ngResource', ['ng']).
             };
             var makeTransitionHooks = function (hook) {
                 // Fetch the Nodes that caused this hook to match.
-                var matches = hook.matches(treeChanges);
+                var matches = hook.matches(treeChanges, transition);
                 // Select the PathNode[] that will be used as TransitionHook context objects
                 var matchingNodes = matches[hookType.criteriaMatchPath.name];
                 // Return an array of HookTuples
@@ -58550,7 +58555,7 @@ angular.module('ngResource', ['ng']).
          *
          * @returns an array of matched [[RegisteredHook]]s
          */
-        HookBuilder.prototype.getMatchingHooks = function (hookType, treeChanges) {
+        HookBuilder.prototype.getMatchingHooks = function (hookType, treeChanges, transition) {
             var isCreate = hookType.hookPhase === exports.TransitionHookPhase.CREATE;
             // Instance and Global hook registries
             var $transitions = this.transition.router.transitionService;
@@ -58559,7 +58564,7 @@ angular.module('ngResource', ['ng']).
                 .map(function (reg) { return reg.getHooks(hookType.name); }) // Get named hooks from registries
                 .filter(assertPredicate(isArray, "broken event named: " + hookType.name)) // Sanity check
                 .reduce(unnestR, []) // Un-nest RegisteredHook[][] to RegisteredHook[] array
-                .filter(function (hook) { return hook.matches(treeChanges); }); // Only those satisfying matchCriteria
+                .filter(function (hook) { return hook.matches(treeChanges, transition); }); // Only those satisfying matchCriteria
         };
         return HookBuilder;
     }());
@@ -58743,8 +58748,8 @@ angular.module('ngResource', ['ng']).
                 // TODO: Also compare parameters
                 return this.is({ to: compare.$to().name, from: compare.$from().name });
             }
-            return !((compare.to && !matchState(this.$to(), compare.to)) ||
-                (compare.from && !matchState(this.$from(), compare.from)));
+            return !((compare.to && !matchState(this.$to(), compare.to, this)) ||
+                (compare.from && !matchState(this.$from(), compare.from, this)));
         };
         Transition.prototype.params = function (pathname) {
             if (pathname === void 0) { pathname = 'to'; }
@@ -59767,13 +59772,16 @@ angular.module('ngResource', ['ng']).
         return UrlMatcher;
     }());
 
-    var __assign = (undefined && undefined.__assign) || Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
+    var __assign = (undefined && undefined.__assign) || function () {
+        __assign = Object.assign || function(t) {
+            for (var s, i = 1, n = arguments.length; i < n; i++) {
+                s = arguments[i];
+                for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                    t[p] = s[p];
+            }
+            return t;
+        };
+        return __assign.apply(this, arguments);
     };
     /** @internalapi */
     var ParamFactory = /** @class */ (function () {
@@ -62429,7 +62437,7 @@ angular.module('ngResource', ['ng']).
              */
             var rejectedTransitionHandler = function (trans) { return function (error) {
                 if (error instanceof Rejection) {
-                    var isLatest = router.globals.lastStartedTransitionId === trans.$id;
+                    var isLatest = router.globals.lastStartedTransitionId <= trans.$id;
                     if (error.type === exports.RejectType.IGNORED) {
                         isLatest && router.urlRouter.update();
                         // Consider ignored `Transition.run()` as a successful `transitionTo`
@@ -62898,9 +62906,12 @@ angular.module('ngResource', ['ng']).
     }());
 
     var __extends = (undefined && undefined.__extends) || (function () {
-        var extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        var extendStatics = function (d, b) {
+            extendStatics = Object.setPrototypeOf ||
+                ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+                function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+            return extendStatics(d, b);
+        };
         return function (d, b) {
             extendStatics(d, b);
             function __() { this.constructor = d; }
@@ -62929,9 +62940,12 @@ angular.module('ngResource', ['ng']).
     }(BaseLocationServices));
 
     var __extends$1 = (undefined && undefined.__extends) || (function () {
-        var extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        var extendStatics = function (d, b) {
+            extendStatics = Object.setPrototypeOf ||
+                ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+                function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+            return extendStatics(d, b);
+        };
         return function (d, b) {
             extendStatics(d, b);
             function __() { this.constructor = d; }
@@ -62954,9 +62968,12 @@ angular.module('ngResource', ['ng']).
     }(BaseLocationServices));
 
     var __extends$2 = (undefined && undefined.__extends) || (function () {
-        var extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        var extendStatics = function (d, b) {
+            extendStatics = Object.setPrototypeOf ||
+                ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+                function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+            return extendStatics(d, b);
+        };
         return function (d, b) {
             extendStatics(d, b);
             function __() { this.constructor = d; }
@@ -63080,7 +63097,7 @@ angular.module('ngResource', ['ng']).
         BrowserLocationConfig.prototype.getBaseHref = function () {
             var baseTag = document.getElementsByTagName('base')[0];
             if (baseTag && baseTag.href) {
-                return baseTag.href.replace(/^(https?:)?\/\/[^/]*/, '');
+                return baseTag.href.replace(/^([^/:]*:)?\/\/[^/]*/, '');
             }
             return this._isHtml5 ? '/' : location.pathname || '/';
         };
@@ -65482,7 +65499,7 @@ angular.module('ngResource', ['ng']).
 
     Object.defineProperty(exports, '__esModule', { value: true });
 
-})));
+}));
 //# sourceMappingURL=angular-ui-router.js.map
 
 /*
@@ -74201,10 +74218,10 @@ angular
       }];
   });
 })(window, window.angular);
-/*! angularjs-slider - v6.6.0 - 
- (c) Rafal Zajac <rzajac@gmail.com>, Valentin Hervieu <valentin@hervieu.me>, Jussi Saarivirta <jusasi@gmail.com>, Angelin Sirbu <angelin.sirbu@gmail.com> - 
+/*! angularjs-slider - v6.7.0 - 
+ (c) Rafal Zajac <rzajac@gmail.com>, Valentin Hervieu <valentin@hervi.eu>, Jussi Saarivirta <jusasi@gmail.com>, Angelin Sirbu <angelin.sirbu@gmail.com> - 
  https://github.com/angular-slider/angularjs-slider - 
- 2018-06-29 */
+ 2019-02-23 */
 /*jslint unparam: true */
 /*global angular: false, console: false, define, module */
 ;(function(root, factory) {
@@ -75236,12 +75253,19 @@ angular
           if (this.options.rightToLeft) ticksArray.reverse()
 
           this.scope.ticks = ticksArray.map(function(value) {
+            var legend = null;
+            if (angular.isObject(value)) {
+              legend = value.legend;
+              value = value.value
+            }
+
             var position = self.valueToPosition(value)
 
             if (self.options.vertical) position = self.maxPos - position
 
             var translation = translate + '(' + Math.round(position) + 'px)'
             var tick = {
+              legend: legend,
               selected: self.isTickSelected(value),
               style: {
                 '-webkit-transform': translation,
@@ -75274,7 +75298,7 @@ angular
               }
             }
             if (self.getLegend) {
-              var legend = self.getLegend(value, self.options.id)
+              legend = self.getLegend(value, self.options.id)
               if (legend) tick.legend = legend
             }
             return tick
@@ -80512,7 +80536,7 @@ Gun.chain.then = function(cb) {
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('gun')) :
 	typeof define === 'function' && define.amd ? define(['gun'], factory) :
-	(global.identifiLib = factory(global.Gun));
+	(global.irisLib = factory(global.Gun));
 }(this, (function (Gun) { 'use strict';
 
 	Gun = Gun && Gun.hasOwnProperty('default') ? Gun['default'] : Gun;
@@ -91474,7 +91498,7 @@ Gun.chain.then = function(cb) {
 	  /**
 	  * Use this to load an index that you can write to
 	  * @param {Object} gun gun instance where the index is stored (e.g. new Gun())
-	  * @param {Object} keypair SEA keypair (can be generated with await identifiLib.Key.generate())
+	  * @param {Object} keypair SEA keypair (can be generated with await irisLib.Key.generate())
 	  * @param {Object} options see default options in Index constructor's example
 	  * @returns {Promise}
 	  */
@@ -91710,8 +91734,7 @@ Gun.chain.then = function(cb) {
 	      var index = indexes[i];
 	      for (var j = 0; j < indexKeys[index].length; j++) {
 	        var key = indexKeys[index][j];
-	        console.log('adding key ' + key);
-	        await this.gun.get(index).get(key).put(id);
+	        console.log('adding to index ' + index + ' key ' + key);
 	        await this.gun.get(index).get(key).put(id);
 	      }
 	    }
@@ -92142,8 +92165,8 @@ Gun.chain.then = function(cb) {
 	        }
 	        knownIdentities.push(result);
 	      }, '');
-	      await new _Promise(function (resolve) {
-	        return setTimeout(resolve, 200);
+	      await new _Promise(function (r) {
+	        return setTimeout(r, 2000);
 	      }); // wait for results to accumulate
 	      stop = true;
 	      knownIdentities.sort(function (a, b) {
@@ -92213,7 +92236,7 @@ Gun.chain.then = function(cb) {
 	    for (var index in indexKeys) {
 	      for (var i = 0; i < indexKeys[index].length; i++) {
 	        var key = indexKeys[index][i];
-	        console.log('adding to index ' + index + ' message key ' + key);
+	        console.log('adding to index ' + index + ' key ' + key);
 	        this.gun.get(index).get(key).put(obj);
 	        this.gun.get(index).get(key).put(obj); // umm, what? doesn't work unless I write it twice
 	      }
@@ -92365,7 +92388,7 @@ Gun.chain.then = function(cb) {
 	  return Index;
 	}();
 
-	var version$1 = "0.0.89";
+	var version$1 = "0.0.91";
 
 	/*eslint no-useless-escape: "off", camelcase: "off" */
 

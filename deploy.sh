@@ -5,3 +5,4 @@ cp -R ../iris-lib/docs ../irislib.github.io/
 cd ../irislib.github.io
 git commit -a -m '.'
 git push origin master
+git push identifi master

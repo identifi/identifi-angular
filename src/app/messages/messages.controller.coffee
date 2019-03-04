@@ -1,6 +1,6 @@
 'use strict'
 # Messages controller
-angular.module('identifiAngular').controller 'MessagesController', [
+angular.module('irisAngular').controller 'MessagesController', [
   '$scope'
   '$rootScope'
   '$window'
@@ -49,14 +49,14 @@ angular.module('identifiAngular').controller 'MessagesController', [
           $scope.setPageTitle 'Message ' + hash
           $scope.setMsgRawData($scope.message)
           $scope.message.signerKeyID = $scope.message.getSignerKeyID()
-          $scope.message.verifiedBy = $scope.identifiIndex.get('keyID', $scope.message.signerKeyID)
+          $scope.message.verifiedBy = $scope.irisIndex.get('keyID', $scope.message.signerKeyID)
           $scope.setIdentityNames($scope.message.verifiedBy, true)
-          $scope.message.verifiedByAttr = new $window.identifiLib.Attribute('keyID', $scope.message.signerKeyID)
+          $scope.message.verifiedByAttr = new $window.irisLib.Attribute('keyID', $scope.message.signerKeyID)
         if hash.match /^Qm[1-9A-Za-z]{40,50}$/ # looks like an ipfs address
           $scope.ipfsGet(hash).then (res) ->
             s = JSON.parse(res.toString())
             console.log 'msg from ipfs', res, s
-            $window.identifiLib.Message.fromSig(s).then (r) ->
+            $window.irisLib.Message.fromSig(s).then (r) ->
               $scope.message = r
               $scope.message.ipfsUri = hash
               processResponse()
@@ -64,17 +64,18 @@ angular.module('identifiAngular').controller 'MessagesController', [
             console.log e
 
     load = ->
-      return unless $scope.identifiIndex
+      return unless $scope.irisIndex
       if $state.is('messages.show')
         $scope.findOne()
-    $scope.$watch 'identifiIndex', load
+    $scope.$watch 'irisIndex', load
 
-    $scope.like = (msg) ->
-      console.log 'msg liked', msg
-
-    $scope.share = (msg) ->
-      console.log 'msg shared', msg
-
-    $scope.replyTo = (msg, reply) ->
-      console.log 'msg replied to', reply, msg
+    $scope.msgUtils =
+      like: (msg) ->
+        console.log 'msg liked', msg
+        msg.liked = true
+      share: (msg) ->
+        console.log 'msg shared', msg
+        msg.shared = true
+      replyTo: (msg, reply) ->
+        console.log 'msg replied to', reply, msg
 ]

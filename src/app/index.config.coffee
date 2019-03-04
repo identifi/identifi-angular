@@ -1,4 +1,4 @@
-angular.module 'identifiAngular'
+angular.module 'irisAngular'
   .config ($logProvider) ->
     'ngInject'
     # Enable log

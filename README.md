@@ -6,10 +6,9 @@
 > Angular app that connects to the Identifi API.
 
 Available at:
-* https://identi.fi
+* https://iris.to
+* https://iris.cx
 * https://iris.github.io/
-* https://ipfs.io/ipns/identi.fi/
-* https://ipfs.io/ipns/QmaiM39ABfBEkb1ajyZ9ebfJXYgfyDNNbUaVZSwezwwoDQ/
 * [Chrome extension](https://chrome.google.com/webstore/detail/iris/oelmiikkaikgnmmjaonjlopkmpcahpgh)
 * [Firefox extension](https://addons.mozilla.org/en-US/firefox/addon/iris/)
 

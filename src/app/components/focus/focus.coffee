@@ -1,4 +1,4 @@
-angular.module 'identifiAngular'
+angular.module 'irisAngular'
 .directive 'focusOn', ->
   (scope, elem, attr) ->
     scope.$on 'focusOn', (e, name) ->
@@ -7,7 +7,7 @@ angular.module 'identifiAngular'
       return
     return
 
-angular.module 'identifiAngular'
+angular.module 'irisAngular'
 .factory 'focus', ($rootScope, $timeout) ->
   (name) ->
     $timeout ->

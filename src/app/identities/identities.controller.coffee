@@ -1,6 +1,6 @@
 'use strict'
 # Identities controller
-angular.module('identifiAngular').controller 'IdentitiesController', [
+angular.module('irisAngular').controller 'IdentitiesController', [
   '$scope'
   '$state'
   '$rootScope'
@@ -57,7 +57,7 @@ angular.module('identifiAngular').controller 'IdentitiesController', [
       else if entry.url
         linkTo = {type:'url', value: entry.url}
       else
-        linkTo = $window.identifiLib.Attribute.getUuid()
+        linkTo = $window.irisLib.Attribute.getUuid()
         entry.uuid = linkTo.value
       params =
         type: 'verification'
@@ -69,7 +69,7 @@ angular.module('identifiAngular').controller 'IdentitiesController', [
 
     $scope.guessAttributeType = ->
       if $scope.newVerification.value.length
-        $scope.newVerification.type = $window.identifiLib.Attribute.guessTypeOf($scope.newVerification.value)
+        $scope.newVerification.type = $window.irisLib.Attribute.guessTypeOf($scope.newVerification.value)
         unless $scope.newVerification.type
           unless $scope.newVerification.value.match /\`|\~|\!|\@|\#|\$|\%|\^|\&|\*|\(|\)|\+|\=|\[|\{|\]|\}|\||\\|\'|\<|\,|\.|\>|\?|\/|\""|\;|\:/
             $scope.newVerification.type = 'name'
@@ -80,8 +80,8 @@ angular.module('identifiAngular').controller 'IdentitiesController', [
       if name
         recipient = {name}
         recipient[$scope.idType] = $scope.idValue
-        $window.identifiLib.Message.createVerification({recipient}, $scope.privateKey).then (m) ->
-          $scope.identifiIndex.addMessage(m)
+        $window.irisLib.Message.createVerification({recipient}, $scope.privateKey).then (m) ->
+          $scope.irisIndex.addMessage(m)
         $scope.nameAdded = true
       else
         $scope.addingName = true
@@ -100,8 +100,8 @@ angular.module('identifiAngular').controller 'IdentitiesController', [
           (b.conf - 2 * b.ref) - (a.conf - 2 * a.ref)
         for a in $scope.attributes
           return unless a.type and a.value
-          a.attr = new $window.identifiLib.Attribute(a.type, a.value)
-          a.isCurrent = new $window.identifiLib.Attribute($scope.idType, $scope.idValue).equals(a.attr)
+          a.attr = new $window.irisLib.Attribute(a.type, a.value)
+          a.isCurrent = new $window.irisLib.Attribute($scope.idType, $scope.idValue).equals(a.attr)
           switch a.type
             when 'email'
               a.iconStyle = 'glyphicon glyphicon-envelope'
@@ -195,7 +195,7 @@ angular.module('identifiAngular').controller 'IdentitiesController', [
           if $scope.receivedIndex
             $scope.receivedIndex.searchText('', 10000, false, true).then (res) ->
               res.forEach (row) ->
-                msg = $window.identifiLib.Message.fromJws(row.value.jws)
+                msg = $window.irisLib.Message.fromJws(row.value.jws)
                 if (msg.signedData.type in ['verify_identity', 'verification', 'unverify_identity', 'unverification'])
                   msg.linkToAuthor = msg.signedData.author[0]
                   $scope.verifications.push msg
@@ -221,17 +221,17 @@ angular.module('identifiAngular').controller 'IdentitiesController', [
           id.collapse = !id.collapse
 
     $scope.getSentMsgs = ->
-      return unless $scope.identity and $scope.identifiIndex
+      return unless $scope.identity and $scope.irisIndex
       $scope.sent = []
       cursor = if $scope.sent.length then $scope.sent[$scope.sent.length - 1].cursor else ''
       resultFound = (msg) ->
         $scope.processMessages [msg], { authorIsSelf: true }
         $scope.sent.push msg
 
-      $scope.identifiIndex.getSentMsgs($scope.identity, resultFound)
+      $scope.irisIndex.getSentMsgs($scope.identity, resultFound)
 
     $scope.getReceivedMsgs = ->
-      return unless $scope.identity and $scope.identifiIndex
+      return unless $scope.identity and $scope.irisIndex
       $scope.received = []
       cursor = if $scope.received.length then $scope.received[$scope.received.length - 1].cursor else ''
       resultFound = (msg) ->
@@ -247,7 +247,7 @@ angular.module('identifiAngular').controller 'IdentitiesController', [
             $scope.thumbsDown.push msg
             $scope.hasThumbsDown = true
           $scope.received.push msg
-      $scope.identifiIndex.getReceivedMsgs($scope.identity, resultFound, undefined, cursor)
+      $scope.irisIndex.getReceivedMsgs($scope.identity, resultFound, undefined, cursor)
 
     $scope.setFilters = (filters) ->
       angular.extend $scope.filters, filters
@@ -256,8 +256,8 @@ angular.module('identifiAngular').controller 'IdentitiesController', [
       $scope.uploadFile(blob).then (files) ->
         recipient = {coverPhoto: '/ipfs/' + files[0].path}
         recipient[$scope.idType] = $scope.idValue
-        $window.identifiLib.Message.createVerification({recipient}, $scope.privateKey).then (m) ->
-          $scope.identifiIndex.addMessage(m)
+        $window.irisLib.Message.createVerification({recipient}, $scope.privateKey).then (m) ->
+          $scope.irisIndex.addMessage(m)
           $scope.uploadModal.close()
 
     $scope.openShareModal = () ->
@@ -291,22 +291,22 @@ angular.module('identifiAngular').controller 'IdentitiesController', [
       $scope.openUploadModal($scope.uploadCoverPhoto, 'Upload cover photo', false)
 
     $scope.findOne = ->
-      return unless $scope.identifiIndex
+      return unless $scope.irisIndex
       $scope.idType = $stateParams.type
       $scope.idValue = $stateParams.value
-      $scope.idAttr = new $window.identifiLib.Attribute($scope.idType, $scope.idValue)
+      $scope.idAttr = new $window.irisLib.Attribute($scope.idType, $scope.idValue)
       $scope.idUrl = $scope.getIdUrl($scope.idType, $scope.idValue)
       $scope.isCurrentUser = $scope.authentication and
         $scope.authentication.user and
         $scope.idType == $scope.authentication.user.idType and
         $scope.idValue == $scope.authentication.user.idValue
-      $scope.isUniqueType = $window.identifiLib.Attribute.isUniqueType($scope.idType)
+      $scope.isUniqueType = $window.irisLib.Attribute.isUniqueType($scope.idType)
       if !$scope.isUniqueType
         $state.go 'identities.list', { search: $scope.idValue }
         $scope.tabs[2].active = true if $scope.tabs
       if $state.is 'identities.show'
         $scope.setPageTitle $scope.idValue
-      $scope.identity = $scope.identifiIndex.get($scope.idType, $scope.idValue)
+      $scope.identity = $scope.irisIndex.get($scope.idType, $scope.idValue)
       $scope.setIdentityNames($scope.identity, false, true)
       $scope.identity.gun.on (data) ->
         $scope.identity.data = data
@@ -317,14 +317,14 @@ angular.module('identifiAngular').controller 'IdentitiesController', [
         $scope.scores = scores
 
     load = ->
-      if $scope.identifiIndex
+      if $scope.irisIndex
         if $state.is 'identities.show'
           $scope.findOne()
 
         if $state.is 'identities.create'
           focus('idNameFocus')
           $scope.newEntry.name = $scope.capitalizeWords($scope.query.term)
-    $scope.$watch 'identifiIndex', load
+    $scope.$watch 'irisIndex', load
 
     $scope.qrScanSuccess = (data) ->
       a = data.split('/')

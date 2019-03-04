@@ -1,4 +1,4 @@
-angular.module 'identifiAngular'
+angular.module 'irisAngular'
   .config ($stateProvider, $urlRouterProvider, $locationProvider) ->
     'ngInject'
     $locationProvider.hashPrefix('')

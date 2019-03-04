@@ -1,4 +1,4 @@
-angular.module 'identifiAngular'
+angular.module 'irisAngular'
   .run ($log, $rootScope, $state, $stateParams, $window, localStorageService) ->
     'ngInject'
     $log.debug 'runBlock end'

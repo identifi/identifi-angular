@@ -9,7 +9,6 @@ var browserSyncSpa = require('browser-sync-spa');
 
 var util = require('util');
 
-var proxyMiddleware = require('http-proxy-middleware');
 const IDENTIFI_API_URL = process.env.IDENTIFI_API_URL || 'https://identi.fi';
 const IPFS_GATEWAY_URL = process.env.IPFS_GATEWAY_URL || 'https://identi.fi';
 
@@ -27,18 +26,6 @@ function browserSyncInit(baseDir, browser) {
     baseDir: baseDir,
     routes: routes
   };
-
-  /*
-   * You can add a proxy to your backend by uncommenting the line below.
-   * You just have to configure a context which will we redirected and the target url.
-   * Example: $http.get('/users') requests will be automatically proxified.
-   *
-   * For more details and option, https://github.com/chimurai/http-proxy-middleware/blob/v0.9.0/README.md
-   */
-  var apiProxy = proxyMiddleware('/api', {target: IDENTIFI_API_URL, changeOrigin: true});
-  var ipfsProxy = proxyMiddleware('/ipfs', {target: IPFS_GATEWAY_URL, changeOrigin: true});
-  var ipnsProxy = proxyMiddleware('/ipns', {target: IPFS_GATEWAY_URL, changeOrigin: true});
-  server.middleware = [apiProxy, ipfsProxy, ipnsProxy];
 
   browserSync.instance = browserSync.init({
     startPath: '/',

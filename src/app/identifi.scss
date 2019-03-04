@@ -1343,7 +1343,7 @@ a {
   color: #A94442;
 }
 
-.jumbotron .identifi-search {
+.jumbotron .iris-search {
   margin-top: 20px;
 }
 
@@ -1554,7 +1554,7 @@ a {
   .jumbotron {
     h1 { margin-top: 0; margin-bottom: 20px; font-size: 1.5em; }
     p { font-size: 1em; }
-    .identifi-search { margin-top: 0 }
+    .iris-search { margin-top: 0 }
   }
   .rating-slider .slider {
     width: 100%;
@@ -1647,4 +1647,11 @@ a {
   color: inherit;
   margin-left: 45px;
   padding: 15px;
+  &.active {
+    color: #23527c;
+  }
+}
+
+.disabled a:hover {
+  color: inherit;
 }

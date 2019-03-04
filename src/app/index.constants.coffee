@@ -1,4 +1,4 @@
-angular.module('identifiAngular')
+angular.module('irisAngular')
   .constant 'config',
     defaultFilters:
       type: null

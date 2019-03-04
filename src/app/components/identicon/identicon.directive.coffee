@@ -1,5 +1,5 @@
 # coffeelint: disable=max_line_length
-angular.module 'identifiAngular'
+angular.module 'irisAngular'
   .directive 'identicon', ->
     scope:
       identity: '='

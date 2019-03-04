@@ -262,7 +262,7 @@
                     </ul>
                   </div>
                 </div>
-                <message ipfs="ipfs" msg="msg" page-info="identity" ng-repeat="msg in received | filter:msgFilter | orderBy:'signedData.timestamp' : true as receivedFiltered" ng-click="openMessage($event, msg, 'lg')"></message>
+                <message ipfs="ipfs" msg-utils="msgUtils" msg="msg" page-info="identity" ng-repeat="msg in received | filter:msgFilter | orderBy:'signedData.timestamp' : true as receivedFiltered" ng-click="openMessage($event, msg, 'lg')"></message>
               </div>
               <div ng-if="!isCurrentUser && receivedFiltered.length == 0" class="alert alert-info text-center">No messages yet</div>
             </uib-tab>
@@ -288,7 +288,7 @@
                     </ul>
                   </div>
                 </div>
-                <message ipfs="ipfs" msg="msg" page-info="identity" ng-repeat="msg in sent | filter:msgFilter | orderBy:'signedData.timestamp' : true as sentFiltered" ng-click="openMessage($event, msg, 'lg')"></message>
+                <message ipfs="ipfs" msg-utils="msgUtils" msg="msg" page-info="identity" ng-repeat="msg in sent | filter:msgFilter | orderBy:'signedData.timestamp' : true as sentFiltered" ng-click="openMessage($event, msg, 'lg')"></message>
               </div>
               <div ng-if="sentFiltered.length == 0" class="alert alert-info text-center">No messages yet</div>
             </uib-tab>

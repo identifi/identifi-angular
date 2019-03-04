@@ -1,26 +1,26 @@
-angular.module 'identifiAngular',
+angular.module 'irisAngular',
   ['ngAnimate', 'ngCookies', 'ngTouch', 'ngSanitize', 'ngMessages',
   'ngAria', 'ngResource', 'ui.router', 'ui.bootstrap', 'angular-parallax',
   'infinite-scroll', 'LocalStorageModule', 'rzModule', 'angular-clipboard',
   'monospaced.qrcode', 'ngFileUpload', 'qrScanner', 'hm.readmore']
 
-angular.module('identifiAngular').filter 'escape', [ ->
+angular.module('irisAngular').filter 'escape', [ ->
   (input) ->
     encodeURIComponent encodeURIComponent(input)
  ]
-angular.module('identifiAngular').filter 'encodeURIComponent', [ ->
+angular.module('irisAngular').filter 'encodeURIComponent', [ ->
   (input) ->
     encodeURIComponent input
  ]
 
-angular.module('identifiAngular').filter 'highlight', ($sce) ->
+angular.module('irisAngular').filter 'highlight', ($sce) ->
   (text, phrase) ->
     if typeof text == 'string' and phrase
       text = text.replace(new RegExp('(' + phrase + ')', 'gi'), '<b>$1</b>')
       return $sce.trustAsHtml text.toString()
     return text
 
-angular.module('identifiAngular').filter 'ordinal', ->
+angular.module('irisAngular').filter 'ordinal', ->
   (input) ->
     s = [
       'th'

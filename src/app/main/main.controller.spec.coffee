@@ -1,7 +1,7 @@
 describe 'controllers', () ->
   vm = undefined
 
-  beforeEach module 'identifiAngular'
+  beforeEach module 'irisAngular'
 
   beforeEach inject ($controller, webDevTec) ->
     spyOn(webDevTec, 'getTec').and.returnValue [{}, {}, {}, {}, {}]

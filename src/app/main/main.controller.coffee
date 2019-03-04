@@ -1,5 +1,5 @@
 'use strict'
-angular.module('identifiAngular').controller 'MainController', [
+angular.module('irisAngular').controller 'MainController', [
   '$scope'
   '$rootScope'
   '$location'
@@ -52,7 +52,7 @@ angular.module('identifiAngular').controller 'MainController', [
     $scope.ipfs = new Ipfs(
       init: true
       start: true
-      repo: 'ipfs7-identifi'
+      repo: 'ipfs7-iris'
     )
 
     $scope.capitalizeWords = (s) ->
@@ -65,7 +65,7 @@ angular.module('identifiAngular').controller 'MainController', [
       clipboard.copyText text
 
     $scope.search = (query, limit) ->
-      return unless $scope.identifiIndex
+      return unless $scope.irisIndex
       $scope.ids.activeKey = -1
       $scope.ids.list = []
       searchKey = (query or $scope.query.term or '').toLowerCase().trim()
@@ -91,7 +91,7 @@ angular.module('identifiAngular').controller 'MainController', [
               i.linkTo = linkTo
         $scope.setIdentityNames(i, true)
 
-      $scope.identifiIndex.search(searchKey, undefined, resultFound, limit)
+      $scope.irisIndex.search(searchKey, undefined, resultFound, limit)
       return new Promise (resolve) -> # TODO: uib-typeahead is limited, but something better pls
         setTimeout ->
           resolve($scope.ids.list)
@@ -101,45 +101,45 @@ angular.module('identifiAngular').controller 'MainController', [
       $scope.ids.list = []
       $scope.msgs.list = []
       $scope.msgs.seen = {}
-      $scope.identifiIndex = results
+      $scope.irisIndex = results
       setTimeout () ->
         $scope.$broadcast('rzSliderForceRender')
       , 1000
       setTimeout () ->
         $scope.$broadcast('rzSliderForceRender')
       , 3000 # :---D
-      console.log 'Got index', $scope.identifiIndex
-      $scope.viewpoint.identity = $scope.identifiIndex.get($scope.viewpoint.type, $scope.viewpoint.value)
+      console.log 'Got index', $scope.irisIndex
+      $scope.viewpoint.identity = $scope.irisIndex.get($scope.viewpoint.type, $scope.viewpoint.value)
       $scope.viewpoint.identity.gun.get('attrs').open (attrs) ->
         $scope.viewpoint.attrs = attrs
-        $scope.viewpoint.mostVerifiedAttributes = $window.identifiLib.Identity.getMostVerifiedAttributes(attrs)
+        $scope.viewpoint.mostVerifiedAttributes = $window.irisLib.Identity.getMostVerifiedAttributes(attrs)
 
     $scope.loadDefaultIndex = ->
-      $scope.identifiIndex = null
+      $scope.irisIndex = null
       $scope.viewpoint = {type: 'keyID', value: $scope.defaultIndexKeyID}
-      setIndex new $window.identifiLib.Index($scope.gun.user($scope.defaultIndexKeyID).get('identifi'), {ipfs: $scope.ipfs})
+      setIndex new $window.irisLib.Index($scope.gun.user($scope.defaultIndexKeyID).get('identifi'), {ipfs: $scope.ipfs})
 
     $scope.loginWithKey = (privateKeySerialized, self) ->
-      $scope.identifiIndex = null
+      $scope.irisIndex = null
       $scope.loggingIn = true
-      $scope.privateKey = $window.identifiLib.Key.fromJwk(privateKeySerialized)
-      localStorageService.set('identifiKey', privateKeySerialized)
+      $scope.privateKey = $window.irisLib.Key.fromJwk(privateKeySerialized)
+      localStorageService.set('irisKey', privateKeySerialized)
       $scope.authentication.user =
         idType: 'keyID'
-        idValue: $window.identifiLib.Key.getId($scope.privateKey)
+        idValue: $window.irisLib.Key.getId($scope.privateKey)
       $scope.authentication.user.url = $scope.getIdUrl 'keyID', $scope.authentication.user.idValue
       $scope.loginModal.close() if $scope.loginModal
-      keyID = $window.identifiLib.Key.getId($scope.privateKey)
+      keyID = $window.irisLib.Key.getId($scope.privateKey)
       $scope.viewpoint = {type: 'keyID', value: keyID}
       $scope.ids.list = []
       $scope.msgs.list = []
       $scope.msgs.seen = {}
-      $window.identifiLib.Index.create($scope.gun, $scope.privateKey, {self, ipfs: $scope.ipfs}).then (i) ->
+      $window.irisLib.Index.create($scope.gun, $scope.privateKey, {self, ipfs: $scope.ipfs}).then (i) ->
         setIndex(i)
         $scope.loggingIn = false
-        $scope.authentication.identity = $scope.identifiIndex.get('keyID', keyID)
+        $scope.authentication.identity = $scope.irisIndex.get('keyID', keyID)
         $scope.authentication.identity.gun.get('attrs').open (val, key, msg, eve) ->
-          mva = $window.identifiLib.Identity.getMostVerifiedAttributes(val)
+          mva = $window.irisLib.Identity.getMostVerifiedAttributes(val)
           $scope.authentication.identity.mva = mva
           eve.off() if mva.profilePhoto
         $scope.authentication.identity.gun.on (data) ->
@@ -151,7 +151,7 @@ angular.module('identifiAngular').controller 'MainController', [
         console.error(e)
         $scope.loggingIn = false
 
-    privateKey = localStorageService.get('identifiKey')
+    privateKey = localStorageService.get('irisKey') or localStorageService.get('identifiKey')
     if privateKey
       $scope.loginWithKey(privateKey)
     else
@@ -189,9 +189,9 @@ angular.module('identifiAngular').controller 'MainController', [
         else
           recipient.keyID = $scope.authentication.user.idValue
           $scope.closeProfileUploadNotification()
-        $window.identifiLib.Message.createVerification({recipient}, $scope.privateKey).then (m) ->
+        $window.irisLib.Message.createVerification({recipient}, $scope.privateKey).then (m) ->
           $scope.hideProfilePhoto = true # There's a weird bug where the profile identicon doesn't update
-          $scope.identifiIndex.addMessage(m).then ->
+          $scope.irisIndex.addMessage(m).then ->
             $scope.hideProfilePhoto = false
             if !$state.is 'identities.show'
               $state.go 'identities.show', { type: $scope.authentication.user.idType, value: $scope.authentication.user.idValue }
@@ -202,7 +202,7 @@ angular.module('identifiAngular').controller 'MainController', [
       if (title)
         $rootScope.pageTitle += ' - ' + title
 
-    $scope.ipfsGet = (uri, options) ->
+    $scope.ipfsGet = (uri, options = {}) ->
       return new Promise (resolve) ->
         go = ->
           $scope.ipfs.cat(uri).then (file) ->
@@ -275,15 +275,15 @@ angular.module('identifiAngular').controller 'MainController', [
         if msg.type == 'rating'
           msg.maxRating |= 3
           msg.minRating |= -3
-          message = $window.identifiLib.Message.createRating(msg, $scope.privateKey)
+          message = $window.irisLib.Message.createRating(msg, $scope.privateKey)
         else if msg.type == 'verification'
-          message = $window.identifiLib.Message.createVerification(msg, $scope.privateKey)
+          message = $window.irisLib.Message.createVerification(msg, $scope.privateKey)
         else
-          message = $window.identifiLib.Message.create(msg, $scope.privateKey)
+          message = $window.irisLib.Message.create(msg, $scope.privateKey)
         options = {}
 
         message.then (m) ->
-          $scope.identifiIndex.addMessage(m)
+          $scope.irisIndex.addMessage(m)
           $scope.msgs.seen[m.getHash()] = true
           $scope.processMessages([m])
         .then (messages) ->
@@ -369,10 +369,10 @@ angular.module('identifiAngular').controller 'MainController', [
         $scope.processMessages [msg]
         $scope.$apply ->
           $scope.msgs.list.push msg
-      $scope.identifiIndex.getMessagesByTimestamp(resultFound, limit)
+      $scope.irisIndex.getMessagesByTimestamp(resultFound, limit)
 
-    $scope.$watch 'identifiIndex', ->
-      return unless $scope.identifiIndex
+    $scope.$watch 'irisIndex', ->
+      return unless $scope.irisIndex
       $scope.loadMsgs()
       $scope.search()
 
@@ -394,11 +394,11 @@ angular.module('identifiAngular').controller 'MainController', [
       name = name.trim()
       $scope.creatingUser = true
       self = {name}
-      $window.identifiLib.Key.generate()
+      $window.irisLib.Key.generate()
       .then (key) ->
         $scope.privateKey = key
-        $scope.privateKeySerialized = $window.identifiLib.Key.toJwk($scope.privateKey)
-        self.keyID = $window.identifiLib.Key.getId($scope.privateKey)
+        $scope.privateKeySerialized = $window.irisLib.Key.toJwk($scope.privateKey)
+        self.keyID = $window.irisLib.Key.getId($scope.privateKey)
         $scope.loginWithKey($scope.privateKeySerialized, self)
       .then (msg) ->
         $scope.creatingUser = false
@@ -407,10 +407,10 @@ angular.module('identifiAngular').controller 'MainController', [
         $scope.creatingUser = false
 
     $scope.generateKey = ->
-      $window.identifiLib.Key.generate().then (key) ->
+      $window.irisLib.Key.generate().then (key) ->
         $scope.$apply ->
           $scope.privateKey = key
-          $scope.privateKeySerialized = $window.identifiLib.Key.toJwk($scope.privateKey)
+          $scope.privateKeySerialized = $window.irisLib.Key.toJwk($scope.privateKey)
 
     $scope.download = (filename, data, type, charset = 'utf-8') ->
       hiddenElement = document.createElement('a')
@@ -420,7 +420,7 @@ angular.module('identifiAngular').controller 'MainController', [
       hiddenElement.click()
 
     $scope.downloadText = (text) ->
-      $scope.download('identifi_private_key.txt', text, 'text/csv', 'utf-8')
+      $scope.download('iris_private_key.txt', text, 'text/csv', 'utf-8')
 
     $scope.openLogoutModal = ->
       $scope.logoutModal = $uibModal.open(
@@ -494,16 +494,16 @@ angular.module('identifiAngular').controller 'MainController', [
       $scope.setMsgRawData(message)
       $scope.message = message
       # TODO: check sig
-      $scope.message.recipient = $scope.message.getRecipient($scope.identifiIndex)
+      $scope.message.recipient = $scope.message.getRecipient($scope.irisIndex)
       $scope.message.recipient.gun.get('attrs').open (d) ->
-        mva = $window.identifiLib.Identity.getMostVerifiedAttributes(d)
+        mva = $window.irisLib.Identity.getMostVerifiedAttributes(d)
         if mva.name
           $scope.$apply -> $scope.message.recipient_name = mva.name.attribute.value
         else if mva.nickname
           $scope.$apply -> $scope.message.recipient_name = mva.nickname.attribute.value
       $scope.message.signerKeyID = $scope.message.getSignerKeyID()
-      $scope.message.verifiedBy = $scope.identifiIndex.get('keyID', $scope.message.signerKeyID)
-      $scope.message.verifiedByAttr = new $window.identifiLib.Attribute('keyID', $scope.message.signerKeyID)
+      $scope.message.verifiedBy = $scope.irisIndex.get('keyID', $scope.message.signerKeyID)
+      $scope.message.verifiedByAttr = new $window.irisLib.Attribute('keyID', $scope.message.signerKeyID)
       $scope.messageModal = $uibModal.open(
         animation: $scope.animationsEnabled
         templateUrl: 'app/messages/show.modal.html'
@@ -526,17 +526,17 @@ angular.module('identifiAngular').controller 'MainController', [
 
     $scope.processMessages = (messages, msgOptions) ->
       processMessage = (msg) ->
-        msg.author = msg.getAuthor($scope.identifiIndex)
+        msg.author = msg.getAuthor($scope.irisIndex)
         msg.author.gun.get('trustDistance').on (d) -> msg.authorTrustDistance = d
         msg.author.gun.get('attrs').open (d) ->
-          mva = $window.identifiLib.Identity.getMostVerifiedAttributes(d)
+          mva = $window.irisLib.Identity.getMostVerifiedAttributes(d)
           if mva.name
             $scope.$apply -> msg.author_name = mva.name.attribute.value
           else if mva.nickname
             $scope.$apply -> msg.author_name = mva.nickname.attribute.value
-        msg.recipient = msg.getRecipient($scope.identifiIndex)
+        msg.recipient = msg.getRecipient($scope.irisIndex)
         msg.recipient.gun.get('attrs').open (d) ->
-          mva = $window.identifiLib.Identity.getMostVerifiedAttributes(d)
+          mva = $window.irisLib.Identity.getMostVerifiedAttributes(d)
           if mva.name
             $scope.$apply -> msg.recipient_name = mva.name.attribute.value
           else if mva.nickname
@@ -559,7 +559,7 @@ angular.module('identifiAngular').controller 'MainController', [
           msg.authorArray = msg.getAuthorArray()
           for a in msg.authorArray
             msg.linkToAuthor = a unless msg.linkToAuthor
-            index = Object.keys($window.identifiLib.Attribute.getUniqueIdValidators()).indexOf(a.type)
+            index = Object.keys($window.irisLib.Attribute.getUniqueIdValidators()).indexOf(a.type)
             if index > -1 and index < smallestIndex
               smallestIndex = index
               msg.linkToAuthor = a
@@ -571,7 +571,7 @@ angular.module('identifiAngular').controller 'MainController', [
           msg.recipientArray = msg.getRecipientArray()
           for a in msg.recipientArray
             msg.linkToRecipient = a unless msg.linkToAuthor
-            index = Object.keys($window.identifiLib.Attribute.getUniqueIdValidators()).indexOf(a.type)
+            index = Object.keys($window.irisLib.Attribute.getUniqueIdValidators()).indexOf(a.type)
             if index > -1 and index < smallestIndex
               smallestIndex = index
               msg.linkToRecipient = a
@@ -650,7 +650,7 @@ angular.module('identifiAngular').controller 'MainController', [
       i.verified = false
       i.gun.get('attrs').open (attrs) ->
         $scope.$apply ->
-          mva = $window.identifiLib.Identity.getMostVerifiedAttributes(attrs)
+          mva = $window.irisLib.Identity.getMostVerifiedAttributes(attrs)
           if mva.name
             i.primaryName = mva.name.attribute.value
             i.hasProperName = true

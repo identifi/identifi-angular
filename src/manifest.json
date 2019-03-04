@@ -1,6 +1,6 @@
 {
   "manifest_version": 2,
-  "name": "identifi",
+  "name": "iris",
   "description": "A social networking application that stores everything on its users' devices which communicate directly with each other.",
   "version": "1.22.38",
   "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
