@@ -1647,8 +1647,12 @@ a {
   color: inherit;
   margin-left: 45px;
   padding: 15px;
+  text-decoration: none;
   &.active {
     color: #23527c;
+  }
+  &:hover, &:focus, &:active {
+    text-decoration: none;
   }
 }
 

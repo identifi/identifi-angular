@@ -72,10 +72,20 @@ angular.module('irisAngular').controller 'MessagesController', [
     $scope.msgUtils =
       like: (msg) ->
         console.log 'msg liked', msg
-        msg.liked = true
+        if msg.liked
+          msg.liked = false
+          msg.likes = if msg.likes then msg.likes - 1 else 0
+        else
+          msg.liked = true
+          msg.likes = if msg.likes then msg.likes + 1 else 1
       share: (msg) ->
         console.log 'msg shared', msg
-        msg.shared = true
+        if msg.shared
+          msg.shared = false
+          msg.shares = if msg.shares then msg.shares - 1 else 0
+        else
+          msg.shared = true
+          msg.shares = if msg.shares then msg.shares + 1 else 1
       replyTo: (msg, reply) ->
         console.log 'msg replied to', reply, msg
 ]
