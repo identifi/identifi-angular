@@ -1,17 +1,17 @@
-# identifi-angular
+# iris-angular
 
-[![Travis](https://img.shields.io/travis/identifi/identifi-angular/master.svg?style=flat-square)](https://travis-ci.org/identifi/identifi-angular)
-[![David](https://img.shields.io/david/identifi/identifi-angular.svg?style=flat-square)](https://david-dm.org/identifi/identifi-angular)
+[![Travis](https://img.shields.io/travis/irislib/iris-angular/master.svg?style=flat-square)](https://travis-ci.org/irislib/iris-angular)
+[![David](https://img.shields.io/david/irislib/iris-angular.svg?style=flat-square)](https://david-dm.org/irislib/iris-angular)
 
 > Angular app that connects to the Identifi API.
 
 Available at:
 * https://identi.fi
-* https://identifi.github.io/
+* https://iris.github.io/
 * https://ipfs.io/ipns/identi.fi/
 * https://ipfs.io/ipns/QmaiM39ABfBEkb1ajyZ9ebfJXYgfyDNNbUaVZSwezwwoDQ/
-* [Chrome extension](https://chrome.google.com/webstore/detail/identifi/oelmiikkaikgnmmjaonjlopkmpcahpgh)
-* [Firefox extension](https://addons.mozilla.org/en-US/firefox/addon/identifi/)
+* [Chrome extension](https://chrome.google.com/webstore/detail/iris/oelmiikkaikgnmmjaonjlopkmpcahpgh)
+* [Firefox extension](https://addons.mozilla.org/en-US/firefox/addon/iris/)
 
 ## Development
 ### Requirements
@@ -19,8 +19,8 @@ Node >= 10, yarn (or npm)
 
 ### Get started
 ```
-git clone https://github.com/identifi/identifi-angular.git
-cd identifi-angular
+git clone https://github.com/irislib/iris-angular.git
+cd iris-angular
 ```
 
 ### Install dependencies & build
