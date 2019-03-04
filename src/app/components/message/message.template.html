@@ -48,17 +48,17 @@
     hm-more-text="Show more"
     hm-less-text="Show less"></p>
 
-    <span class="pull-right" ng-if="$ctrl.msg.signedData.type == 'post'">
-      <a class="msg-reaction" href="" ng-click="$ctrl.msg.showCommentField = !$ctrl.msg.showCommentField"><i class="glyphicon glyphicon-comment"></i></a>
-      <a class="msg-reaction" ng-class="{active: $ctrl.msg.shared}" href="" ng-click="$ctrl.msgUtils.share($ctrl.msg)"><b ng-if="$ctrl.msg.shares">{{$ctrl.msg.shares}} </b><i class="glyphicon glyphicon-retweet"></i></a>
-      <a class="msg-reaction" ng-class="{active: $ctrl.msg.liked}" href="" ng-click="$ctrl.msgUtils.like($ctrl.msg)"><b ng-if="$ctrl.msg.likes">{{$ctrl.msg.likes}} </b><i class="glyphicon" ng-class="{'glyphicon-heart-empty': !$ctrl.msg.liked, 'glyphicon-heart': $ctrl.msg.liked,}"></i></a>
-    </span>
-
     <form class="form-inline" ng-submit="$ctrl.msgUtils.replyTo($ctrl.msg, reply)" ng-show="$ctrl.msg.showCommentField">
       <div class="form-group">
         <input focus-on="addNameFocus" type="text" class="form-control" ng-model="reply" placeholder="Write a reply">
       </div>
       <button type="submit" class="btn btn-primary">Post</button>
     </form>
+
+    <span class="pull-right" ng-if="$ctrl.msg.signedData.type == 'post'">
+      <a class="msg-reaction" href="" ng-click="$ctrl.msg.showCommentField = !$ctrl.msg.showCommentField"><i class="glyphicon glyphicon-comment"></i></a>
+      <a class="msg-reaction" ng-class="{active: $ctrl.msg.shared}" href="" ng-click="$ctrl.msgUtils.share($ctrl.msg)"><b ng-if="$ctrl.msg.shares">{{$ctrl.msg.shares}} </b><i class="glyphicon glyphicon-retweet"></i></a>
+      <a class="msg-reaction" ng-class="{active: $ctrl.msg.liked}" href="" ng-click="$ctrl.msgUtils.like($ctrl.msg)"><b ng-if="$ctrl.msg.likes">{{$ctrl.msg.likes}} </b><i class="glyphicon" ng-class="{'glyphicon-heart-empty': !$ctrl.msg.liked, 'glyphicon-heart': $ctrl.msg.liked,}"></i></a>
+    </span>
   </div>
 </div>
