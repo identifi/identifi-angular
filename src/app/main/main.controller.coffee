@@ -34,7 +34,7 @@ angular.module('irisAngular').controller 'MainController', [
       if $window.location.hostname.indexOf('.') > -1 # differentiate between localhost / chrome plugin uri and DNS name
         return $state.href('identities.show', {type, value}, {absolute: true}) + '?share'
       else
-        return 'https://identi.fi/' + $state.href('identities.show', {type, value}) + '?share'
+        return 'https://iris.to/' + $state.href('identities.show', {type, value}) + '?share'
 
     $scope.getIdKey = (id) ->
       return encodeURIComponent(id.type) + ':' + encodeURIComponent(id.value)
