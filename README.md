@@ -10,7 +10,7 @@ Available at:
 * https://iris.cx
 * https://iris.github.io/
 * [Chrome extension](https://chrome.google.com/webstore/detail/iris/oelmiikkaikgnmmjaonjlopkmpcahpgh)
-* [Firefox extension](https://addons.mozilla.org/en-US/firefox/addon/iris/)
+* [Firefox extension](https://addons.mozilla.org/en-US/firefox/addon/irisapp/)
 
 ## Development
 ### Requirements
