@@ -236,7 +236,11 @@
                         <span class="visible-xs pull-left write-msg-icons">
                           <span ng-repeat="i in iconCount(newMessage.rating) track by $index" class="write-msg-icon glyphicon glyphicon-thumbs-up mar-left5" ng-class="[iconStyle(newMessage.rating), iconClass(newMessage.rating)]"></span>
                         </span>
-                        <button ng-disabled="addingMessage" type="submit" class="pull-right btn btn-primary" data-style="zoom-out"><span><span class="fa fa-edit"></span> Publish</span><span></span></button>
+                        <button ng-disabled="addingMessage" type="submit" class="pull-right btn btn-primary" data-style="zoom-out">
+                          <span ng-show="newMessage.rating == 0">Neutral</span>
+                          <span ng-show="newMessage.rating > 0">Upvote</span>
+                          <span ng-show="newMessage.rating < 0">Downvote</span>
+                        </button>
                       </div>
                     </div>
                   </form>

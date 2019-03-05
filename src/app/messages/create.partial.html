@@ -33,7 +33,7 @@ ngf-multiple="true"
 
       <div class="row">
         <div class="col-xs-12">
-          <button ng-disabled="addingMessage || loggingIn || !authentication.user || !(newMessage.comment || newMessage.files.length)" type="submit" class="btn btn-primary" data-style="zoom-out"><span><span class="fa fa-edit"></span> Publish</span><span></span></button>
+          <button ng-disabled="addingMessage || loggingIn || !authentication.user || !(newMessage.comment || newMessage.files.length)" type="submit" class="btn btn-primary" data-style="zoom-out">Publish</button>
           <button ngf-select ng-model="newMessage.files" ngf-multiple="true" href="" ng-disabled="addingMessage || loggingIn || !authentication.user" class="btn btn-default pull-right" data-style="zoom-out"><span class="fa fa-paperclip"></span> Add files</button>
         </div>
       </div>
