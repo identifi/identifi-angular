@@ -24,7 +24,7 @@
         <div ng-include="'app/messages/create.partial.html'"></div>
         <div class="visible-xs visible-sm" ng-include="'app/messages/filters.partial.html'"></div>
         <div ng-init="filters.maxDistance = 0;filters.limit = 10" infinite-scroll="filters.limit = filters.limit + 1" infinite-scroll-distance="1" infinite-scroll-disabled="!msgs || !msgs.list || msgs.list.length < filters.limit || !irisIndex">
-          <message ng-repeat="msg in msgs.list | filter:msgFilter | orderBy:'signedData.timestamp' : true | limitTo:filters.limit as filteredMsgs track by msg.hash" msg-utils="msgUtils" ipfs="ipfs" msg="msg" ng-click="openMessage($event, msg, 'lg')"></message>
+          <message auth="authentication" ng-repeat="msg in msgs.list | filter:msgFilter | orderBy:'signedData.timestamp' : true | limitTo:filters.limit as filteredMsgs track by msg.hash" msg-utils="msgUtils" ipfs="ipfs" msg="msg" ng-click="openMessage($event, msg, 'lg')"></message>
         </div>
         <div class="alert alert-info text-center" ng-if="!filteredMsgs.length">
           No messages yet
