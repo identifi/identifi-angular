@@ -222,7 +222,7 @@
                 <div class="panel-body" id="write-feedback">
                   <form ng-controller="MessagesController" ng-submit="createMessage($event, { type: 'rating', rating: newMessage.rating, comment: newMessage.comment })">
                     <div class="form-group">
-                      <textarea name="comment" class="form-control" id="comment" ng-model="newMessage.comment" ng-disabled="addingMessage" placeholder="Write feedback"></textarea>
+                      <textarea name="comment" class="form-control" id="comment" ng-model="newMessage.comment" ng-disabled="addingMessage" placeholder="Comment (optional)"></textarea>
                     </div>
 
                     <div class="row">
