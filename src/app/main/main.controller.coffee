@@ -144,6 +144,19 @@ angular.module('irisAngular').controller 'MainController', [
           mva = $window.irisLib.Identity.getMostVerifiedAttributes(val)
           $scope.authentication.identity.mva = mva
           eve.off() if mva.profilePhoto
+        startAt = new Date()
+        $scope.authentication.identity.gun.get('received').map().once (m) ->
+          return if m.pubKey == $scope.viewpoint.value
+          $window.irisLib.Message.fromSig(m).then (msg) ->
+            if new Date(msg.signedData.timestamp) > startAt
+              author = msg.getAuthor($scope.irisIndex)
+              $scope.setIdentityNames(author).then (name) ->
+                uiNotification.primary
+                  message: "<a href=\"/#/contacts/keyID/#{$scope.viewpoint.value}\">#{name} sent you a message!</a>"
+                  positionX: 'right'
+                  positionY: 'bottom'
+                  delay: 10000
+                  replaceMessage: true
         $scope.authentication.identity.gun.on (data) ->
           if data.receivedPositive and $scope.authentication.identity.data and not $scope.authentication.identity.data.receivedPositive
             console.log 'great, you got your first upvote!'
@@ -504,12 +517,6 @@ angular.module('irisAngular').controller 'MainController', [
         else
           msg.liked = true
           msg.likes = if msg.likes then msg.likes + 1 else 1
-          uiNotification.success
-            message: 'msg liked!'
-            positionX: 'right'
-            positionY: 'bottom'
-            delay: 10000
-            replaceMessage: true
       share: (msg) ->
         if msg.shared
           msg.shared = false
@@ -680,26 +687,28 @@ angular.module('irisAngular').controller 'MainController', [
 
     $scope.setIdentityNames = (i, htmlSafe, setTitle) ->
       i.verified = false
-      i.gun.get('attrs').open (attrs) ->
-        $scope.$apply ->
-          mva = $window.irisLib.Identity.getMostVerifiedAttributes(attrs)
-          if mva.name
-            i.primaryName = mva.name.attribute.value
-            i.hasProperName = true
-            i.verified = true if mva.name.verified
-          else if mva.nickname
-            i.primaryName = mva.nickname.attribute.value
-            i.hasProperName = true
-          else
-            a = Object.values(attrs)[0]
-            i.primaryName = a.value
-            i.primaryName = i.primaryName.slice(0,6) + '...' if a.type in ['keyID', 'uuid']
-          if i.primaryName
-            if mva.nickname and mva.nickname.attribute.value != i.primaryName
-              i.nickname = mva.nickname.attribute.value
-              i.nickname = i.nickname.replace('<', '&lt;') if htmlSafe
-            i.primaryName = i.primaryName.replace('<', '&lt;') if htmlSafe
-          $scope.setPageTitle i.primaryName if setTitle
+      return new Promise (resolve) ->
+        i.gun.get('attrs').open (attrs) ->
+          $scope.$apply ->
+            mva = $window.irisLib.Identity.getMostVerifiedAttributes(attrs)
+            if mva.name
+              i.primaryName = mva.name.attribute.value
+              i.hasProperName = true
+              i.verified = true if mva.name.verified
+            else if mva.nickname
+              i.primaryName = mva.nickname.attribute.value
+              i.hasProperName = true
+            else
+              a = Object.values(attrs)[0]
+              i.primaryName = a.value
+              i.primaryName = i.primaryName.slice(0,6) + '...' if a.type in ['keyID', 'uuid']
+            if i.primaryName
+              if mva.nickname and mva.nickname.attribute.value != i.primaryName
+                i.nickname = mva.nickname.attribute.value
+                i.nickname = i.nickname.replace('<', '&lt;') if htmlSafe
+              i.primaryName = i.primaryName.replace('<', '&lt;') if htmlSafe
+            $scope.setPageTitle i.primaryName if setTitle
+            resolve i.primaryName
 
     $scope.searchKeydown = (event) ->
       switch (if event then event.which else -1)
