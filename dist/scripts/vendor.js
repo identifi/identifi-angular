@@ -54778,15 +54778,15 @@ angular.module('ngResource', ['ng']).
  *         This causes it to be incompatible with plugins that depend on @uirouter/core.
  *         We recommend switching to the ui-router-core.js and ui-router-angularjs.js bundles instead.
  *         For more information, see https://ui-router.github.io/blog/uirouter-for-angularjs-umd-bundles
- * @version v1.0.22
+ * @version v1.0.20
  * @link https://ui-router.github.io
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('angular')) :
     typeof define === 'function' && define.amd ? define(['exports', 'angular'], factory) :
-    (global = global || self, factory(global['@uirouter/angularjs'] = {}, global.angular));
-}(this, function (exports, ng_from_import) { 'use strict';
+    (factory((global['@uirouter/angularjs'] = {}),global.angular));
+}(this, (function (exports,ng_from_import) { 'use strict';
 
     /** @publicapi @module ng1 */ /** */
     /** @hidden */ var ng_from_global = angular;
@@ -56980,9 +56980,7 @@ angular.module('ngResource', ['ng']).
          */
         PathUtils.applyViewConfigs = function ($view, path, states) {
             // Only apply the viewConfigs to the nodes for the given states
-            path
-                .filter(function (node) { return inArray(states, node.state); })
-                .forEach(function (node) {
+            path.filter(function (node) { return inArray(states, node.state); }).forEach(function (node) {
                 var viewDecls = values(node.state.views || {});
                 var subPath = PathUtils.subPath(path, function (n) { return n === node; });
                 var viewConfigs = viewDecls.map(function (view) { return $view.createViewConfig(subPath, view); });
@@ -57466,18 +57464,15 @@ angular.module('ngResource', ['ng']).
     }
     var getUrlBuilder = function ($urlMatcherFactoryProvider, root$$1) {
         return function urlBuilder(stateObject) {
-            var stateDec = stateObject.self;
+            var state = stateObject.self;
             // For future states, i.e., states whose name ends with `.**`,
             // match anything that starts with the url prefix
-            if (stateDec && stateDec.url && stateDec.name && stateDec.name.match(/\.\*\*$/)) {
-                var newStateDec = {};
-                copy(stateDec, newStateDec);
-                newStateDec.url += '{remainder:any}'; // match any path (.*)
-                stateDec = newStateDec;
+            if (state && state.url && state.name && state.name.match(/\.\*\*$/)) {
+                state.url += '{remainder:any}'; // match any path (.*)
             }
             var parent = stateObject.parent;
-            var parsed = parseUrl(stateDec.url);
-            var url = !parsed ? stateDec.url : $urlMatcherFactoryProvider.compile(parsed.val, { state: stateDec });
+            var parsed = parseUrl(state.url);
+            var url = !parsed ? state.url : $urlMatcherFactoryProvider.compile(parsed.val, { state: state });
             if (!url)
                 return null;
             if (!$urlMatcherFactoryProvider.isMatcher(url))
@@ -58339,7 +58334,7 @@ angular.module('ngResource', ['ng']).
      * - If a function, matchState calls the function with the state and returns true if the function's result is truthy.
      * @returns {boolean}
      */
-    function matchState(state, criterion, transition) {
+    function matchState(state, criterion) {
         var toMatch = isString(criterion) ? [criterion] : criterion;
         function matchGlobs(_state) {
             var globStrings = toMatch;
@@ -58352,7 +58347,7 @@ angular.module('ngResource', ['ng']).
             return false;
         }
         var matchFn = (isFunction(toMatch) ? toMatch : matchGlobs);
-        return !!matchFn(state, transition);
+        return !!matchFn(state);
     }
     /**
      * @internalapi
@@ -58387,10 +58382,10 @@ angular.module('ngResource', ['ng']).
          * with `entering: (state) => true` which only matches when a state is actually
          * being entered.
          */
-        RegisteredHook.prototype._matchingNodes = function (nodes, criterion, transition) {
+        RegisteredHook.prototype._matchingNodes = function (nodes, criterion) {
             if (criterion === true)
                 return nodes;
-            var matching = nodes.filter(function (node) { return matchState(node.state, criterion, transition); });
+            var matching = nodes.filter(function (node) { return matchState(node.state, criterion); });
             return matching.length ? matching : null;
         };
         /**
@@ -58425,7 +58420,7 @@ angular.module('ngResource', ['ng']).
          * };
          * ```
          */
-        RegisteredHook.prototype._getMatchingNodes = function (treeChanges, transition) {
+        RegisteredHook.prototype._getMatchingNodes = function (treeChanges) {
             var _this = this;
             var criteria = extend(this._getDefaultMatchCriteria(), this.matchCriteria);
             var paths = values(this.tranSvc._pluginapi._getPathTypes());
@@ -58435,7 +58430,7 @@ angular.module('ngResource', ['ng']).
                 var isStateHook = pathtype.scope === exports.TransitionHookScope.STATE;
                 var path = treeChanges[pathtype.name] || [];
                 var nodes = isStateHook ? path : [tail(path)];
-                mn[pathtype.name] = _this._matchingNodes(nodes, criteria[pathtype.name], transition);
+                mn[pathtype.name] = _this._matchingNodes(nodes, criteria[pathtype.name]);
                 return mn;
             }, {});
         };
@@ -58445,8 +58440,8 @@ angular.module('ngResource', ['ng']).
          * @returns an IMatchingNodes object, or null. If an IMatchingNodes object is returned, its values
          * are the matching [[PathNode]]s for each [[HookMatchCriterion]] (to, from, exiting, retained, entering)
          */
-        RegisteredHook.prototype.matches = function (treeChanges, transition) {
-            var matches = this._getMatchingNodes(treeChanges, transition);
+        RegisteredHook.prototype.matches = function (treeChanges) {
+            var matches = this._getMatchingNodes(treeChanges);
             // Check if all the criteria matched the TreeChanges object
             var allMatched = values(matches).every(identity);
             return allMatched ? matches : null;
@@ -58515,7 +58510,7 @@ angular.module('ngResource', ['ng']).
             var transition = this.transition;
             var treeChanges = transition.treeChanges();
             // Find all the matching registered hooks for a given hook type
-            var matchingHooks = this.getMatchingHooks(hookType, treeChanges, transition);
+            var matchingHooks = this.getMatchingHooks(hookType, treeChanges);
             if (!matchingHooks)
                 return [];
             var baseHookOptions = {
@@ -58524,7 +58519,7 @@ angular.module('ngResource', ['ng']).
             };
             var makeTransitionHooks = function (hook) {
                 // Fetch the Nodes that caused this hook to match.
-                var matches = hook.matches(treeChanges, transition);
+                var matches = hook.matches(treeChanges);
                 // Select the PathNode[] that will be used as TransitionHook context objects
                 var matchingNodes = matches[hookType.criteriaMatchPath.name];
                 // Return an array of HookTuples
@@ -58555,7 +58550,7 @@ angular.module('ngResource', ['ng']).
          *
          * @returns an array of matched [[RegisteredHook]]s
          */
-        HookBuilder.prototype.getMatchingHooks = function (hookType, treeChanges, transition) {
+        HookBuilder.prototype.getMatchingHooks = function (hookType, treeChanges) {
             var isCreate = hookType.hookPhase === exports.TransitionHookPhase.CREATE;
             // Instance and Global hook registries
             var $transitions = this.transition.router.transitionService;
@@ -58564,7 +58559,7 @@ angular.module('ngResource', ['ng']).
                 .map(function (reg) { return reg.getHooks(hookType.name); }) // Get named hooks from registries
                 .filter(assertPredicate(isArray, "broken event named: " + hookType.name)) // Sanity check
                 .reduce(unnestR, []) // Un-nest RegisteredHook[][] to RegisteredHook[] array
-                .filter(function (hook) { return hook.matches(treeChanges, transition); }); // Only those satisfying matchCriteria
+                .filter(function (hook) { return hook.matches(treeChanges); }); // Only those satisfying matchCriteria
         };
         return HookBuilder;
     }());
@@ -58748,8 +58743,8 @@ angular.module('ngResource', ['ng']).
                 // TODO: Also compare parameters
                 return this.is({ to: compare.$to().name, from: compare.$from().name });
             }
-            return !((compare.to && !matchState(this.$to(), compare.to, this)) ||
-                (compare.from && !matchState(this.$from(), compare.from, this)));
+            return !((compare.to && !matchState(this.$to(), compare.to)) ||
+                (compare.from && !matchState(this.$from(), compare.from)));
         };
         Transition.prototype.params = function (pathname) {
             if (pathname === void 0) { pathname = 'to'; }
@@ -59772,16 +59767,13 @@ angular.module('ngResource', ['ng']).
         return UrlMatcher;
     }());
 
-    var __assign = (undefined && undefined.__assign) || function () {
-        __assign = Object.assign || function(t) {
-            for (var s, i = 1, n = arguments.length; i < n; i++) {
-                s = arguments[i];
-                for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                    t[p] = s[p];
-            }
-            return t;
-        };
-        return __assign.apply(this, arguments);
+    var __assign = (undefined && undefined.__assign) || Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
     };
     /** @internalapi */
     var ParamFactory = /** @class */ (function () {
@@ -62437,7 +62429,7 @@ angular.module('ngResource', ['ng']).
              */
             var rejectedTransitionHandler = function (trans) { return function (error) {
                 if (error instanceof Rejection) {
-                    var isLatest = router.globals.lastStartedTransitionId <= trans.$id;
+                    var isLatest = router.globals.lastStartedTransitionId === trans.$id;
                     if (error.type === exports.RejectType.IGNORED) {
                         isLatest && router.urlRouter.update();
                         // Consider ignored `Transition.run()` as a successful `transitionTo`
@@ -62906,12 +62898,9 @@ angular.module('ngResource', ['ng']).
     }());
 
     var __extends = (undefined && undefined.__extends) || (function () {
-        var extendStatics = function (d, b) {
-            extendStatics = Object.setPrototypeOf ||
-                ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-                function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-            return extendStatics(d, b);
-        };
+        var extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
         return function (d, b) {
             extendStatics(d, b);
             function __() { this.constructor = d; }
@@ -62940,12 +62929,9 @@ angular.module('ngResource', ['ng']).
     }(BaseLocationServices));
 
     var __extends$1 = (undefined && undefined.__extends) || (function () {
-        var extendStatics = function (d, b) {
-            extendStatics = Object.setPrototypeOf ||
-                ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-                function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-            return extendStatics(d, b);
-        };
+        var extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
         return function (d, b) {
             extendStatics(d, b);
             function __() { this.constructor = d; }
@@ -62968,12 +62954,9 @@ angular.module('ngResource', ['ng']).
     }(BaseLocationServices));
 
     var __extends$2 = (undefined && undefined.__extends) || (function () {
-        var extendStatics = function (d, b) {
-            extendStatics = Object.setPrototypeOf ||
-                ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-                function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-            return extendStatics(d, b);
-        };
+        var extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
         return function (d, b) {
             extendStatics(d, b);
             function __() { this.constructor = d; }
@@ -63097,7 +63080,7 @@ angular.module('ngResource', ['ng']).
         BrowserLocationConfig.prototype.getBaseHref = function () {
             var baseTag = document.getElementsByTagName('base')[0];
             if (baseTag && baseTag.href) {
-                return baseTag.href.replace(/^([^/:]*:)?\/\/[^/]*/, '');
+                return baseTag.href.replace(/^(https?:)?\/\/[^/]*/, '');
             }
             return this._isHtml5 ? '/' : location.pathname || '/';
         };
@@ -65499,7 +65482,7 @@ angular.module('ngResource', ['ng']).
 
     Object.defineProperty(exports, '__esModule', { value: true });
 
-}));
+})));
 //# sourceMappingURL=angular-ui-router.js.map
 
 /*
@@ -74218,10 +74201,10 @@ angular
       }];
   });
 })(window, window.angular);
-/*! angularjs-slider - v6.7.0 - 
- (c) Rafal Zajac <rzajac@gmail.com>, Valentin Hervieu <valentin@hervi.eu>, Jussi Saarivirta <jusasi@gmail.com>, Angelin Sirbu <angelin.sirbu@gmail.com> - 
+/*! angularjs-slider - v6.6.0 - 
+ (c) Rafal Zajac <rzajac@gmail.com>, Valentin Hervieu <valentin@hervieu.me>, Jussi Saarivirta <jusasi@gmail.com>, Angelin Sirbu <angelin.sirbu@gmail.com> - 
  https://github.com/angular-slider/angularjs-slider - 
- 2019-02-23 */
+ 2018-06-29 */
 /*jslint unparam: true */
 /*global angular: false, console: false, define, module */
 ;(function(root, factory) {
@@ -75253,19 +75236,12 @@ angular
           if (this.options.rightToLeft) ticksArray.reverse()
 
           this.scope.ticks = ticksArray.map(function(value) {
-            var legend = null;
-            if (angular.isObject(value)) {
-              legend = value.legend;
-              value = value.value
-            }
-
             var position = self.valueToPosition(value)
 
             if (self.options.vertical) position = self.maxPos - position
 
             var translation = translate + '(' + Math.round(position) + 'px)'
             var tick = {
-              legend: legend,
               selected: self.isTickSelected(value),
               style: {
                 '-webkit-transform': translation,
@@ -75298,7 +75274,7 @@ angular
               }
             }
             if (self.getLegend) {
-              legend = self.getLegend(value, self.options.id)
+              var legend = self.getLegend(value, self.options.id)
               if (legend) tick.legend = legend
             }
             return tick
@@ -97431,3 +97407,265 @@ var degreeDifference=remainder.Degree-other.Degree,scale=this.field.multiply(rem
 void(null!=qrcode2.callback&&qrcode2.callback(qrcode2.result))}try{qrcode2.result=qrcode2.process(context)}catch(e){console.log(e),qrcode2.result="error decoding QR Code"}null!=qrcode2.callback&&qrcode2.callback(qrcode2.result)},image.onerror=function(){null!=qrcode2.callback&&qrcode2.callback("Failed to load the image")},image.src=src},qrcode2.isUrl=function(s){return/(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/.test(s)},qrcode2.decode_url=function(s){var escaped="";try{escaped=escape(s)}catch(e){console.log(e),escaped=s}var ret="";try{ret=decodeURIComponent(escaped)}catch(e){console.log(e),ret=escaped}return ret},qrcode2.decode_utf8=function(s){return qrcode2.isUrl(s)?qrcode2.decode_url(s):s},qrcode2.process=function(ctx){var start=(new Date).getTime(),image=qrcode2.grayScaleToBitmap(qrcode2.grayscale());if(qrcode2.debug){for(var y=0;y<qrcode2.height;y++)for(var x=0;x<qrcode2.width;x++){var point=4*x+y*qrcode2.width*4;qrcode2.imagedata.data[point]=(image[x+y*qrcode2.width],0),qrcode2.imagedata.data[point+1]=(image[x+y*qrcode2.width],0),qrcode2.imagedata.data[point+2]=image[x+y*qrcode2.width]?255:0}ctx.putImageData(qrcode2.imagedata,0,0)}var detector=new Detector(image),qRCodeMatrix=detector.detect();if(qrcode2.debug){for(var y=0;y<qRCodeMatrix.bits.Height;y++)for(var x=0;x<qRCodeMatrix.bits.Width;x++){var point=4*x*2+2*y*qrcode2.width*4;qrcode2.imagedata.data[point]=(qRCodeMatrix.bits.get_Renamed(x,y),0),qrcode2.imagedata.data[point+1]=(qRCodeMatrix.bits.get_Renamed(x,y),0),qrcode2.imagedata.data[point+2]=qRCodeMatrix.bits.get_Renamed(x,y)?255:0}ctx.putImageData(qrcode2.imagedata,0,0)}for(var reader=Decoder.decode(qRCodeMatrix.bits),data=reader.DataByte,str="",i=0;i<data.length;i++)for(var j=0;j<data[i].length;j++)str+=String.fromCharCode(data[i][j]);var end=(new Date).getTime(),time=end-start;return console.log(time),qrcode2.decode_utf8(str)},qrcode2.getPixel=function(x,y){if(qrcode2.width<x)throw"point error";if(qrcode2.height<y)throw"point error";var point=4*x+y*qrcode2.width*4;return(33*qrcode2.imagedata.data[point]+34*qrcode2.imagedata.data[point+1]+33*qrcode2.imagedata.data[point+2])/100},qrcode2.binarize=function(th){for(var ret=new Array(qrcode2.width*qrcode2.height),y=0;y<qrcode2.height;y++)for(var x=0;x<qrcode2.width;x++){var gray=qrcode2.getPixel(x,y);ret[x+y*qrcode2.width]=gray<=th}return ret},qrcode2.getMiddleBrightnessPerArea=function(image){for(var numSqrtArea=4,areaWidth=Math.floor(qrcode2.width/numSqrtArea),areaHeight=Math.floor(qrcode2.height/numSqrtArea),minmax=new Array(numSqrtArea),i=0;i<numSqrtArea;i++){minmax[i]=new Array(numSqrtArea);for(var i2=0;i2<numSqrtArea;i2++)minmax[i][i2]=new Array(0,0)}for(var ay=0;ay<numSqrtArea;ay++)for(var ax=0;ax<numSqrtArea;ax++){minmax[ax][ay][0]=255;for(var dy=0;dy<areaHeight;dy++)for(var dx=0;dx<areaWidth;dx++){var target=image[areaWidth*ax+dx+(areaHeight*ay+dy)*qrcode2.width];target<minmax[ax][ay][0]&&(minmax[ax][ay][0]=target),target>minmax[ax][ay][1]&&(minmax[ax][ay][1]=target)}}for(var middle=new Array(numSqrtArea),i3=0;i3<numSqrtArea;i3++)middle[i3]=new Array(numSqrtArea);for(var ay=0;ay<numSqrtArea;ay++)for(var ax=0;ax<numSqrtArea;ax++)middle[ax][ay]=Math.floor((minmax[ax][ay][0]+minmax[ax][ay][1])/2);return middle},qrcode2.grayScaleToBitmap=function(grayScale){for(var middle=qrcode2.getMiddleBrightnessPerArea(grayScale),sqrtNumArea=middle.length,areaWidth=Math.floor(qrcode2.width/sqrtNumArea),areaHeight=Math.floor(qrcode2.height/sqrtNumArea),buff=new ArrayBuffer(qrcode2.width*qrcode2.height),bitmap=new Uint8Array(buff),ay=0;ay<sqrtNumArea;ay++)for(var ax=0;ax<sqrtNumArea;ax++)for(var dy=0;dy<areaHeight;dy++)for(var dx=0;dx<areaWidth;dx++)bitmap[areaWidth*ax+dx+(areaHeight*ay+dy)*qrcode2.width]=grayScale[areaWidth*ax+dx+(areaHeight*ay+dy)*qrcode2.width]<middle[ax][ay];return bitmap},qrcode2.grayscale=function(){for(var buff=new ArrayBuffer(qrcode2.width*qrcode2.height),ret=new Uint8Array(buff),y=0;y<qrcode2.height;y++)for(var x=0;x<qrcode2.width;x++){var gray=qrcode2.getPixel(x,y);ret[x+y*qrcode2.width]=gray}return ret};var MIN_SKIP=3,MAX_MODULES=57,INTEGER_MATH_SHIFT=8,CENTER_QUORUM=2;qrcode2.orderBestPatterns=function(patterns){function distance(pattern1,pattern2){var xDiff=pattern1.X-pattern2.X,yDiff=pattern1.Y-pattern2.Y;return Math.sqrt(xDiff*xDiff+yDiff*yDiff)}function crossProductZ(pointA,pointB,pointC){var bX=pointB.x,bY=pointB.y;return(pointC.x-bX)*(pointA.y-bY)-(pointC.y-bY)*(pointA.x-bX)}var pointA,pointB,pointC,zeroOneDistance=distance(patterns[0],patterns[1]),oneTwoDistance=distance(patterns[1],patterns[2]),zeroTwoDistance=distance(patterns[0],patterns[2]);if(oneTwoDistance>=zeroOneDistance&&oneTwoDistance>=zeroTwoDistance?(pointB=patterns[0],pointA=patterns[1],pointC=patterns[2]):zeroTwoDistance>=oneTwoDistance&&zeroTwoDistance>=zeroOneDistance?(pointB=patterns[1],pointA=patterns[0],pointC=patterns[2]):(pointB=patterns[2],pointA=patterns[0],pointC=patterns[1]),crossProductZ(pointA,pointB,pointC)<0){var temp=pointA;pointA=pointC,pointC=temp}patterns[0]=pointA,patterns[1]=pointB,patterns[2]=pointC};
 
 "use strict";function readMore(e){function t(e,t,o){function s(){o.debug("setToggleMoreText"),d.toggle.moreText=d.hmMoreText||"Read more"}function n(){o.debug("setToggleLessText"),d.toggle.lessText=d.hmLessText||"Read less"}function m(){o.debug("setCurrentToggleText"),d.toggle.text=d.toggle.state?d.toggle.lessText:d.toggle.moreText}function g(){o.debug("setShowToggle"),d.toggle.show=d.moreText&&d.moreText.length>0}function l(){o.debug("setLinkClass"),d.toggle.linkClass=d.hmLinkClass}function i(){o.debug("setDotsClass"),d.toggle.dotsClass=d.hmDotsClass}function a(){o.debug("validateLimit"),d.hmLimit=d.hmLimit&&d.hmLimit<=0?void 0:d.hmLimit}function h(){return o.debug("getMoreTextLimit"),d.hmLimit&&d.hmLimit<d.hmText.length?d.hmLimit-d.hmText.length:0}function r(){o.debug("setLessAndMoreText"),d.lessText=e("limitTo")(d.hmText,d.hmLimit),d.moreText=e("limitTo")(d.hmText,h())}var d=this;d.toggle={dots:"...",dotsClass:d.hmDotsClass,linkClass:d.hmLinkClass},d.$onInit=function(){o.debug("initialize"),s(),n(),a(),r(),g(),m(),l(),i()},d.doToggle=function(){o.debug("doToggle"),d.toggle.state=!d.toggle.state,d.showMoreText=!d.showMoreText,m()},t.$watch("vm.hmMoreText",function(e,t){e!=t&&(o.debug("hmMoreText changed"),s(),m())}),t.$watch("vm.hmLessText",function(e,t){e!=t&&(o.debug("hmLessText changed"),n(),m())}),t.$watch("vm.hmDotsClass",function(e,t){e!=t&&(o.debug("hmDotsClass changed"),i())}),t.$watch("vm.hmLinkClass",function(e,t){e!=t&&(o.debug("hmLinkClass changed"),l())}),t.$watch("vm.hmText",function(e,t){e!=t&&(o.debug("hmText changed"),a(),r(),g())}),t.$watch("vm.hmLimit",function(e,t){e!=t&&(o.debug("hmLimit changed"),a(),r(),g())})}return t.$inject=["$filter","$scope","$log"],{restrict:"AE",scope:{hmText:"@",hmLimit:"@",hmMoreText:"@",hmLessText:"@",hmDotsClass:"@",hmLinkClass:"@"},template:e.get("readmore.template.html"),controller:t,controllerAs:"vm",bindToController:!0}}readMore.$inject=["$templateCache"],angular.module("hm.readmore",["ngAnimate","ngSanitize"]).directive("hmReadMore",readMore).config(["$logProvider",function(e){e.debugEnabled(!1)}]),angular.module("hm.readmore").run(["$templateCache",function(e){e.put("readmore.template.html",'<span name="text"><span ng-bind-html="vm.lessText" style="white-space:pre-wrap;"></span><span ng-show="vm.showMoreText" class="more-show-hide" ng-bind-html="vm.moreText" style="white-space:pre-wrap;"></span></span><span name="toggle" ng-show="vm.toggle.show"><span ng-class="vm.toggle.dotsClass" ng-show="!vm.toggle.state">{{ vm.toggle.dots }}</span><a ng-class="vm.toggle.linkClass" ng-click="vm.doToggle()">{{ vm.toggle.text }}</a></span>')}]);
+/**
+ * angular-ui-notification - Angular.js service providing simple notifications using Bootstrap 3 styles with css transitions for animating
+ * @author Alex_Crack
+ * @version v0.3.6
+ * @link https://github.com/alexcrack/angular-ui-notification
+ * @license MIT
+ */
+angular.module('ui-notification',[]);
+
+angular.module('ui-notification').provider('Notification', function() {
+
+    this.options = {
+        delay: 5000,
+        startTop: 10,
+        startRight: 10,
+        verticalSpacing: 10,
+        horizontalSpacing: 10,
+        positionX: 'right',
+        positionY: 'top',
+        replaceMessage: false,
+        templateUrl: 'angular-ui-notification.html',
+        onClose: undefined,
+        closeOnClick: true,
+        maxCount: 0, // 0 - Infinite
+        container: 'body',
+        priority: 10
+    };
+
+    this.setOptions = function(options) {
+        if (!angular.isObject(options)) throw new Error("Options should be an object!");
+        this.options = angular.extend({}, this.options, options);
+    };
+
+    this.$get = ["$timeout", "$http", "$compile", "$templateCache", "$rootScope", "$injector", "$sce", "$q", "$window", function($timeout, $http, $compile, $templateCache, $rootScope, $injector, $sce, $q, $window) {
+        var options = this.options;
+
+        var startTop = options.startTop;
+        var startRight = options.startRight;
+        var verticalSpacing = options.verticalSpacing;
+        var horizontalSpacing = options.horizontalSpacing;
+        var delay = options.delay;
+
+        var messageElements = [];
+        var isResizeBound = false;
+
+        var notify = function(args, t){
+            var deferred = $q.defer();
+
+            if (typeof args !== 'object' || args === null) {
+                args = {message:args};
+            }
+
+            args.scope = args.scope ? args.scope : $rootScope;
+            args.template = args.templateUrl ? args.templateUrl : options.templateUrl;
+            args.delay = !angular.isUndefined(args.delay) ? args.delay : delay;
+            args.type = t || args.type || options.type ||  '';
+            args.positionY = args.positionY ? args.positionY : options.positionY;
+            args.positionX = args.positionX ? args.positionX : options.positionX;
+            args.replaceMessage = args.replaceMessage ? args.replaceMessage : options.replaceMessage;
+            args.onClose = args.onClose ? args.onClose : options.onClose;
+            args.closeOnClick = (args.closeOnClick !== null && args.closeOnClick !== undefined) ? args.closeOnClick : options.closeOnClick;
+            args.container = args.container ? args.container : options.container;
+            args.priority = args.priority ? args.priority : options.priority;
+            
+            var template=$templateCache.get(args.template);
+
+            if(template){
+                processNotificationTemplate(template);
+            }else{
+                // load it via $http only if it isn't default template and template isn't exist in template cache
+                // cache:true means cache it for later access.
+                $http.get(args.template,{cache: true})
+                  .then(function(response){
+                    processNotificationTemplate(response.data);
+                  })
+                  .catch(function(data){
+                    throw new Error('Template ('+args.template+') could not be loaded. ' + data);
+                  });                
+            }    
+            
+            
+             function processNotificationTemplate(template) {
+
+                var scope = args.scope.$new();
+                scope.message = $sce.trustAsHtml(args.message);
+                scope.title = $sce.trustAsHtml(args.title);
+                scope.t = args.type.substr(0,1);
+                scope.delay = args.delay;
+                scope.onClose = args.onClose;
+
+                var priorityCompareTop = function(a, b) {
+                    return a._priority - b._priority;
+                };
+
+                var priorityCompareBtm = function(a, b) {
+                    return b._priority - a._priority;
+                };
+
+                var reposite = function() {
+                    var j = 0;
+                    var k = 0;
+                    var lastTop = startTop;
+                    var lastRight = startRight;
+                    var lastPosition = [];
+
+                    if( args.positionY === 'top' ) {
+                        messageElements.sort( priorityCompareTop );
+                    } else if( args.positionY === 'bottom' ) {
+                        messageElements.sort( priorityCompareBtm );
+                    }
+
+                    for(var i = messageElements.length - 1; i >= 0; i --) {
+                        var element  = messageElements[i];
+                        if (args.replaceMessage && i < messageElements.length - 1) {
+                            element.addClass('killed');
+                            continue;
+                        }
+                        var elHeight = parseInt(element[0].offsetHeight);
+                        var elWidth  = parseInt(element[0].offsetWidth);
+                        var position = lastPosition[element._positionY+element._positionX];
+
+                        if ((top + elHeight) > window.innerHeight) {
+                            position = startTop;
+                            k ++;
+                            j = 0;
+                        }
+
+                        var top = (lastTop = position ? (j === 0 ? position : position + verticalSpacing) : startTop);
+                        var right = lastRight + (k * (horizontalSpacing + elWidth));
+
+                        element.css(element._positionY, top + 'px');
+                        if (element._positionX == 'center') {
+                            element.css('left', parseInt(window.innerWidth / 2 - elWidth / 2) + 'px');
+                        } else {
+                            element.css(element._positionX, right + 'px');
+                        }
+
+                        lastPosition[element._positionY+element._positionX] = top + elHeight;
+
+                        if (options.maxCount > 0 && messageElements.length > options.maxCount && i === 0) {
+                            element.scope().kill(true);
+                        }
+
+                        j ++;
+                    }
+                };
+
+                var templateElement = $compile(template)(scope);
+                templateElement._positionY = args.positionY;
+                templateElement._positionX = args.positionX;
+                templateElement._priority = args.priority;
+                templateElement.addClass(args.type);
+
+                var closeEvent = function(e) {
+                    e = e.originalEvent || e;
+                    if (e.type === 'click' || (e.propertyName === 'opacity' && e.elapsedTime >= 1)){
+                        if (scope.onClose) {
+                            scope.$apply(scope.onClose(templateElement));
+                        }
+
+                        templateElement.remove();
+                        messageElements.splice(messageElements.indexOf(templateElement), 1);
+                        scope.$destroy();
+                        reposite();
+                    }
+                };
+
+                if (args.closeOnClick) {
+                    templateElement.addClass('clickable');
+                    templateElement.bind('click', closeEvent);
+                }
+
+                templateElement.bind('webkitTransitionEnd oTransitionEnd otransitionend transitionend msTransitionEnd', closeEvent);
+
+                if (angular.isNumber(args.delay)) {
+                    $timeout(function() {
+                        templateElement.addClass('killed');
+                    }, args.delay);
+                }
+
+                setCssTransitions('none');
+
+                angular.element(document.querySelector(args.container)).append(templateElement);
+                var offset = -(parseInt(templateElement[0].offsetHeight) + 50);
+                templateElement.css(templateElement._positionY, offset + "px");
+                messageElements.push(templateElement);
+
+                if(args.positionX == 'center'){
+                    var elWidth = parseInt(templateElement[0].offsetWidth);
+                    templateElement.css('left', parseInt(window.innerWidth / 2 - elWidth / 2) + 'px');
+                }
+
+                $timeout(function(){
+                    setCssTransitions('');
+                });
+
+                function setCssTransitions(value){
+                    ['-webkit-transition', '-o-transition', 'transition'].forEach(function(prefix){
+                        templateElement.css(prefix, value);
+                    });
+                }
+
+                scope._templateElement = templateElement;
+
+                scope.kill = function(isHard) {
+                    if (isHard) {
+                        if (scope.onClose) {
+                            scope.$apply(scope.onClose(scope._templateElement));
+                        }
+
+                        messageElements.splice(messageElements.indexOf(scope._templateElement), 1);
+                        scope._templateElement.remove();
+                        scope.$destroy();
+                        $timeout(reposite);
+                    } else {
+                        scope._templateElement.addClass('killed');
+                    }
+                };
+
+                $timeout(reposite);
+
+                if (!isResizeBound) {
+                    angular.element($window).bind('resize', function(e) {
+                        $timeout(reposite);
+                    });
+                    isResizeBound = true;
+                }
+
+                deferred.resolve(scope);
+
+            }
+
+            return deferred.promise;
+        };
+
+        notify.primary = function(args) {
+            return this(args, 'primary');
+        };
+        notify.error = function(args) {
+            return this(args, 'error');
+        };
+        notify.success = function(args) {
+            return this(args, 'success');
+        };
+        notify.info = function(args) {
+            return this(args, 'info');
+        };
+        notify.warning = function(args) {
+            return this(args, 'warning');
+        };
+
+        notify.clearAll = function() {
+            angular.forEach(messageElements, function(element) {
+                element.addClass('killed');
+            });
+        };
+
+        return notify;
+    }];
+});
+
+angular.module("ui-notification").run(["$templateCache", function($templateCache) {$templateCache.put("angular-ui-notification.html","<div class=\"ui-notification\"><h3 ng-show=\"title\" ng-bind-html=\"title\"></h3><div class=\"message\" ng-bind-html=\"message\"></div></div>");}]);

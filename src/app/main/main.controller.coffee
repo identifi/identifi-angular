@@ -14,12 +14,14 @@ angular.module('irisAngular').controller 'MainController', [
   '$transitions'
   '$q'
   'focus'
+  'Notification'
 
   #'Authentication'
   #'Menus'
   #'Persona'
   ($scope, $rootScope, $location, $http, $state, config,
-  localStorageService, clipboard, $uibModal, $window, $stateParams, $transitions, $q, focus) -> # Authentication, Menus, Persona
+  localStorageService, clipboard, $uibModal, $window, $stateParams,
+  $transitions, $q, focus, uiNotification) -> # Authentication, Menus, Persona
     hosts = ['https://gun-us.herokuapp.com/gun', 'https://gun-eu.herokuapp.com/gun']
     if $window.location.protocol != "https:"
       hosts.push('http://localhost:8765/gun')
@@ -146,6 +148,12 @@ angular.module('irisAngular').controller 'MainController', [
           if data.receivedPositive and $scope.authentication.identity.data and not $scope.authentication.identity.data.receivedPositive
             console.log 'great, you got your first upvote!'
             # TODO: notification
+            uiNotification.primary
+              message: 'great, you got your first upvote!'
+              positionX: 'right'
+              positionY: 'bottom'
+              delay: 10000
+              replaceMessage: true
           $scope.authentication.identity.data = data
       .catch (e) ->
         console.error(e)
@@ -496,6 +504,12 @@ angular.module('irisAngular').controller 'MainController', [
         else
           msg.liked = true
           msg.likes = if msg.likes then msg.likes + 1 else 1
+          uiNotification.success
+            message: 'msg liked!'
+            positionX: 'right'
+            positionY: 'bottom'
+            delay: 10000
+            replaceMessage: true
       share: (msg) ->
         if msg.shared
           msg.shared = false
