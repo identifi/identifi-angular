@@ -300,6 +300,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
         $scope.authentication.user and
         $scope.idType == $scope.authentication.user.idType and
         $scope.idValue == $scope.authentication.user.idValue
+      $scope.notifications.count = 0 if $scope.isCurrentUser
       $scope.isUniqueType = $window.irisLib.Attribute.isUniqueType($scope.idType)
       if !$scope.isUniqueType
         $state.go 'identities.list', { search: $scope.idValue }

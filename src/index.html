@@ -51,7 +51,9 @@
             <li ng-cloak ng-show="authentication.user" ui-sref-active="active"><a ui-sref="settings"><span class="glyphicon glyphicon-cog"></span></a></li>
             <li ng-cloak ng-show="authentication.identity" ui-sref-active="active">
       				<a ui-sref="identities.show({ type: authentication.user.idType, value: authentication.user.idValue })" class="nav-identicon">
-      					<identicon width="26" identity="authentication.identity" show-distance="0" ipfs="ipfs">
+                <notification-icon count="notifications.count">
+      					  <identicon width="26" identity="authentication.identity" show-distance="0" ipfs="ipfs">
+                </notification-icon>
       				</a>
       			</li>
             <li class="dropdown" ng-hide="authentication.user">

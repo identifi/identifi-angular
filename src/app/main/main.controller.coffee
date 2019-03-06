@@ -28,6 +28,9 @@ angular.module('irisAngular').controller 'MainController', [
     # set authentication
     $scope.authentication = {} # Authentication
 
+    $scope.notifications =
+      count: 0
+
     $scope.getIdUrl = (type, value) ->
       if $window.location.hostname.indexOf('.') > -1 # differentiate between localhost / chrome plugin uri and DNS name
         return $state.href('identities.show', {type, value}, {absolute: true}) + '?share'
@@ -147,6 +150,7 @@ angular.module('irisAngular').controller 'MainController', [
             if new Date(msg.signedData.timestamp) > startAt
               author = msg.getAuthor($scope.irisIndex)
               $scope.setIdentityNames(author).then (name) ->
+                $scope.notifications.count += 1
                 uiNotification.primary
                   message: "<a href=\"/#/contacts/keyID/#{$scope.viewpoint.value}\">#{name} sent you a message!</a>"
                   positionX: 'right'
