@@ -15,13 +15,9 @@ angular.module('irisAngular').controller 'MainController', [
   '$q'
   'focus'
   'Notification'
-
-  #'Authentication'
-  #'Menus'
-  #'Persona'
   ($scope, $rootScope, $location, $http, $state, config,
   localStorageService, clipboard, $uibModal, $window, $stateParams,
-  $transitions, $q, focus, uiNotification) -> # Authentication, Menus, Persona
+  $transitions, $q, focus, uiNotification) ->
     hosts = ['https://gun-us.herokuapp.com/gun', 'https://gun-eu.herokuapp.com/gun']
     if $window.location.protocol != "https:"
       hosts.push('http://localhost:8765/gun')
@@ -685,6 +681,7 @@ angular.module('irisAngular').controller 'MainController', [
           $window.scrollTo 0, pos.bottom - ($window.innerHeight or document.documentElement.clientHeight) + 15
       return
 
+    # should be moved to iris-lib?
     $scope.setIdentityNames = (i, htmlSafe, setTitle) ->
       i.verified = false
       return new Promise (resolve) ->

@@ -2,8 +2,7 @@ angular.module 'irisAngular',
   ['ngAnimate', 'ngCookies', 'ngTouch', 'ngSanitize', 'ngMessages',
   'ngAria', 'ngResource', 'ui.router', 'ui.bootstrap', 'angular-parallax',
   'infinite-scroll', 'LocalStorageModule', 'rzModule', 'angular-clipboard',
-  'monospaced.qrcode', 'ngFileUpload', 'qrScanner', 'hm.readmore',
-  'ui-notification']
+  'monospaced.qrcode', 'ngFileUpload', 'qrScanner', 'hm.readmore', 'ui-notification']
 
 angular.module('irisAngular').filter 'escape', [ ->
   (input) ->
