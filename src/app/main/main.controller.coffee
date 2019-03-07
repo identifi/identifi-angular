@@ -724,26 +724,21 @@ angular.module('irisAngular').controller 'MainController', [
           event.preventDefault()
           if $scope.ids.activeKey > -1
             $scope.addEntryActive = false
-            $scope.ids.list[$scope.ids.activeKey].active = false
             $scope.ids.activeKey--
-            if $scope.ids.activeKey >= 0
-              $scope.ids.list[$scope.ids.activeKey].active = true
           scrollTo document.getElementById('result' + $scope.ids.activeKey)
         when 40
           event.preventDefault()
-          if $scope.ids.activeKey < ($scope.ids.list.length || 0) - 1
-            if $scope.ids.activeKey >= 0
-              $scope.ids.list[$scope.ids.activeKey].active = false
-            $scope.ids.list[$scope.ids.activeKey + 1].active = true
+          if ($scope.ids.activeKey < ($scope.ids.list.length) - 1) and $scope.ids.activeKey < $scope.filters.limit
             $scope.ids.activeKey++
-          scrollTo document.getElementById('result' + $scope.ids.activeKey)
+          el = document.getElementById('result' + $scope.ids.activeKey)
+          scrollTo el
         when 13
           event.preventDefault()
           if $scope.ids.activeKey == -1
             $state.go 'identities.create'
           else
-            id = $scope.ids.list[$scope.ids.activeKey]
-            $state.go 'identities.show', { type: id.linkTo.type, value: id.linkTo.value }
+            el = document.getElementById('result' + $scope.ids.activeKey)
+            el.click()
         when -1
           clearTimeout $scope.timer
           $scope.query.term = ''
