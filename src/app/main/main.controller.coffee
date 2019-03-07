@@ -304,10 +304,12 @@ angular.module('irisAngular').controller 'MainController', [
           $scope.resetMsg() # why not resetting uploaded files? D:
           options.files = [] if options.files
           $scope.addingMessage = false
+          return message
         .catch (e) ->
           console.error(e)
           $scope.error = e
           $scope.addingMessage = false
+          return message
 
     $scope.addAttribute = ->
       $location.path '#/identities/create/' + $scope.query.term
@@ -463,6 +465,7 @@ angular.module('irisAngular').controller 'MainController', [
 
     $scope.msgFilter = (msg, index, array) ->
       data = msg.signedData
+      return false if msg.signedData.replyTo
       if $scope.filters.type
         if $scope.filters.type.match /^rating/
           if data.type != 'rating'
@@ -515,7 +518,16 @@ angular.module('irisAngular').controller 'MainController', [
           msg.shared = true
           msg.shares = if msg.shares then msg.shares + 1 else 1
       replyTo: (msg, reply) ->
-        console.log 'msg replyTo', reply, msg
+        $scope.createMessage(null, {
+          type: 'post',
+          replyTo: msg.getHash()
+          comment: reply
+        }).then (m) ->
+          $scope.irisIndex.addMessage(m)
+          msg.replies = msg.replies or []
+          msg.replies.push(m)
+          reply = ''
+          console.log 'msg replyTo', reply, msg
 
     $scope.openMessage = (event, message, size) ->
       t = event.target
