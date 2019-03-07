@@ -725,20 +725,19 @@ angular.module('irisAngular').controller 'MainController', [
           if $scope.ids.activeKey > -1
             $scope.addEntryActive = false
             $scope.ids.activeKey--
-          scrollTo document.getElementById('result' + $scope.ids.activeKey)
+            id = if $scope.ids.activeKey > -1 then 'result' + $scope.ids.activeKey else 'createIdRow'
+            document.getElementById(id).scrollIntoView()
         when 40
           event.preventDefault()
           if ($scope.ids.activeKey < ($scope.ids.list.length) - 1) and $scope.ids.activeKey < $scope.filters.limit
             $scope.ids.activeKey++
-          el = document.getElementById('result' + $scope.ids.activeKey)
-          scrollTo el
+          document.getElementById('result' + $scope.ids.activeKey).scrollIntoView()
         when 13
           event.preventDefault()
           if $scope.ids.activeKey == -1
             $state.go 'identities.create'
           else
-            el = document.getElementById('result' + $scope.ids.activeKey)
-            el.click()
+            document.getElementById('result' + $scope.ids.activeKey).click()
         when -1
           clearTimeout $scope.timer
           $scope.query.term = ''

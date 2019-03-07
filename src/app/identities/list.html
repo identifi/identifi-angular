@@ -5,7 +5,7 @@
 
     <table ng-init="filters.limit = 10" id="search-results" class="table table-hover" infinite-scroll="filters.limit = filters.limit + 1" infinite-scroll-distance="1" infinite-scroll-disabled="!irisIndex || !ids || !ids.list || ids.list.length < filters.limit || filteredIds.length < filters.limit">
       <tbody>
-        <tr ng-class="{active: ids.activeKey == -1}" ui-sref="identities.create" class="search-result-row">
+        <tr id="createIdRow" ng-class="{active: ids.activeKey == -1}" ui-sref="identities.create" class="search-result-row">
           <td class="gravatar-col align-center"><span style="line-height:46px" class="glyphicon glyphicon-plus"></span></td>
           <td>
             <a ui-sref="identities.create">Add contact<span ng-if="query.term">: <span ng-bind="capitalizeWords(query.term)"></span></span></a>
