@@ -151,7 +151,8 @@ angular.module('irisAngular').controller 'MainController', [
               $scope.setIdentityNames(author).then (name) ->
                 $scope.notifications.count += 1
                 NotificationService.create
-                  message: "<a href=\"/#/contacts/keyID/#{$scope.viewpoint.value}\">#{name} sent you a message!</a>"
+                  message: "#{name} sent you a message!"
+                  onClick: () -> $state.go 'identities.show', { type: $scope.authentication.user.idType, value: $scope.authentication.user.idValue }
         $scope.authentication.identity.gun.on (data) ->
           if data.receivedPositive and $scope.authentication.identity.data and not $scope.authentication.identity.data.receivedPositive
             console.log 'great, you got your first upvote!'
@@ -506,8 +507,6 @@ angular.module('irisAngular').controller 'MainController', [
         else
           msg.liked = true
           msg.likes = if msg.likes then msg.likes + 1 else 1
-          NotificationService.create
-            message: 'liked!'
       share: (msg) ->
         if msg.shared
           msg.shared = false
