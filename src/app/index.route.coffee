@@ -14,7 +14,7 @@ angular.module 'irisAngular'
         controllerAs: 'identities'
         params:
           search: ''
-        title: 'Identifi - Contacts'
+        title: 'Iris - Contacts'
       .state 'identities.create',
         url: '/create'
         templateUrl: 'app/identities/create.html'
@@ -34,7 +34,7 @@ angular.module 'irisAngular'
         templateUrl: 'app/messages/list.html'
         controller: 'MessagesController'
         controllerAs: 'messages'
-        title: 'Identifi'
+        title: 'Iris'
       .state 'messages.show',
         url: '/messages/:id'
         templateUrl: 'app/messages/show.html'
@@ -43,14 +43,14 @@ angular.module 'irisAngular'
       .state 'about',
         url: '/about'
         templateUrl: 'app/main/about.html'
-        title: 'Identifi - About'
+        title: 'Iris - About'
       .state 'settings',
         url: '/settings'
         templateUrl: 'app/main/settings.html'
-        title: 'Identifi - Settings'
+        title: 'Iris - Settings'
       .state 'privacy',
         url: '/privacy'
         templateUrl: 'app/main/privacy-policy.html'
-        title: 'Identifi - Privacy policy'
+        title: 'Iris - Privacy policy'
 
     $urlRouterProvider.otherwise ''
