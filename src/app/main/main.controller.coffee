@@ -30,6 +30,11 @@ angular.module('irisAngular').controller 'MainController', [
 
     $scope.notificationService = NotificationService
 
+    $scope.trustDistanceComparator = (a, b) ->
+      return 1 if a.type != 'number'
+      return -1 if b.type != 'number'
+      return a.value - b.value
+
     $scope.getIdUrl = (type, value) ->
       if $window.location.hostname.indexOf('.') > -1 # differentiate between localhost / chrome plugin uri and DNS name
         return $state.href('identities.show', {type, value}, {absolute: true}) + '?share'
