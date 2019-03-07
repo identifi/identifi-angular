@@ -1,6 +1,6 @@
 {
   "name": "iris-angular",
-  "version": "1.22.41",
+  "version": "1.22.42",
   "description": "A social networking application that stores everything on its users' devices which communicate directly with each other - no corporate gatekeepers needed.",
   "author": "Martti Malmi",
   "main": "electron.js",
