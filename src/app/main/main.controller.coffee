@@ -14,10 +14,10 @@ angular.module('irisAngular').controller 'MainController', [
   '$transitions'
   '$q'
   'focus'
-  'Notification'
+  'NotificationService'
   ($scope, $rootScope, $location, $http, $state, config,
   localStorageService, clipboard, $uibModal, $window, $stateParams,
-  $transitions, $q, focus, uiNotification) ->
+  $transitions, $q, focus, NotificationService) ->
     hosts = ['https://gun-us.herokuapp.com/gun', 'https://gun-eu.herokuapp.com/gun']
     if $window.location.protocol != "https:"
       hosts.push('http://localhost:8765/gun')
@@ -28,8 +28,7 @@ angular.module('irisAngular').controller 'MainController', [
     # set authentication
     $scope.authentication = {} # Authentication
 
-    $scope.notifications =
-      count: 0
+    $scope.notificationService = NotificationService
 
     $scope.getIdUrl = (type, value) ->
       if $window.location.hostname.indexOf('.') > -1 # differentiate between localhost / chrome plugin uri and DNS name
@@ -151,22 +150,12 @@ angular.module('irisAngular').controller 'MainController', [
               author = msg.getAuthor($scope.irisIndex)
               $scope.setIdentityNames(author).then (name) ->
                 $scope.notifications.count += 1
-                uiNotification.primary
+                NotificationService.create
                   message: "<a href=\"/#/contacts/keyID/#{$scope.viewpoint.value}\">#{name} sent you a message!</a>"
-                  positionX: 'right'
-                  positionY: 'bottom'
-                  delay: 10000
-                  replaceMessage: true
         $scope.authentication.identity.gun.on (data) ->
           if data.receivedPositive and $scope.authentication.identity.data and not $scope.authentication.identity.data.receivedPositive
             console.log 'great, you got your first upvote!'
             # TODO: notification
-            uiNotification.primary
-              message: 'great, you got your first upvote!'
-              positionX: 'right'
-              positionY: 'bottom'
-              delay: 10000
-              replaceMessage: true
           $scope.authentication.identity.data = data
       .catch (e) ->
         console.error(e)
@@ -517,6 +506,8 @@ angular.module('irisAngular').controller 'MainController', [
         else
           msg.liked = true
           msg.likes = if msg.likes then msg.likes + 1 else 1
+          NotificationService.create
+            message: 'liked!'
       share: (msg) ->
         if msg.shared
           msg.shared = false
