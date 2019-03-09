@@ -512,9 +512,11 @@ angular.module('irisAngular').controller 'MainController', [
         if msg.liked
           msg.liked = false
           msg.likes = if msg.likes then msg.likes - 1 else 0
+          $scope.irisIndex.setReaction(msg, null)
         else
           msg.liked = true
           msg.likes = if msg.likes then msg.likes + 1 else 1
+          $scope.irisIndex.setReaction(msg, 'like')
       share: (msg) ->
         if msg.shared
           msg.shared = false
