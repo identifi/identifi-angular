@@ -529,11 +529,12 @@ angular.module('irisAngular').controller 'MainController', [
           type: 'post',
           replyTo: msg.getHash()
           comment: reply
-        }).then (m) ->
-          $scope.irisIndex.addMessage(m)
-          msg.replies = msg.replies or []
-          msg.replies.push(m)
-          reply = ''
+        }).then (r) ->
+          $scope.irisIndex.addMessage(r)
+          msg.replies = msg.replies or {}
+          msg.replies[r.getHash()] = r
+          msg.repliesArr = msg.repliesArr or []
+          msg.repliesArr.push(r)
           console.log 'msg replyTo', reply, msg
 
     $scope.openMessage = (event, message, size) ->
@@ -576,17 +577,28 @@ angular.module('irisAngular').controller 'MainController', [
       processMessage = (msg) ->
         msg.likes = 0
         updateReactions = (reactions) ->
+          likes = 0
+          liked = false
+          for k, v of reactions
+            if v == 'like'
+              likes++
+              liked = true if k == $scope.viewpoint.value and v == 'like'
           $scope.$apply ->
-            likes = 0
-            liked = false
-            for k, v of reactions
-              if v == 'like'
-                likes++
-                liked = true if k == $scope.viewpoint.value and v == 'like'
             msg.likes = likes
             msg.liked = liked
         updateReactions(msg.reactions) if msg.reactions
-        msg.gun.get('reactions').on(updateReactions) if msg.gun
+        msg.repliesArr = msg.repliesArr or []
+        msg.replies = msg.replies or {}
+        updateReplies = (replies) ->
+          for hash, replyRaw of replies
+            $window.irisLib.Message.fromSig(replyRaw).then (r) ->
+              unless msg.replies[r.getHash()] and msg.replies[r.getHash()].author
+                msg.replies[r.getHash()] = r
+                processMessage r
+                $scope.$apply -> msg.repliesArr.push(r)
+        if msg.gun
+          msg.gun.get('replies').open updateReplies
+          msg.gun.get('reactions').on updateReactions
         msg.author = msg.getAuthor($scope.irisIndex)
         msg.author.gun.get('trustDistance').on (d) -> msg.authorTrustDistance = d
         msg.author.gun.get('attrs').open (d) ->

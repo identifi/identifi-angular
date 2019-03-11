@@ -61,7 +61,7 @@
       <button type="submit" class="btn btn-primary">Post</button>
     </form>
 
-    <div ng-repeat="m in $ctrl.msg.replies | orderBy:'signedData.timestamp' : true" class="mar-top15 clear">
+    <div ng-repeat="m in $ctrl.msg.repliesArr | orderBy:'signedData.timestamp' : true" class="mar-top15 clear">
       <a ui-sref="identities.show({ type: m.linkToAuthor.type, value: m.linkToAuthor.value })" class="id-link">
         <identicon ipfs="$ctrl.ipfs" identity="m.author" class="mar-right5" border="3" width="35"></identicon>
         <span ng-bind="m.author_name"></span>
