@@ -574,6 +574,19 @@ angular.module('irisAngular').controller 'MainController', [
 
     $scope.processMessages = (messages, msgOptions) ->
       processMessage = (msg) ->
+        msg.likes = 0
+        updateReactions = (reactions) ->
+          $scope.$apply ->
+            likes = 0
+            liked = false
+            for k, v of reactions
+              if v == 'like'
+                likes++
+                liked = true if k == $scope.viewpoint.value and v == 'like'
+            msg.likes = likes
+            msg.liked = liked
+        updateReactions(msg.reactions) if msg.reactions
+        msg.gun.get('reactions').on updateReactions
         msg.author = msg.getAuthor($scope.irisIndex)
         msg.author.gun.get('trustDistance').on (d) -> msg.authorTrustDistance = d
         msg.author.gun.get('attrs').open (d) ->
