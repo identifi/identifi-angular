@@ -586,7 +586,7 @@ angular.module('irisAngular').controller 'MainController', [
             msg.likes = likes
             msg.liked = liked
         updateReactions(msg.reactions) if msg.reactions
-        msg.gun.get('reactions').on updateReactions
+        msg.gun.get('reactions').on(updateReactions) if msg.gun
         msg.author = msg.getAuthor($scope.irisIndex)
         msg.author.gun.get('trustDistance').on (d) -> msg.authorTrustDistance = d
         msg.author.gun.get('attrs').open (d) ->
