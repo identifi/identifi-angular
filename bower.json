@@ -1,6 +1,6 @@
 {
   "name": "iris-angular",
-  "version": "1.22.44",
+  "version": "1.22.45",
   "dependencies": {
     "jquery": "~3.3.1",
     "angular": "^1.7.8",
@@ -22,7 +22,7 @@
     "angular-local-storage": "^0.7.1",
     "angularjs-slider": "^7.0.0",
     "gun": "0.9.999998",
-    "iris-lib": "0.0.93",
+    "iris-lib": "0.0.94",
     "angular-clipboard": "https://github.com/mmalmi/angular-clipboard.git#1.6.3",
     "angular-qrcode": "^7.2.0",
     "ng-file-upload": "^12.2.13",
