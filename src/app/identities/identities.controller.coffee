@@ -23,7 +23,9 @@ angular.module('irisAngular').controller 'IdentitiesController', [
     $scope.activeTab = 1
     $scope.activateTab = (tabId) -> $scope.activeTab = tabId
     $scope.sent = []
-    $scope.received = []
+    $scope.received =
+      list: []
+      seen: {}
     $scope.attributes = {}
     thumbsUpObj = {}
     thumbsDownObj = {}
@@ -234,9 +236,12 @@ angular.module('irisAngular').controller 'IdentitiesController', [
 
     $scope.getReceivedMsgs = ->
       return unless $scope.identity and $scope.irisIndex
-      $scope.received = []
-      cursor = if $scope.received.length then $scope.received[$scope.received.length - 1].cursor else ''
+      $scope.received =
+        list: []
+        seen: {}
+      cursor = if $scope.received.list.length then $scope.received.list[$scope.received.list.length - 1].cursor else ''
       resultFound = (msg) ->
+        return if $scope.received.seen[msg.getHash()]
         $scope.processMessages [msg], { recipientIsSelf: true }
         $scope.$apply ->
           if msg.isPositive()
@@ -248,7 +253,8 @@ angular.module('irisAngular').controller 'IdentitiesController', [
             thumbsDownObj[JSON.stringify(msg.signedData.author)] = true
             $scope.thumbsDown.push msg
             $scope.hasThumbsDown = true
-          $scope.received.push msg
+          $scope.received.list.push msg
+          $scope.received.seen[msg.getHash()] = true
       $scope.irisIndex.getReceivedMsgs($scope.identity, resultFound, undefined, cursor)
 
     $scope.setFilters = (filters) ->

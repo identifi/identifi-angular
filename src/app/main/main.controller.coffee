@@ -113,6 +113,9 @@ angular.module('irisAngular').controller 'MainController', [
       setTimeout () ->
         $scope.$broadcast('rzSliderForceRender')
       , 3000 # :---D
+      setTimeout () ->
+        $scope.$broadcast('rzSliderForceRender')
+      , 5000 # :---D
       console.log 'Got index', $scope.irisIndex
       $scope.viewpoint.identity = $scope.irisIndex.get($scope.viewpoint.type, $scope.viewpoint.value)
       $scope.viewpoint.identity.gun.get('attrs').open (attrs) ->
@@ -296,7 +299,6 @@ angular.module('irisAngular').controller 'MainController', [
           message = $window.irisLib.Message.createVerification(msg, $scope.privateKey)
         else
           message = $window.irisLib.Message.create(msg, $scope.privateKey)
-        options = {}
 
         message.then (m) ->
           $scope.irisIndex.addMessage(m)
@@ -304,6 +306,9 @@ angular.module('irisAngular').controller 'MainController', [
           $scope.processMessages([m])
         .then (messages) ->
           $scope.msgs.list.push(messages[0])
+          if options.addTo and not options.addTo.seen[messages[0].getHash()]
+            options.addTo.list.push messages[0]
+            options.addTo.seen[messages[0].getHash()] = true
           if $scope.filters.type not in [msg.type, null]
             $scope.filters.type = msg.type
           $scope.resetMsg() # why not resetting uploaded files? D:

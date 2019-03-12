@@ -25,7 +25,7 @@
       <div class="col-md-9 col-md-offset-3">
         <ul class="list-inline tab-list">
           <li ng-if="isUniqueType">
-            <a href="" ng-class="{ active: activeTab == 1 }" ng-click="activateTab(1)"><span class="hidden-xs">Received </span>({{0+identity.data.receivedPositive+identity.data.receivedNeutral+identity.data.receivedNegative || received.length}})</a>
+            <a href="" ng-class="{ active: activeTab == 1 }" ng-click="activateTab(1)"><span class="hidden-xs">Received </span>({{0+identity.data.receivedPositive+identity.data.receivedNeutral+identity.data.receivedNegative || received.list.length}})</a>
           </li>
           <li ng-if="isUniqueType">
             <a href="" ng-class="{ active: activeTab == 2 }" ng-click="activateTab(2)"><span class="hidden-xs">Sent </span>({{0+identity.data.sentPositive+identity.data.sentNeutral+identity.data.sentNegative || sent.length}})</a>
@@ -220,7 +220,7 @@
 
               <div ng-style="newMessage.style" ng-show="!loggingIn && authentication.user && !isCurrentUser" class="panel panel-default panel-success" id="newRatingPanel">
                 <div class="panel-body" id="write-feedback">
-                  <form ng-controller="MessagesController" ng-submit="createMessage($event, { type: 'rating', rating: newMessage.rating, comment: newMessage.comment })">
+                  <form ng-controller="MessagesController" ng-submit="createMessage($event, { type: 'rating', rating: newMessage.rating, comment: newMessage.comment }, {addTo: received})">
                     <div class="form-group">
                       <textarea name="comment" class="form-control" id="comment" ng-model="newMessage.comment" ng-disabled="addingMessage" placeholder="Comment (optional)"></textarea>
                     </div>
@@ -266,7 +266,7 @@
                     </ul>
                   </div>
                 </div>
-                <message auth="authentication" ipfs="ipfs" msg-utils="msgUtils" msg="msg" page-info="identity" ng-repeat="msg in received | filter:msgFilter | orderBy:'signedData.timestamp' : true as receivedFiltered" ng-click="openMessage($event, msg, 'lg')"></message>
+                <message auth="authentication" ipfs="ipfs" msg-utils="msgUtils" msg="msg" page-info="identity" ng-repeat="msg in received.list | filter:msgFilter | orderBy:'signedData.timestamp' : true as receivedFiltered" ng-click="openMessage($event, msg, 'lg')"></message>
               </div>
               <div ng-if="!isCurrentUser && receivedFiltered.length == 0" class="alert alert-info text-center">No messages yet</div>
             </uib-tab>
