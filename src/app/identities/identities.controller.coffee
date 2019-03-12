@@ -42,6 +42,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
         ceil: 3
         hidePointerLabels: true
         hideLimitLabels: true
+        disableAnimation: true
 
     $scope.share = true if $location.search().share
 

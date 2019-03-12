@@ -1,7 +1,7 @@
 angular.module 'irisAngular',
   ['ngAnimate', 'ngCookies', 'ngTouch', 'ngSanitize', 'ngMessages',
   'ngAria', 'ngResource', 'ui.router', 'ui.bootstrap', 'angular-parallax',
-  'infinite-scroll', 'LocalStorageModule', 'rzModule', 'angular-clipboard',
+  'infinite-scroll', 'LocalStorageModule', 'rzSlider', 'angular-clipboard',
   'monospaced.qrcode', 'ngFileUpload', 'qrScanner', 'hm.readmore',
   'ui-notification', 'angular-notification-icons']
 

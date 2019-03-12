@@ -10364,7 +10364,7 @@ return jQuery;
 } );
 
 /**
- * @license AngularJS v1.7.7
+ * @license AngularJS v1.7.8
  * (c) 2010-2018 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -10464,7 +10464,7 @@ function isValidObjectMaxDepth(maxDepth) {
 function minErr(module, ErrorConstructor) {
   ErrorConstructor = ErrorConstructor || Error;
 
-  var url = 'https://errors.angularjs.org/1.7.7/';
+  var url = 'https://errors.angularjs.org/1.7.8/';
   var regex = url.replace('.', '\\.') + '[\\s\\S]*';
   var errRegExp = new RegExp(regex, 'g');
 
@@ -13170,11 +13170,11 @@ function toDebugString(obj, maxDepth) {
 var version = {
   // These placeholder strings will be replaced by grunt's `build` task.
   // They need to be double- or single-quoted.
-  full: '1.7.7',
+  full: '1.7.8',
   major: 1,
   minor: 7,
-  dot: 7,
-  codeName: 'kingly-exiting'
+  dot: 8,
+  codeName: 'enthusiastic-oblation'
 };
 
 
@@ -13324,7 +13324,7 @@ function publishExternalAPI(angular) {
       });
     }
   ])
-  .info({ angularVersion: '1.7.7' });
+  .info({ angularVersion: '1.7.8' });
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -46264,15 +46264,21 @@ var requiredDirective = ['$parse', function($parse) {
     require: '?ngModel',
     link: function(scope, elm, attr, ctrl) {
       if (!ctrl) return;
-      var value = attr.required || $parse(attr.ngRequired)(scope);
+      // For boolean attributes like required, presence means true
+      var value = attr.hasOwnProperty('required') || $parse(attr.ngRequired)(scope);
 
-      attr.required = true; // force truthy in case we are on non input element
+      if (!attr.ngRequired) {
+        // force truthy in case we are on non input element
+        // (input elements do this automatically for boolean attributes like required)
+        attr.required = true;
+      }
 
       ctrl.$validators.required = function(modelValue, viewValue) {
         return !value || !ctrl.$isEmpty(viewValue);
       };
 
       attr.$observe('required', function(newVal) {
+
         if (value !== newVal) {
           value = newVal;
           ctrl.$validate();
@@ -46793,7 +46799,7 @@ $provide.value("$locale", {
 
 !window.angular.$$csp().noInlineStyle && window.angular.element(document.head).prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');
 /**
- * @license AngularJS v1.7.7
+ * @license AngularJS v1.7.8
  * (c) 2010-2018 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -51046,7 +51052,7 @@ angular.module('ngAnimate', [], function initAngularHelpers() {
   isFunction  = angular.isFunction;
   isElement   = angular.isElement;
 })
-  .info({ angularVersion: '1.7.7' })
+  .info({ angularVersion: '1.7.8' })
   .directive('ngAnimateSwap', ngAnimateSwapDirective)
 
   .directive('ngAnimateChildren', $$AnimateChildrenDirective)
@@ -51066,7 +51072,7 @@ angular.module('ngAnimate', [], function initAngularHelpers() {
 })(window, window.angular);
 
 /**
- * @license AngularJS v1.7.7
+ * @license AngularJS v1.7.8
  * (c) 2010-2018 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -51084,7 +51090,7 @@ angular.module('ngAnimate', [], function initAngularHelpers() {
 
 
 angular.module('ngCookies', ['ng']).
-  info({ angularVersion: '1.7.7' }).
+  info({ angularVersion: '1.7.8' }).
   /**
    * @ngdoc provider
    * @name $cookiesProvider
@@ -51320,7 +51326,7 @@ angular.module('ngCookies').provider('$$cookieWriter', /** @this */ function $$C
 })(window, window.angular);
 
 /**
- * @license AngularJS v1.7.7
+ * @license AngularJS v1.7.8
  * (c) 2010-2018 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -51350,7 +51356,7 @@ angular.module('ngCookies').provider('$$cookieWriter', /** @this */ function $$C
 /* global ngTouch */
 var ngTouch = angular.module('ngTouch', []);
 
-ngTouch.info({ angularVersion: '1.7.7' });
+ngTouch.info({ angularVersion: '1.7.8' });
 
 function nodeName_(element) {
   return angular.$$lowercase(element.nodeName || (element[0] && element[0].nodeName));
@@ -51689,7 +51695,7 @@ makeSwipeDirective('ngSwipeRight', 1, 'swiperight');
 })(window, window.angular);
 
 /**
- * @license AngularJS v1.7.7
+ * @license AngularJS v1.7.8
  * (c) 2010-2018 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -52401,7 +52407,7 @@ function sanitizeText(chars) {
 // define ngSanitize module and register $sanitize service
 angular.module('ngSanitize', [])
   .provider('$sanitize', $SanitizeProvider)
-  .info({ angularVersion: '1.7.7' });
+  .info({ angularVersion: '1.7.8' });
 
 /**
  * @ngdoc filter
@@ -52603,7 +52609,7 @@ angular.module('ngSanitize').filter('linky', ['$sanitize', function($sanitize) {
 })(window, window.angular);
 
 /**
- * @license AngularJS v1.7.7
+ * @license AngularJS v1.7.8
  * (c) 2010-2018 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -52895,7 +52901,7 @@ angular.module('ngMessages', [], function initAngularHelpers() {
   isString = angular.isString;
   jqLite = angular.element;
 })
-  .info({ angularVersion: '1.7.7' })
+  .info({ angularVersion: '1.7.8' })
 
   /**
    * @ngdoc directive
@@ -53433,7 +53439,7 @@ function ngMessageDirectiveFactory(isDefault) {
 })(window, window.angular);
 
 /**
- * @license AngularJS v1.7.7
+ * @license AngularJS v1.7.8
  * (c) 2010-2018 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -53497,7 +53503,7 @@ function ngMessageDirectiveFactory(isDefault) {
 var ARIA_DISABLE_ATTR = 'ngAriaDisable';
 
 var ngAriaModule = angular.module('ngAria', ['ng']).
-                        info({ angularVersion: '1.7.7' }).
+                        info({ angularVersion: '1.7.8' }).
                         provider('$aria', $AriaProvider);
 
 /**
@@ -53861,7 +53867,7 @@ ngAriaModule.directive('ngShow', ['$aria', function($aria) {
 })(window, window.angular);
 
 /**
- * @license AngularJS v1.7.7
+ * @license AngularJS v1.7.8
  * (c) 2010-2018 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -54359,7 +54365,7 @@ function shallowClearAndCopy(src, dst) {
  *
  */
 angular.module('ngResource', ['ng']).
-  info({ angularVersion: '1.7.7' }).
+  info({ angularVersion: '1.7.8' }).
   provider('$resource', function ResourceProvider() {
     var PROTOCOL_AND_IPV6_REGEX = /^https?:\/\/\[[^\]]*][^/]*/;
 
@@ -74218,7 +74224,7 @@ angular
       }];
   });
 })(window, window.angular);
-/*! angularjs-slider - v6.7.0 - 
+/*! angularjs-slider - v7.0.0 - 
  (c) Rafal Zajac <rzajac@gmail.com>, Valentin Hervieu <valentin@hervi.eu>, Jussi Saarivirta <jusasi@gmail.com>, Angelin Sirbu <angelin.sirbu@gmail.com> - 
  https://github.com/angular-slider/angularjs-slider - 
  2019-02-23 */
@@ -74247,7 +74253,7 @@ angular
 })(this, function(angular) {
   'use strict'
   var module = angular
-    .module('rzModule', [])
+    .module('rzSlider', [])
     .factory('RzSliderOptions', function() {
       var defaultOptions = {
         floor: 0,
@@ -74292,6 +74298,7 @@ angular
         enforceRange: false,
         noSwitching: false,
         onlyBindHandles: false,
+        disableAnimation: false,
         onStart: null,
         onChange: null,
         onEnd: null,
@@ -74317,7 +74324,7 @@ angular
        * `options({})` allows global configuration of all sliders in the
        * application.
        *
-       *   var app = angular.module( 'App', ['rzModule'], function( RzSliderOptions ) {
+       *   var app = angular.module( 'App', ['rzSlider'], function( RzSliderOptions ) {
        *     // show ticks for all sliders
        *     RzSliderOptions.options( { showTicks: true } );
        *   });
@@ -74552,6 +74559,11 @@ angular
          */
         this.currentFocusElement = null
 
+        /**
+         * Internal variable to know if we are already moving
+         */
+        this.moving = false
+
         // Slider DOM elements wrapped in jqLite
         this.fullBar = null // The whole slider bar
         this.selBar = null // Highlight between two handles
@@ -74606,6 +74618,10 @@ angular
           angular.element($window).on('resize', calcDimFn)
 
           this.initHasRun = true
+
+          if (this.options.disableAnimation) {
+            this.sliderElem.addClass('noanimate')
+          }
 
           // Watch for changes to the model
           thrLow = rzThrottle(function() {
@@ -74814,6 +74830,9 @@ angular
           if (this.options.vertical) {
             this.positionProperty = 'bottom'
             this.dimensionProperty = 'height'
+          } else {
+            this.positionProperty = 'left'
+            this.dimensionProperty = 'width'
           }
 
           if (this.options.customTemplateScope)
@@ -74848,6 +74867,7 @@ angular
          * @returns {undefined}
          */
         resetSlider: function() {
+          this.resetLabelsValue()
           this.manageElementsStyle()
           this.addAccessibility()
           this.setMinAndMax()
@@ -74989,7 +75009,11 @@ angular
             this.fullBar.addClass('rz-transparent')
           }
 
-          if (this.options.vertical) this.sliderElem.addClass('rz-vertical')
+          if (this.options.vertical) {
+            this.sliderElem.addClass('rz-vertical')
+          } else {
+            this.sliderElem.removeClass('rz-vertical')
+          }
 
           if (this.options.draggableRange) this.selBar.addClass('rz-draggable')
           else this.selBar.removeClass('rz-draggable')
@@ -75036,6 +75060,14 @@ angular
         resetLabelsValue: function() {
           this.minLab.rzsv = undefined
           this.maxLab.rzsv = undefined
+          this.flrLab.rzsv = undefined
+          this.ceilLab.rzsv = undefined
+          this.cmbLab.rzsv = undefined
+          this.resetPosition(this.flrLab)
+          this.resetPosition(this.ceilLab)
+          this.resetPosition(this.cmbLab)
+          this.resetPosition(this.minLab)
+          this.resetPosition(this.maxLab)
         },
 
         /**
@@ -75155,8 +75187,11 @@ angular
           )
             this.minH.attr('tabindex', '0')
           else this.minH.attr('tabindex', '')
-          if (this.options.vertical)
+          if (this.options.vertical) {
             this.minH.attr('aria-orientation', 'vertical')
+          } else {
+            this.minH.attr('aria-orientation', 'horizontal')
+          }
           if (this.options.ariaLabel)
             this.minH.attr('aria-label', this.options.ariaLabel)
           else if (this.options.ariaLabelledBy)
@@ -75172,6 +75207,7 @@ angular
             else this.maxH.attr('tabindex', '')
             if (this.options.vertical)
               this.maxH.attr('aria-orientation', 'vertical')
+            else this.maxH.attr('aria-orientation', 'horizontal')
             if (this.options.ariaLabelHigh)
               this.maxH.attr('aria-label', this.options.ariaLabelHigh)
             else if (this.options.ariaLabelledByHigh)
@@ -75253,9 +75289,9 @@ angular
           if (this.options.rightToLeft) ticksArray.reverse()
 
           this.scope.ticks = ticksArray.map(function(value) {
-            var legend = null;
+            var legend = null
             if (angular.isObject(value)) {
-              legend = value.legend;
+              legend = value.legend
               value = value.value
             }
 
@@ -75842,6 +75878,13 @@ angular
           return pos
         },
 
+        resetPosition: function(elem) {
+          elem.css({
+            left: null,
+            bottom: null,
+          })
+        },
+
         /**
          * Get element width/height depending on whether slider is horizontal or vertical
          *
@@ -76256,6 +76299,12 @@ angular
          * @returns {undefined}
          */
         onMove: function(pointer, event, fromTick) {
+          if (!this.options.disableAnimation) {
+            if (this.moving) {
+              this.sliderElem.addClass('noanimate')
+            }
+          }
+          this.moving = true
           var changedTouches = this.getEventAttr(event, 'changedTouches')
           var touchForThisSlider
           if (changedTouches) {
@@ -76302,6 +76351,10 @@ angular
          * @returns {undefined}
          */
         onEnd: function(ehMove, event) {
+          this.moving = false
+          if (!this.options.disableAnimation) {
+            this.sliderElem.removeClass('noanimate')
+          }
           var changedTouches = this.getEventAttr(event, 'changedTouches')
           if (changedTouches && changedTouches[0].identifier !== this.touchId) {
             return
@@ -76548,6 +76601,12 @@ angular
          * @returns {undefined}
          */
         onDragMove: function(pointer, event) {
+          if (!this.options.disableAnimation) {
+            if (this.moving) {
+              this.sliderElem.addClass('noanimate')
+            }
+          }
+          this.moving = true
           var newPos = this.getEventPosition(event),
             newMinValue,
             newMaxValue,
@@ -90619,31 +90678,32 @@ Gun.chain.then = function(cb) {
 	        }
 	      }
 	    }
-	    if (d.recipient) {
-	      if (typeof d.recipient !== 'object') {
-	        throw new ValidationError(errorMsg + ' Recipient must be object');
-	      }
-	      if (Array.isArray(d.recipient)) {
-	        throw new ValidationError(errorMsg + ' Recipient must not be an array');
-	      }
-	      if (_Object$keys(d.recipient).length === 0) {
-	        throw new ValidationError(errorMsg + ' Recipient empty');
-	      }
-	      for (var _attr in d.recipient) {
-	        var _t = _typeof(d.recipient[_attr]);
-	        if (_t !== 'string') {
-	          if (Array.isArray(d.recipient[_attr])) {
-	            for (var _i = 0; _i < d.recipient[_attr].length; _i++) {
-	              if (typeof d.recipient[_attr][_i] !== 'string') {
-	                throw new ValidationError(errorMsg + ' Recipient attribute must be string, got ' + _attr + ': [' + d.recipient[_attr][_i] + ']');
-	              }
-	              if (d.recipient[_attr][_i].length === 0) {
-	                throw new ValidationError(errorMsg + ' recipient ' + _attr + ' in array[' + _i + '] is empty');
-	              }
+	    if (!d.recipient) {
+	      throw new ValidationError(errorMsg + ' Missing recipient');
+	    }
+	    if (typeof d.recipient !== 'object') {
+	      throw new ValidationError(errorMsg + ' Recipient must be object');
+	    }
+	    if (Array.isArray(d.recipient)) {
+	      throw new ValidationError(errorMsg + ' Recipient must not be an array');
+	    }
+	    if (_Object$keys(d.recipient).length === 0) {
+	      throw new ValidationError(errorMsg + ' Recipient empty');
+	    }
+	    for (var _attr in d.recipient) {
+	      var _t = _typeof(d.recipient[_attr]);
+	      if (_t !== 'string') {
+	        if (Array.isArray(d.recipient[_attr])) {
+	          for (var _i = 0; _i < d.recipient[_attr].length; _i++) {
+	            if (typeof d.recipient[_attr][_i] !== 'string') {
+	              throw new ValidationError(errorMsg + ' Recipient attribute must be string, got ' + _attr + ': [' + d.recipient[_attr][_i] + ']');
 	            }
-	          } else {
-	            throw new ValidationError(errorMsg + ' Recipient attribute must be string or array, got ' + _attr + ': ' + d.recipient[_attr]);
+	            if (d.recipient[_attr][_i].length === 0) {
+	              throw new ValidationError(errorMsg + ' recipient ' + _attr + ' in array[' + _i + '] is empty');
+	            }
 	          }
+	        } else {
+	          throw new ValidationError(errorMsg + ' Recipient attribute must be string or array, got ' + _attr + ': ' + d.recipient[_attr]);
 	        }
 	      }
 	    }
@@ -91488,10 +91548,6 @@ Gun.chain.then = function(cb) {
 	                });
 	              }
 	            });
-	            _this.gun.user(uri).get('identifi').get('reactions').map(function (reaction, msgHash) {
-	              _this.gun.get('messagesByHash').get(msgHash).get('reactions').get(uri).put(reaction);
-	              _this.gun.get('messagesByHash').get(msgHash).get('reactions').get(uri).put(reaction);
-	            });
 	          }
 	        });
 	      }, 5000); // TODO: this should be made to work without timeout
@@ -91723,7 +91779,6 @@ Gun.chain.then = function(cb) {
 	      if (result.value && result.value.ipfsUri) {
 	        msg.ipfsUri = result.value.ipfsUri;
 	      }
-	      msg.gun = msgIndex.get(result.key);
 	      callback(msg);
 	    }
 	    searchText(msgIndex, resultFound, '', undefined, cursor, desc);
@@ -92231,32 +92286,26 @@ Gun.chain.then = function(cb) {
 	        return;
 	      }
 	    }
-	    var obj = { sig: msg.sig, pubKey: msg.pubKey };
-	    //const node = this.gun.get(`messagesByHash`).get(hash).put(obj);
-	    var node = this.gun.back(-1).get('messagesByHash').get(hash).put(obj); // TODO: needs fix to https://github.com/amark/gun/issues/719
 	    msg.distance = await this.getMsgTrustDistance(msg);
 	    if (msg.distance === undefined) {
 	      return false; // do not save messages from untrusted author
 	    }
-	    if (msg.signedData.replyTo) {
-	      this.gun.back(-1).get('messagesByHash').get(msg.signedData.replyTo).get('replies').get(hash).put(node);
-	      this.gun.back(-1).get('messagesByHash').get(msg.signedData.replyTo).get('replies').get(hash).put(node);
-	    }
+	    var obj = { sig: msg.sig, pubKey: msg.pubKey };
 	    var indexKeys = Index.getMsgIndexKeys(msg);
 	    for (var index in indexKeys) {
 	      for (var i = 0; i < indexKeys[index].length; i++) {
 	        var key = indexKeys[index][i];
 	        console.log('adding to index ' + index + ' key ' + key);
-	        this.gun.get(index).get(key).put(node);
-	        this.gun.get(index).get(key).put(node); // umm, what? doesn't work unless I write it twice
+	        this.gun.get(index).get(key).put(obj);
+	        this.gun.get(index).get(key).put(obj); // umm, what? doesn't work unless I write it twice
 	      }
 	    }
 	    if (this.options.ipfs) {
 	      try {
 	        var ipfsUri = await msg.saveToIpfs(this.options.ipfs);
-	        this.gun.get('messagesByHash').get(ipfsUri).put(node);
-	        this.gun.get('messagesByHash').get(ipfsUri).put(node);
-	        this.gun.get('messagesByHash').get(ipfsUri).put({ ipfsUri: ipfsUri });
+	        obj.ipfsUri = ipfsUri;
+	        this.gun.get('messagesByHash').get(ipfsUri).put(obj);
+	        this.gun.get('messagesByHash').get(ipfsUri).put(obj);
 	      } catch (e) {
 	        console.error('adding msg ' + msg + ' to ipfs failed: ' + e);
 	      }
@@ -92395,17 +92444,10 @@ Gun.chain.then = function(cb) {
 	    }
 	  };
 
-	  Index.prototype.setReaction = function setReaction(msg, reaction) {
-	    this.gun.get('reactions').get(msg.getHash()).put(reaction);
-	    this.gun.get('reactions').get(msg.getHash()).put(reaction);
-	    this.gun.get('messagesByHash').get(msg.getHash()).get('reactions').get(this.viewpoint.value).put(reaction);
-	    this.gun.get('messagesByHash').get(msg.getHash()).get('reactions').get(this.viewpoint.value).put(reaction);
-	  };
-
 	  return Index;
 	}();
 
-	var version$1 = "0.0.93";
+	var version$1 = "0.0.91";
 
 	/*eslint no-useless-escape: "off", camelcase: "off" */
 
