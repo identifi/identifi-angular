@@ -19,15 +19,17 @@
        - <a ui-sref="messages.show({ id: ($ctrl.msg.ipfsUri || $ctrl.msg.hash) })" ng-bind="$ctrl.msg.signedData.timestamp|date:'medium'" class="text-muted small" style="display:inline-block;"></a>
     </p>
 
-    <p ng-if="$ctrl.msg.isVerification || $ctrl.msg.isUnverification">
-      <small ng-repeat="a in $ctrl.msg.recipientArray">
-        {{a.type}}:
-        <span ng-if="a.type == 'email' || a.type == 'url'" ng-bind-html="a.value | linky"></span>
-        <span ng-if="!(a.type == 'email' || a.type == 'url')" ng-bind="a.value"></span>
-        <i class="fa fa-link" ng-if="!$last && $ctrl.msg.isVerification"></i>
-        <i class="fa fa-chain-broken" ng-if="!$last && $ctrl.msg.isUnverification"></i>
-      </small>
-    </p>
+    <div ng-if="$ctrl.msg.isVerification || $ctrl.msg.isUnverification">
+      <div ng-repeat="a in $ctrl.msg.recipientArray">
+        <small>
+          <i class="fa fa-link" ng-if="$ctrl.msg.isVerification"></i>
+          <i class="fa fa-chain-broken" ng-if="$ctrl.msg.isUnverification"></i>
+          {{a.type}}:
+          <span ng-if="a.type == 'email' || a.type == 'url'" ng-bind-html="a.value | linky"></span>
+          <span ng-if="!(a.type == 'email' || a.type == 'url')" ng-bind="a.value"></span>
+        </small>
+      </div>
+    </div>
 
     <p>
       <span ng-repeat="attachment in $ctrl.msg.attachments">
