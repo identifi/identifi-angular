@@ -90678,32 +90678,31 @@ Gun.chain.then = function(cb) {
 	        }
 	      }
 	    }
-	    if (!d.recipient) {
-	      throw new ValidationError(errorMsg + ' Missing recipient');
-	    }
-	    if (typeof d.recipient !== 'object') {
-	      throw new ValidationError(errorMsg + ' Recipient must be object');
-	    }
-	    if (Array.isArray(d.recipient)) {
-	      throw new ValidationError(errorMsg + ' Recipient must not be an array');
-	    }
-	    if (_Object$keys(d.recipient).length === 0) {
-	      throw new ValidationError(errorMsg + ' Recipient empty');
-	    }
-	    for (var _attr in d.recipient) {
-	      var _t = _typeof(d.recipient[_attr]);
-	      if (_t !== 'string') {
-	        if (Array.isArray(d.recipient[_attr])) {
-	          for (var _i = 0; _i < d.recipient[_attr].length; _i++) {
-	            if (typeof d.recipient[_attr][_i] !== 'string') {
-	              throw new ValidationError(errorMsg + ' Recipient attribute must be string, got ' + _attr + ': [' + d.recipient[_attr][_i] + ']');
+	    if (d.recipient) {
+	      if (typeof d.recipient !== 'object') {
+	        throw new ValidationError(errorMsg + ' Recipient must be object');
+	      }
+	      if (Array.isArray(d.recipient)) {
+	        throw new ValidationError(errorMsg + ' Recipient must not be an array');
+	      }
+	      if (_Object$keys(d.recipient).length === 0) {
+	        throw new ValidationError(errorMsg + ' Recipient empty');
+	      }
+	      for (var _attr in d.recipient) {
+	        var _t = _typeof(d.recipient[_attr]);
+	        if (_t !== 'string') {
+	          if (Array.isArray(d.recipient[_attr])) {
+	            for (var _i = 0; _i < d.recipient[_attr].length; _i++) {
+	              if (typeof d.recipient[_attr][_i] !== 'string') {
+	                throw new ValidationError(errorMsg + ' Recipient attribute must be string, got ' + _attr + ': [' + d.recipient[_attr][_i] + ']');
+	              }
+	              if (d.recipient[_attr][_i].length === 0) {
+	                throw new ValidationError(errorMsg + ' recipient ' + _attr + ' in array[' + _i + '] is empty');
+	              }
 	            }
-	            if (d.recipient[_attr][_i].length === 0) {
-	              throw new ValidationError(errorMsg + ' recipient ' + _attr + ' in array[' + _i + '] is empty');
-	            }
+	          } else {
+	            throw new ValidationError(errorMsg + ' Recipient attribute must be string or array, got ' + _attr + ': ' + d.recipient[_attr]);
 	          }
-	        } else {
-	          throw new ValidationError(errorMsg + ' Recipient attribute must be string or array, got ' + _attr + ': ' + d.recipient[_attr]);
 	        }
 	      }
 	    }
@@ -91548,6 +91547,10 @@ Gun.chain.then = function(cb) {
 	                });
 	              }
 	            });
+	            _this.gun.user(uri).get('identifi').get('reactions').map(function (reaction, msgHash) {
+	              _this.gun.get('messagesByHash').get(msgHash).get('reactions').get(uri).put(reaction);
+	              _this.gun.get('messagesByHash').get(msgHash).get('reactions').get(uri).put(reaction);
+	            });
 	          }
 	        });
 	      }, 5000); // TODO: this should be made to work without timeout
@@ -91779,6 +91782,7 @@ Gun.chain.then = function(cb) {
 	      if (result.value && result.value.ipfsUri) {
 	        msg.ipfsUri = result.value.ipfsUri;
 	      }
+	      msg.gun = msgIndex.get(result.key);
 	      callback(msg);
 	    }
 	    searchText(msgIndex, resultFound, '', undefined, cursor, desc);
@@ -92286,26 +92290,32 @@ Gun.chain.then = function(cb) {
 	        return;
 	      }
 	    }
+	    var obj = { sig: msg.sig, pubKey: msg.pubKey };
+	    //const node = this.gun.get(`messagesByHash`).get(hash).put(obj);
+	    var node = this.gun.back(-1).get('messagesByHash').get(hash).put(obj); // TODO: needs fix to https://github.com/amark/gun/issues/719
 	    msg.distance = await this.getMsgTrustDistance(msg);
 	    if (msg.distance === undefined) {
 	      return false; // do not save messages from untrusted author
 	    }
-	    var obj = { sig: msg.sig, pubKey: msg.pubKey };
+	    if (msg.signedData.replyTo) {
+	      this.gun.back(-1).get('messagesByHash').get(msg.signedData.replyTo).get('replies').get(hash).put(node);
+	      this.gun.back(-1).get('messagesByHash').get(msg.signedData.replyTo).get('replies').get(hash).put(node);
+	    }
 	    var indexKeys = Index.getMsgIndexKeys(msg);
 	    for (var index in indexKeys) {
 	      for (var i = 0; i < indexKeys[index].length; i++) {
 	        var key = indexKeys[index][i];
 	        console.log('adding to index ' + index + ' key ' + key);
-	        this.gun.get(index).get(key).put(obj);
-	        this.gun.get(index).get(key).put(obj); // umm, what? doesn't work unless I write it twice
+	        this.gun.get(index).get(key).put(node);
+	        this.gun.get(index).get(key).put(node); // umm, what? doesn't work unless I write it twice
 	      }
 	    }
 	    if (this.options.ipfs) {
 	      try {
 	        var ipfsUri = await msg.saveToIpfs(this.options.ipfs);
-	        obj.ipfsUri = ipfsUri;
-	        this.gun.get('messagesByHash').get(ipfsUri).put(obj);
-	        this.gun.get('messagesByHash').get(ipfsUri).put(obj);
+	        this.gun.get('messagesByHash').get(ipfsUri).put(node);
+	        this.gun.get('messagesByHash').get(ipfsUri).put(node);
+	        this.gun.get('messagesByHash').get(ipfsUri).put({ ipfsUri: ipfsUri });
 	      } catch (e) {
 	        console.error('adding msg ' + msg + ' to ipfs failed: ' + e);
 	      }
@@ -92444,10 +92454,17 @@ Gun.chain.then = function(cb) {
 	    }
 	  };
 
+	  Index.prototype.setReaction = function setReaction(msg, reaction) {
+	    this.gun.get('reactions').get(msg.getHash()).put(reaction);
+	    this.gun.get('reactions').get(msg.getHash()).put(reaction);
+	    this.gun.get('messagesByHash').get(msg.getHash()).get('reactions').get(this.viewpoint.value).put(reaction);
+	    this.gun.get('messagesByHash').get(msg.getHash()).get('reactions').get(this.viewpoint.value).put(reaction);
+	  };
+
 	  return Index;
 	}();
 
-	var version$1 = "0.0.91";
+	var version$1 = "0.0.93";
 
 	/*eslint no-useless-escape: "off", camelcase: "off" */
 
