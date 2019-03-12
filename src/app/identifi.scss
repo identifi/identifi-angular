@@ -1574,7 +1574,7 @@ a {
     width: auto;
   }
 
-  #connections .table {
+  #attributes .table {
     table-layout: fixed;
     word-wrap: break-word;
 
@@ -1596,7 +1596,7 @@ a {
   }
 }
 
-#connections .table {
+#attributes .table {
   .identicon {
     display: inline-block;
   }
@@ -1669,4 +1669,8 @@ a {
 .disabled a:hover {
   color: inherit;
   cursor: not-allowed;
+}
+
+.cursor-default {
+  cursor: default !important;
 }

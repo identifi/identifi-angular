@@ -93,19 +93,19 @@ angular.module('irisAngular').controller 'IdentitiesController', [
 
     $scope.getAttributes = ->
       $scope.identity.gun.get('attrs').open (attrs) ->
-        console.log attrs
-        connections = attrs or []
-        if connections.length > 0
-          c = connections[0]
+        attributes = attrs or []
+        if attributes.length > 0
+          c = attributes[0]
           mostConfirmations = c.conf
         else
           mostConfirmations = 1
-        $scope.attributes = Object.values(connections).sort (a, b) ->
+        $scope.attributes = Object.values(attributes).sort (a, b) ->
           (b.conf - 2 * b.ref) - (a.conf - 2 * a.ref)
         for a in $scope.attributes
           return unless a.type and a.value
           a.attr = new $window.irisLib.Attribute(a.type, a.value)
           a.isCurrent = new $window.irisLib.Attribute($scope.idType, $scope.idValue).equals(a.attr)
+          a.rowClass = 'cursor-default' if a.isCurrent
           switch a.type
             when 'email'
               a.iconStyle = 'glyphicon glyphicon-envelope'
@@ -192,37 +192,21 @@ angular.module('irisAngular').controller 'IdentitiesController', [
           $scope.hasQuickContacts = $scope.hasQuickContacts or a.quickContact
         $scope.attributesLength = Object.keys($scope.attributes).length
 
-
-    $scope.getConnectingMsgs = (id1, id2) ->
-      getVerifications = $q (resolve) ->
-        if !$scope.verifications.length
-          if $scope.receivedIndex
-            $scope.receivedIndex.searchText('', 10000, false, true).then (res) ->
-              res.forEach (row) ->
-                msg = $window.irisLib.Message.fromJws(row.value.jws)
-                if (msg.signedData.type in ['verify_identity', 'verification', 'unverify_identity', 'unverification'])
-                  msg.linkToAuthor = msg.signedData.author[0]
-                  $scope.verifications.push msg
-              resolve()
-          else
-            resolve()
-        else
-          resolve()
-      getVerifications.then ->
-        msgs = []
-        $scope.verifications.forEach (msg) ->
-          hasId1 = hasId2 = false
-          for id in msg.signedData.recipient
-            return msgs.push msg if id.type == id2.type and id.value == id2.value
-        return msgs
-
-    $scope.connectionClicked = (event, id) ->
-      if id.connecting_msgs
-        id.collapse = !id.collapse
+    $scope.attributeClicked = (event, attr) ->
+      if attr.connectingMsgs
+        attr.collapse = !attr.collapse
       else
-        $scope.getConnectingMsgs([$scope.idType, $scope.idValue], id).then (msgs) ->
-          id.connecting_msgs = msgs
-          id.collapse = !id.collapse
+        attr.connectingMsgs = []
+        for msg in $scope.received.list
+          continue unless msg.signedData.type in ['verification', 'unverification', 'verify_identity', 'unverify_identity']
+          hasAttr1 = hasAttr2 = false
+          for a in msg.getRecipientArray()
+            hasAttr1 = hasAttr1 or a.type == attr.type and a.value == attr.value
+            hasAttr2 = hasAttr2 or a.type == $scope.idType and a.value == $scope.idValue
+            if hasAttr1 and hasAttr2
+              attr.connectingMsgs.push msg
+              break
+        attr.collapse = !attr.collapse
 
     $scope.getSentMsgs = ->
       return unless $scope.identity and $scope.irisIndex

@@ -1,7 +1,7 @@
 <!-- <input id="authenticity_token" name="authenticity_token" type="hidden" value="z1JM7ffnFK7gOv6S3yzG9UFyakukYHikAU94/3TcT2o="> -->
 <table class="table truncated-table table-hover">
   <tbody>
-    <tr ng-repeat-start="a in attributes" style="{{a.rowStyle}}" ng-class="a.rowClass" ng-click="!a.isCurrent && connectionClicked($event, id)" class="id-row">
+    <tr ng-repeat-start="a in attributes" style="{{a.rowStyle}}" ng-class="a.rowClass" ng-click="!a.isCurrent && attributeClicked($event, a)" class="id-row">
       <td>
         <div>
           <div class="pull-left mar-right15">
@@ -35,22 +35,23 @@
     <tr ng-repeat-end ng-if="!a.isCurrent" class="active connectingmsgs">
       <td class="connectingmsgs" data-style="zoom-in" data-spinner-color="#000">
         <div uib-collapse="!a.collapse">
-          <div ng-repeat="msg in a.connecting_msgs" ng-click="openMessage($event, msg, 'lg')" class="confirmation-panel">
-              <span ng-if="msg.data.type === 'verification'">
+          <div ng-repeat="msg in a.connectingMsgs" ng-click="openMessage($event, msg, 'lg')" class="confirmation-panel">
+              <span ng-if="msg.signedData.type === 'verification'">
                 <span class="positive glyphicon glyphicon-ok hidden-xs mar-left5 pull-right"></span>
                 <span class="positive glyphicon glyphicon-ok visible-xs-inline-block mar-right10"></span>
               </span>
-              <span ng-if="msg.data.type === 'unverification'">
+              <span ng-if="msg.signedData.type === 'unverification'">
                 <span class="negative glyphicon glyphicon-remove hidden-xs mar-left5 pull-right"></span>
                 <span class="negative glyphicon glyphicon-remove visible-xs-inline-block mar-right10"></span>
               </span>
               <strong>
                 <a ui-sref="identities.show({ type: msg.linkToAuthor.type, value: msg.linkToAuthor.value })" class="id-link">
-                  <identicon ipfs="ipfs" identity="msg" class="mar-right5" border="3" width="30" positive-score="msg.author_pos" negative-score="msg.author_neg"></identicon>
-                  <span ng-bind="msg.author_name||msg.data.author.type.value"></span>
+                  <identicon ipfs="ipfs" identity="msg.author" class="mar-right5" border="3" width="30"></identicon>
+                  <span ng-bind="msg.author_name||msg.signedData.author.type.value"></span>
                 </a>
               </strong>
-               - <span ng-bind="msg.data.timestamp|date:'mediumDate'" class="text-muted small" style="display:inline-block;"></span>
+               - <span ng-bind="msg.signedData.timestamp|date:'mediumDate'" class="text-muted small" style="display:inline-block;"></span>
+               <span ng-if="msg.signedData.comment"> - {{msg.signedData.comment|limitTo:250}}</span>
           </div>
         </div>
       </td>
