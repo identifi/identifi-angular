@@ -6,17 +6,17 @@
         <h4 ng-show="idType === 'keyID' || idType === 'uuid'">
           <identicon identity="idAttr" width=35></identicon>
           <button class="btn btn-default mar-left15" ng-click="openShareModal()">
-            <span class="glyphicon glyphicon-qrcode mar-right5"></span> Share
+          <span class="glyphicon glyphicon-qrcode mar-right5"></span> Share
           </button>
         </h4>
         <h4 ng-hide="idType === 'keyID' || idType === 'uuid'">
           <span ng-bind="idValue" class="idValue"></span>
           <small class="text-muted">
-            <span ng-hide="idType === 'url'" ng-bind="idType" class="idType"></span>
-            <a ng-href="{{idValue}}" ng-show="idType === 'url'" ng-bind="idType" class="idType"></a>
+          <span ng-hide="idType === 'url'" ng-bind="idType" class="idType"></span>
+          <a ng-href="{{idValue}}" ng-show="idType === 'url'" ng-bind="idType" class="idType"></a>
           </small>
           <button class="btn btn-default mar-left15" ng-click="openShareModal()">
-            <span class="glyphicon glyphicon-qrcode mar-right5"></span> Share
+          <span class="glyphicon glyphicon-qrcode mar-right5"></span> Share
           </button>
         </h4>
       </div>
@@ -43,330 +43,35 @@
     <section>
       <div class="row">
         <div class="col-md-3 id-left-column">
-        <div ng-if="isUniqueType">
-        <div>
-          <p class="hidden-md hidden-lg" ng-hide="!stats.name">
-            <span ng-bind="idValue" class="idValue"></span>
-            <small class="text-muted">
-              <span ng-hide="idType === 'url'" ng-bind="idType" class="idType"></span>
-              <a ng-href="{{idValue}}" ng-show="idType === 'url'" ng-bind="idType" class="idType"></a>
-            </small>
-          </p>
-          <div class="stats-box">
-            <div class="row">
-              <div class="col-xs-12">
-                <p class="align-center">
-                  <identicon ng-click="openProfilePhotoUploadModal()" identity="identity"
-                    ipfs="ipfs"
-                    border="4"
-                    show-distance="0"
-                    width="230"
-                    ng-if="hideProfilePhoto">
-                  </identicon>
-                  <identicon ng-click="openProfilePhotoUploadModal()" identity="identity"
-                    ipfs="ipfs"
-                    border="4"
-                    show-distance="0"
-                    width="230"
-                    ng-if="!hideProfilePhoto">
-                  </identicon>
-                </p>
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-xs-12">
-                <h4>
-                  <span class="visible-xs-inline-block visible-sm-inline-block mar-right15">
-                    <span ng-show="idType === 'keyID' || idType === 'uuid'">
-                      <identicon identity="idAttr" width=35></identicon>
-                    </span>
-                    <span ng-hide="idType === 'keyID' || idType === 'uuid'">
-                      <span ng-if="!(identity.data.mostVerifiedAttributes.name||identity.data.mostVerifiedAttributes.nickname)">
-                        <span ng-bind="idValue" class="idValue"></span>
-                        <small class="text-muted">
-                          <span ng-hide="idType === 'url'" ng-bind="idType" class="idType"></span>
-                          <a ng-href="{{idValue}}" ng-show="idType === 'url'" ng-bind="idType" class="idType"></a>
-                        </small>
-                      </span>
-                    </span>
-                  </span>
-                  <span ng-bind="identity.primaryName"></span>
-                  <span class="glyphicon glyphicon-ok-sign" style="color:#337ab7" uib-tooltip="Verified by a trusted verifier" ng-if="identity.verified"></span>
-                  <span ng-hide="!identity.data.mostVerifiedAttributes.nickname || identity.data.mostVerifiedAttributes.nickname == identity.data.mostVerifiedAttributes.primaryName">
-                    (<span class="text-muted" ng-bind="identity.nickname"></span>)
-                  </span>
-                  <button class="mar-left15 visible-xs-inline-block visible-sm-inline-block btn btn-default" ng-click="openShareModal()">
-                    <span class="glyphicon glyphicon-share mar-right5"></span> Share
-                  </button>
-                  <span ng-if="identity.data.trustDistance === 0" class="label label-default pull-right">viewpoint</span>
-                  <span ng-if="identity.data.trustDistance > 0" ng-bind="identity.data.trustDistance | ordinal" class="label label-default pull-right"></span>
-                  <span ng-if="identity.data.trustDistance === false" class="label label-default pull-right">unconnected</span>
-                </h4>
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-xs-12 col-sm-6 col-md-12 mar-bot10 mar-top10">
-                <div class="mar-bot10" ng-if="authentication.user && !identity.hasProperName && !nameAdded">
-                  <a href="" ng-click="addName()" ng-hide="addingName">Add name</a>
-                  <form class="form-inline" ng-show="addingName" ng-submit="addName(name)">
-                    <div class="form-group">
-                      <input focus-on="addNameFocus" type="text" class="form-control" ng-model="name" placeholder="Add name">
-                    </div>
-                    <button type="submit" class="btn btn-default"><span class="glyphicon glyphicon-plus"></span></button>
-                  </form>
-                </div>
-                <p>
-                  <b>Received:
-                    <span ng-if="identity.data.receivedPositive || identity.data.receivedNegative">
-                      <span ng-bind="identity.data.receivedPositive / (identity.data.receivedPositive+identity.data.receivedNeutral+identity.data.receivedNegative) * 100 | number:0">
-                      </span>% positive
-                    </span>
-                    <span ng-if="!(identity.data.receivedPositive || identity.data.receivedNegative)">
-                      &mdash;
-                    </span>
-                  </b><br>
-                  Sent:
-                  <span ng-if="identity.data.sentPositive || identity.data.sentNegative">
-                    <span ng-bind="identity.data.sentPositive / (identity.data.sentPositive+identity.data.sentNeutral+identity.data.sentNegative) * 100 | number:0">
-                    </span>% positive
-                  </span>
-                  <span ng-if="!(identity.data.sentPositive || identity.data.sentNegative)">
-                    &mdash;
-                  </span>
-                </p>
-                <!--
-                <p class="received-stats">
-                  <div><strong>Received</strong></div>
-                  <div>
-                    <strong>
-                      <span class="positive"><span class="glyphicon glyphicon-thumbs-up"></span> <span ng-bind="identity.data.receivedPositive">-</span></span>
-                      <span class="neutral"><span class="glyphicon glyphicon-question-sign"></span> <span ng-bind="identity.data.receivedNeutral">-</span></span>
-                      <span class="negative"><span class="glyphicon glyphicon-thumbs-down"></span> <span ng-bind="identity.data.receivedNegative">-</span></span>
-                    </strong>
-                  </div>
-                </p>
-                <p>
-                  <div>Sent</div>
-                  <div>
-                    <span class="positive"><span class="glyphicon glyphicon-thumbs-up"></span> <span ng-bind="identity.data.sentPositive">-</span></span>
-                    <span class="neutral"><span class="glyphicon glyphicon-question-sign"></span> <span ng-bind="identity.data.sentNeutral">-</span></span>
-                    <span class="negative"><span class="glyphicon glyphicon-thumbs-down"></span> <span ng-bind="identity.data.sentNegative">-</span></span>
-                  </div>
-                </p> -->
-                <div ng-if="scores.verifier && scores.verifier.score > 0" class="text-center alert alert-info">
-                  <span class="fa fa-shield" style="font-size:2em"></span>
-                  <p>This identity is a <b>trusted verifier</b> in this web of trust.
-                    It can grant verification checkmarks.</p>
-                </div>
-                <div ng-if="isUniqueType" class="mar-top10 quick-contact">
-                  <ul class="list-unstyled">
-                    <li ng-repeat="a in attributes" ng-if="a.quickContact"><a ng-href="{{a.link}}"><span ng-class="a.iconStyle"></span><span ng-bind="a.linkName || a.value"></span></a></li>
-                    <li ng-if="stats.first_seen">
-                      <span class="fa fa-calendar"></span>First seen:
-                       <span ng-if="stats.first_seen" ng-bind="stats.first_seen|date:'mediumDate'"></span>
-                       <span ng-if="!stats.first_seen">&mdash;</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-              <div class="col-xs-12 col-sm-6 col-md-12 mar-top10">
-                <div ng-if="isUniqueType && hasThumbsUp" class="stats-box mar-bot10">
-                  <h5>Thumbs up</h5>
-                  <a ng-repeat="msg in thumbsUp | orderBy:'authorTrustDistance'"
-                    ng-class="{ 'hidden-xs': $index > 3, 'hidden-sm': $index > 4 }"
-                    class="mar-right5 mar-bot5"
-                    ui-sref="identities.show({ type: msg.linkToAuthor.type, value: msg.linkToAuthor.value })"
-                    title=""
-                    uib-tooltip="{{ msg.author_name || msg.linkToAuthor.value }}"><identicon ipfs="ipfs" identity="msg.author" class="no-glow" border="3" width="60"></identicon></a>
-                </div>
-
-                <div ng-if="isUniqueType && hasThumbsDown" class="stats-box mar-bot10">
-                  <h5>Thumbs down</h5>
-                  <a ng-repeat="msg in thumbsDown | orderBy:'authorTrustDistance'"
-                  ng-class="{ 'hidden-xs': $index > 3, 'hidden-sm': $index > 4 }"
-                  class="mar-right5 mar-bot5"
-                  ui-sref="identities.show({ type: msg.linkToAuthor.type, value: msg.linkToAuthor.value })"
-                  title=""
-                  uib-tooltip="{{ msg.author_name || msg.linkToAuthor.value }}"><identicon ipfs="ipfs" identity="msg.author" class="no-glow" border="3" width="60"></identicon></a>
-                </div>
-              </div>
-            </div>
-          </div>
+          <div ng-if="isUniqueType" ng-include="'app/identities/show.stats.html'"></div>
+          <div class="hidden-xs" ng-include="'app/messages/distance-selector.partial.html'"></div>
         </div>
-      </div>
-
-      <div class="hidden-xs" ng-include="'app/messages/distance-selector.partial.html'"></div>
-
-
-    </div>
         <div class="col-md-8 id-right-column">
           <!-- Nav tabs -->
           <div ng-include="'app/main/createuser.partial.html'"></div>
-
           <uib-tabset active="activeTab">
             <uib-tab index="1" ng-if="isUniqueType">
               <uib-tab-heading>
                 <span class="hidden-xs">Received ({{0+identity.data.receivedPositive+identity.data.receivedNeutral+identity.data.receivedNegative}})</span>
                 <span class="visible-xs">Recv ({{0+identity.data.receivedPositive+identity.data.receivedNeutral+identity.data.receivedNegative}})</span>
               </uib-tab-heading>
-
               <div ng-if="isCurrentUser" ng-include="'app/main/getstarted.partial.html'"></div>
-
               <div class="panel panel-info" ng-if="!isCurrentUser && authentication.user && authentication.identity.data && !authentication.identity.data.sentPositive">
                 <div class="panel-heading">
                   Trust this user? Upvote them to see their posts!
                 </div>
               </div>
-
-              <div ng-style="newMessage.style" ng-show="!loggingIn && authentication.user && !isCurrentUser" class="panel panel-default panel-success" id="newRatingPanel">
-                <div class="panel-body" id="write-feedback">
-                  <form ng-controller="MessagesController" ng-submit="createMessage($event, { type: 'rating', rating: newMessage.rating, comment: newMessage.comment }, {addTo: received})">
-                    <div class="form-group">
-                      <textarea name="comment" class="form-control" id="comment" ng-model="newMessage.comment" ng-disabled="addingMessage" placeholder="Comment (optional)"></textarea>
-                    </div>
-
-                    <div class="row">
-                      <div class="col-sm-10 col-xs-12 rating-slider" id="write-msg-slider">
-                        <rzslider rz-slider-model="newMessage.rating" rz-slider-options="slider.options" min="-3" max="3" step="1"></rzslider>
-                        <span class="hidden-xs write-msg-icons mar-left5">
-                          <span ng-repeat="i in iconCount(newMessage.rating) track by $index" class="write-msg-icon glyphicon glyphicon-thumbs-up mar-left5" ng-class="[iconStyle(newMessage.rating), iconClass(newMessage.rating)]"></span>
-                        </span>
-                      </div>
-                      <div class="col-sm-2 col-xs-12" style="text-align:right">
-                        <span class="visible-xs pull-left write-msg-icons">
-                          <span ng-repeat="i in iconCount(newMessage.rating) track by $index" class="write-msg-icon glyphicon glyphicon-thumbs-up mar-left5" ng-class="[iconStyle(newMessage.rating), iconClass(newMessage.rating)]"></span>
-                        </span>
-                        <button ng-disabled="addingMessage" type="submit" class="pull-right btn btn-primary" data-style="zoom-out">
-                          <span ng-show="newMessage.rating == 0">Neutral</span>
-                          <span ng-show="newMessage.rating > 0">Upvote</span>
-                          <span ng-show="newMessage.rating < 0">Downvote</span>
-                        </button>
-                      </div>
-                    </div>
-                  </form>
-                </div>
-              </div>
-
-              <div infinite-scroll="getReceivedMsgs()" infinite-scroll-distance="2" infinite-scroll-disabled="true || !identity || activeTab != 1">
-                <div class="panel" ng-class="{'mar-bot5': (filters.type.indexOf('rating') === 0)}">
-                  <div class="filters">
-                    <ul class="nav nav-pills msg-type-filter">
-                      <li ng-class="{active: (filters.type === null) }" ng-click="setFilters({ type: null })"><a>All</a></li>
-                      <li ng-class="{active: (filters.type === 'rating') }" ng-click="setFilters({type: 'rating'})"><a>Rating</a></li>
-                      <li ng-class="{active: (filters.type === 'verification') }" ng-click="setFilters({type:'verification'})"><a>Verification</a></li>
-                    </ul>
-                  </div>
-                </div>
-                <div class="panel" ng-show="filters.type.indexOf('rating') === 0">
-                  <div class="filters">
-                    <ul class="nav nav-pills msg-type-filter">
-                      <li ng-class="{active: (filters.type === 'rating:positive') }" ng-click="setFilters({type: 'rating:positive'})"><a><span class="positive"><span class="visible-xs-inline glyphicon glyphicon-thumbs-up"></span><span class="hidden-xs">Pos<span class="hidden-md">itive</span></span> ({{0+identity.data.receivedPositive}})</span></a></li>
-                      <li ng-class="{active: (filters.type === 'rating:neutral') }" ng-click="setFilters({type: 'rating:neutral'})"><a><span class="neutral"><span class="visible-xs-inline glyphicon glyphicon-question-sign"></span><span class="hidden-xs">Neut<span class="hidden-md">ral</span></span> ({{0+identity.data.receivedNeutral}})</span></a></li>
-                      <li ng-class="{active: (filters.type === 'rating:negative') }" ng-click="setFilters({type: 'rating:negative'})"><a><span class="negative"><span class="visible-xs-inline glyphicon glyphicon-thumbs-down"></span><span class="hidden-xs">Neg<span class="hidden-md">ative</span></span> ({{0+identity.data.receivedNegative}})</span></a></li>
-                    </ul>
-                  </div>
-                </div>
-                <message auth="authentication" ipfs="ipfs" msg-utils="msgUtils" msg="msg" page-info="identity" ng-repeat="msg in received.list | filter:msgFilter | orderBy:'signedData.timestamp' : true as receivedFiltered" ng-click="openMessage($event, msg, 'lg')"></message>
-              </div>
+              <div ng-include="'app/messages/create.rating.partial.html'" ng-show="!loggingIn && authentication.user && !isCurrentUser"></div>
+              <div ng-include="'app/identities/show.received.html'"></div>
               <div ng-if="!isCurrentUser && receivedFiltered.length == 0" class="alert alert-info text-center">No messages yet</div>
             </uib-tab>
             <uib-tab index="2" ng-if="isUniqueType">
               <uib-tab-heading>Sent ({{0+identity.data.sentPositive+identity.data.sentNeutral+identity.data.sentNegative}})</uib-tab-heading>
-              <div infinite-scroll="getSentMsgs()" infinite-scroll-distance="2" infinite-scroll-disabled="true || !identity || activeTab != 2">
-                <div class="panel" ng-class="{'mar-bot5': (filters.type.indexOf('rating') === 0)}">
-                  <div class="filters">
-                    <ul class="nav nav-pills msg-type-filter">
-                      <li ng-class="{active: (filters.type === null) }" ng-click="setFilters({ type: null })"><a>All</a></li>
-                      <li ng-class="{active: (filters.type === 'rating') }" ng-click="setFilters({type: 'rating'})"><a>Rating</a></li>
-                      <li ng-class="{active: (filters.type === 'verification') }" ng-click="setFilters({type:'verification'})"><a>Verification</a></li>
-                      <!-- <li ><a href="#" data-val="other"><span class="glyphicon glyphicon-question-sign"></span> Other</a></li> -->
-                    </ul>
-                  </div>
-                </div>
-                <div ng-show="filters.type.indexOf('rating') === 0" class="panel">
-                  <div class="filters">
-                    <ul class="nav nav-pills msg-type-filter">
-                      <li ng-class="{active: (filters.type === 'rating:positive') }" ng-click="setFilters({type: 'rating:positive'})"><a><span class="positive"><span class="visible-xs-inline glyphicon glyphicon-thumbs-up"></span><span class="hidden-xs">Pos<span class="hidden-md">itive</span></span> ({{0+identity.data.sentPositive}})</span></a></li>
-                      <li ng-class="{active: (filters.type === 'rating:neutral') }" ng-click="setFilters({type: 'rating:neutral'})"><a><span class="neutral"><span class="visible-xs-inline glyphicon glyphicon-question-sign"></span><span class="hidden-xs">Neut<span class="hidden-md">ral</span></span> ({{0+identity.data.sentNeutral}})</span></a></li>
-                      <li ng-class="{active: (filters.type === 'rating:negative') }" ng-click="setFilters({type: 'rating:negative'})"><a><span class="negative"><span class="visible-xs-inline glyphicon glyphicon-thumbs-down"></span><span class="hidden-xs">Neg<span class="hidden-md">ative</span></span> ({{0+identity.data.sentNegative}})</span></a></li>
-                    </ul>
-                  </div>
-                </div>
-                <message auth="authentication" ipfs="ipfs" msg-utils="msgUtils" msg="msg" page-info="identity" ng-repeat="msg in sent | filter:msgFilter | orderBy:'signedData.timestamp' : true as sentFiltered" ng-click="openMessage($event, msg, 'lg')"></message>
-              </div>
-              <div ng-if="sentFiltered.length == 0" class="alert alert-info text-center">No messages yet</div>
+              <div ng-include="'app/identities/show.sent.html'"></div>
             </uib-tab>
             <uib-tab index="3">
-                <uib-tab-heading>Id<span class="hidden-xs">entity</span> (<span ng-bind="attributesLength || 0"></span>)</uib-tab-heading>
-                <div id="connections">
-                  <!-- <input id="authenticity_token" name="authenticity_token" type="hidden" value="z1JM7ffnFK7gOv6S3yzG9UFyakukYHikAU94/3TcT2o="> -->
-                  <table class="table truncated-table table-hover">
-                    <tbody>
-                      <tr ng-repeat-start="a in attributes" style="{{a.rowStyle}}" ng-class="a.rowClass" ng-click="!a.isCurrent && connectionClicked($event, id)" class="id-row">
-                        <td>
-                          <div>
-                            <div class="pull-left mar-right15">
-                              <a ng-hide="a.type === 'keyID' || a.type === 'uuid'" style="min-width:45px" class="btn btn-lg btn-social-icon" ng-class="a.btnStyle" ng-href="{{a.link}}">
-                                <span ng-class="a.iconStyle"></span>
-                                <span ng-if="a.iconStyle&&!a.link" class="pull-left btn btn-lg btn-social-icon" ng-class="a.btnStyle" ng-href="{{a.link}}">
-                                <span ng-class="a.iconStyle"></span>
-                              </a>
-                              <identicon identity="a.attr" ng-show="a.attr && (a.type === 'keyID' || a.type === 'uuid')" width="45"></identicon>
-                            </div>
-                            <div class="pull-left">
-                              <a ui-sref="identities.show({ type: a.type, value: a.value })" ng-bind="a.linkName || a.value" class="id-link"></a>
-                              <br>
-                              <small ng-bind="a.type"></small>
-                            </div>
-                            <!--
-                              <input class="form-control linkedComment" type="text" placeholder="comment" disabled>
-                            -->
-                            <div class="pull-right" ng-if="!a.isCurrent">
-                              <button autocomplete="off" name="confirm" class="btn btn-default btn-confirm" ng-click="createMessage($event, { type: 'verification' }, {verifiedAttr: a})" ng-disabled="!authentication.user" uib-tooltip="Verify" data-style="zoom-out">
-                                <span class="positive glyphicon glyphicon-ok"></span> {{a.conf}}
-                              </button>
-                              <button autocomplete="off" name="unverify" class="btn btn-default btn-unverify" ng-click="createMessage($event, { type: 'unverification' }, {verifiedAttr: a})" ng-disabled="!authentication.user" uib-tooltip="Unverify" data-style="zoom-out">
-                                <span class="negative glyphicon glyphicon-remove"></span> {{a.ref}}
-                              </button>
-                            </div>
-                            <div class="clear"></div>
-                          </div>
-                        </td>
-                      </tr>
-                      <tr ng-repeat-end ng-if="!a.isCurrent" class="active connectingmsgs">
-                        <td class="connectingmsgs" data-style="zoom-in" data-spinner-color="#000">
-                          <div uib-collapse="!a.collapse">
-                            <div ng-repeat="msg in a.connecting_msgs" ng-click="openMessage($event, msg, 'lg')" class="confirmation-panel">
-                                <span ng-if="msg.data.type === 'verification'">
-                                  <span class="positive glyphicon glyphicon-ok hidden-xs mar-left5 pull-right"></span>
-                                  <span class="positive glyphicon glyphicon-ok visible-xs-inline-block mar-right10"></span>
-                                </span>
-                                <span ng-if="msg.data.type === 'unverification'">
-                                  <span class="negative glyphicon glyphicon-remove hidden-xs mar-left5 pull-right"></span>
-                                  <span class="negative glyphicon glyphicon-remove visible-xs-inline-block mar-right10"></span>
-                                </span>
-                                <strong>
-                                  <a ui-sref="identities.show({ type: msg.linkToAuthor.type, value: msg.linkToAuthor.value })" class="id-link">
-                                    <identicon ipfs="ipfs" identity="msg" class="mar-right5" border="3" width="30" positive-score="msg.author_pos" negative-score="msg.author_neg"></identicon>
-                                    <span ng-bind="msg.author_name||msg.data.author.type.value"></span>
-                                  </a>
-                                </strong>
-                                 - <span ng-bind="msg.data.timestamp|date:'mediumDate'" class="text-muted small" style="display:inline-block;"></span>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                      <tr class="active add-row">
-                        <td>
-                          <input id="addValue" ng-change="guessAttributeType()" ng-model="newVerification.value" class="form-control" name="linkedValue" type="text" placeholder="value (e.g. alice@example.com)" ng-disabled="!authentication.user">
-                          <input id="addType" ng-model="newVerification.type" class="form-control" name="linkedType" type="text" placeholder="type (e.g. email)" ng-disabled="!authentication.user">
-                        <!--<td><input id="addComment" class="form-control" name="linkedComment" type="text" placeholder="comment" disabled></td> -->
-                          <button autocomplete="off" id="addButton" ng-click="createMessage($event, { type: 'verification' }, {verifiedAttr: newVerification})" class="btn btn-default" data-style="zoom-out" ng-disabled="!authentication.user || !(newVerification.type && newVerification.value)"><span class="glyphicon glyphicon-plus"></span> Add</button>
-                        </td>
-                      </tr>
-                  </tbody>
-                </table>
-              </div>
+              <uib-tab-heading>Id<span class="hidden-xs">entity</span> (<span ng-bind="attributesLength || 0"></span>)</uib-tab-heading>
+              <div ng-include="'app/identities/show.connections.html'" id="connections"></div>
             </uib-tab>
           </uib-tabset>
         </div>

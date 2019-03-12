@@ -1,0 +1,67 @@
+<!-- <input id="authenticity_token" name="authenticity_token" type="hidden" value="z1JM7ffnFK7gOv6S3yzG9UFyakukYHikAU94/3TcT2o="> -->
+<table class="table truncated-table table-hover">
+  <tbody>
+    <tr ng-repeat-start="a in attributes" style="{{a.rowStyle}}" ng-class="a.rowClass" ng-click="!a.isCurrent && connectionClicked($event, id)" class="id-row">
+      <td>
+        <div>
+          <div class="pull-left mar-right15">
+            <a ng-hide="a.type === 'keyID' || a.type === 'uuid'" style="min-width:45px" class="btn btn-lg btn-social-icon" ng-class="a.btnStyle" ng-href="{{a.link}}">
+              <span ng-class="a.iconStyle"></span>
+              <span ng-if="a.iconStyle&&!a.link" class="pull-left btn btn-lg btn-social-icon" ng-class="a.btnStyle" ng-href="{{a.link}}">
+              <span ng-class="a.iconStyle"></span>
+            </a>
+            <identicon identity="a.attr" ng-show="a.attr && (a.type === 'keyID' || a.type === 'uuid')" width="45"></identicon>
+          </div>
+          <div class="pull-left">
+            <a ui-sref="identities.show({ type: a.type, value: a.value })" ng-bind="a.linkName || a.value" class="id-link"></a>
+            <br>
+            <small ng-bind="a.type"></small>
+          </div>
+          <!--
+            <input class="form-control linkedComment" type="text" placeholder="comment" disabled>
+          -->
+          <div class="pull-right" ng-if="!a.isCurrent">
+            <button autocomplete="off" name="confirm" class="btn btn-default btn-confirm" ng-click="createMessage($event, { type: 'verification' }, {verifiedAttr: a})" ng-disabled="!authentication.user" uib-tooltip="Verify" data-style="zoom-out">
+              <span class="positive glyphicon glyphicon-ok"></span> {{a.conf}}
+            </button>
+            <button autocomplete="off" name="unverify" class="btn btn-default btn-unverify" ng-click="createMessage($event, { type: 'unverification' }, {verifiedAttr: a})" ng-disabled="!authentication.user" uib-tooltip="Unverify" data-style="zoom-out">
+              <span class="negative glyphicon glyphicon-remove"></span> {{a.ref}}
+            </button>
+          </div>
+          <div class="clear"></div>
+        </div>
+      </td>
+    </tr>
+    <tr ng-repeat-end ng-if="!a.isCurrent" class="active connectingmsgs">
+      <td class="connectingmsgs" data-style="zoom-in" data-spinner-color="#000">
+        <div uib-collapse="!a.collapse">
+          <div ng-repeat="msg in a.connecting_msgs" ng-click="openMessage($event, msg, 'lg')" class="confirmation-panel">
+              <span ng-if="msg.data.type === 'verification'">
+                <span class="positive glyphicon glyphicon-ok hidden-xs mar-left5 pull-right"></span>
+                <span class="positive glyphicon glyphicon-ok visible-xs-inline-block mar-right10"></span>
+              </span>
+              <span ng-if="msg.data.type === 'unverification'">
+                <span class="negative glyphicon glyphicon-remove hidden-xs mar-left5 pull-right"></span>
+                <span class="negative glyphicon glyphicon-remove visible-xs-inline-block mar-right10"></span>
+              </span>
+              <strong>
+                <a ui-sref="identities.show({ type: msg.linkToAuthor.type, value: msg.linkToAuthor.value })" class="id-link">
+                  <identicon ipfs="ipfs" identity="msg" class="mar-right5" border="3" width="30" positive-score="msg.author_pos" negative-score="msg.author_neg"></identicon>
+                  <span ng-bind="msg.author_name||msg.data.author.type.value"></span>
+                </a>
+              </strong>
+               - <span ng-bind="msg.data.timestamp|date:'mediumDate'" class="text-muted small" style="display:inline-block;"></span>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <tr class="active add-row">
+      <td>
+        <input id="addValue" ng-change="guessAttributeType()" ng-model="newVerification.value" class="form-control" name="linkedValue" type="text" placeholder="value (e.g. alice@example.com)" ng-disabled="!authentication.user">
+        <input id="addType" ng-model="newVerification.type" class="form-control" name="linkedType" type="text" placeholder="type (e.g. email)" ng-disabled="!authentication.user">
+      <!--<td><input id="addComment" class="form-control" name="linkedComment" type="text" placeholder="comment" disabled></td> -->
+        <button autocomplete="off" id="addButton" ng-click="createMessage($event, { type: 'verification' }, {verifiedAttr: newVerification})" class="btn btn-default" data-style="zoom-out" ng-disabled="!authentication.user || !(newVerification.type && newVerification.value)"><span class="glyphicon glyphicon-plus"></span> Add</button>
+      </td>
+    </tr>
+  </tbody>
+</table>

@@ -1,0 +1,28 @@
+<div ng-style="newMessage.style" class="panel panel-default panel-success" id="newRatingPanel">
+  <div class="panel-body" id="write-feedback">
+    <form ng-controller="MessagesController" ng-submit="createMessage($event, { type: 'rating', rating: newMessage.rating, comment: newMessage.comment }, {addTo: received})">
+      <div class="form-group">
+        <textarea name="comment" class="form-control" id="comment" ng-model="newMessage.comment" ng-disabled="addingMessage" placeholder="Comment (optional)"></textarea>
+      </div>
+
+      <div class="row">
+        <div class="col-sm-10 col-xs-12 rating-slider" id="write-msg-slider">
+          <rzslider rz-slider-model="newMessage.rating" rz-slider-options="slider.options" min="-3" max="3" step="1"></rzslider>
+          <span class="hidden-xs write-msg-icons mar-left5">
+            <span ng-repeat="i in iconCount(newMessage.rating) track by $index" class="write-msg-icon glyphicon glyphicon-thumbs-up mar-left5" ng-class="[iconStyle(newMessage.rating), iconClass(newMessage.rating)]"></span>
+          </span>
+        </div>
+        <div class="col-sm-2 col-xs-12" style="text-align:right">
+          <span class="visible-xs pull-left write-msg-icons">
+            <span ng-repeat="i in iconCount(newMessage.rating) track by $index" class="write-msg-icon glyphicon glyphicon-thumbs-up mar-left5" ng-class="[iconStyle(newMessage.rating), iconClass(newMessage.rating)]"></span>
+          </span>
+          <button ng-disabled="addingMessage" type="submit" class="pull-right btn btn-primary" data-style="zoom-out">
+            <span ng-show="newMessage.rating == 0">Neutral</span>
+            <span ng-show="newMessage.rating > 0">Upvote</span>
+            <span ng-show="newMessage.rating < 0">Downvote</span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

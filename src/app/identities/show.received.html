@@ -1,0 +1,21 @@
+<div infinite-scroll="getReceivedMsgs()" infinite-scroll-distance="2" infinite-scroll-disabled="true || !identity || activeTab != 1">
+  <div class="panel" ng-class="{'mar-bot5': (filters.type.indexOf('rating') === 0)}">
+    <div class="filters">
+      <ul class="nav nav-pills msg-type-filter">
+        <li ng-class="{active: (filters.type === null) }" ng-click="setFilters({ type: null })"><a>All</a></li>
+        <li ng-class="{active: (filters.type === 'rating') }" ng-click="setFilters({type: 'rating'})"><a>Rating</a></li>
+        <li ng-class="{active: (filters.type === 'verification') }" ng-click="setFilters({type:'verification'})"><a>Verification</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="panel" ng-show="filters.type.indexOf('rating') === 0">
+    <div class="filters">
+      <ul class="nav nav-pills msg-type-filter">
+        <li ng-class="{active: (filters.type === 'rating:positive') }" ng-click="setFilters({type: 'rating:positive'})"><a><span class="positive"><span class="visible-xs-inline glyphicon glyphicon-thumbs-up"></span><span class="hidden-xs">Pos<span class="hidden-md">itive</span></span> ({{0+identity.data.receivedPositive}})</span></a></li>
+        <li ng-class="{active: (filters.type === 'rating:neutral') }" ng-click="setFilters({type: 'rating:neutral'})"><a><span class="neutral"><span class="visible-xs-inline glyphicon glyphicon-question-sign"></span><span class="hidden-xs">Neut<span class="hidden-md">ral</span></span> ({{0+identity.data.receivedNeutral}})</span></a></li>
+        <li ng-class="{active: (filters.type === 'rating:negative') }" ng-click="setFilters({type: 'rating:negative'})"><a><span class="negative"><span class="visible-xs-inline glyphicon glyphicon-thumbs-down"></span><span class="hidden-xs">Neg<span class="hidden-md">ative</span></span> ({{0+identity.data.receivedNegative}})</span></a></li>
+      </ul>
+    </div>
+  </div>
+  <message auth="authentication" ipfs="ipfs" msg-utils="msgUtils" msg="msg" page-info="identity" ng-repeat="msg in received.list | filter:msgFilter | orderBy:'signedData.timestamp' : true as receivedFiltered" ng-click="openMessage($event, msg, 'lg')"></message>
+</div>

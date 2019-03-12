@@ -1,0 +1,153 @@
+<div>
+  <p class="hidden-md hidden-lg" ng-hide="!stats.name">
+    <span ng-bind="idValue" class="idValue"></span>
+    <small class="text-muted">
+    <span ng-hide="idType === 'url'" ng-bind="idType" class="idType"></span>
+    <a ng-href="{{idValue}}" ng-show="idType === 'url'" ng-bind="idType" class="idType"></a>
+    </small>
+  </p>
+  <div class="stats-box">
+    <div class="row">
+      <div class="col-xs-12">
+        <p class="align-center">
+          <identicon ng-click="openProfilePhotoUploadModal()" identity="identity"
+            ipfs="ipfs"
+            border="4"
+            show-distance="0"
+            width="230"
+            ng-if="hideProfilePhoto">
+          </identicon>
+          <identicon ng-click="openProfilePhotoUploadModal()" identity="identity"
+            ipfs="ipfs"
+            border="4"
+            show-distance="0"
+            width="230"
+            ng-if="!hideProfilePhoto">
+          </identicon>
+        </p>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xs-12">
+        <h4>
+          <span class="visible-xs-inline-block visible-sm-inline-block mar-right15">
+            <span ng-show="idType === 'keyID' || idType === 'uuid'">
+              <identicon identity="idAttr" width=35></identicon>
+            </span>
+            <span ng-hide="idType === 'keyID' || idType === 'uuid'">
+            <span ng-if="!(identity.data.mostVerifiedAttributes.name||identity.data.mostVerifiedAttributes.nickname)">
+            <span ng-bind="idValue" class="idValue"></span>
+            <small class="text-muted">
+            <span ng-hide="idType === 'url'" ng-bind="idType" class="idType"></span>
+            <a ng-href="{{idValue}}" ng-show="idType === 'url'" ng-bind="idType" class="idType"></a>
+            </small>
+            </span>
+            </span>
+          </span>
+          <span ng-bind="identity.primaryName"></span>
+          <span class="glyphicon glyphicon-ok-sign" style="color:#337ab7" uib-tooltip="Verified by a trusted verifier" ng-if="identity.verified"></span>
+          <span ng-hide="!identity.data.mostVerifiedAttributes.nickname || identity.data.mostVerifiedAttributes.nickname == identity.data.mostVerifiedAttributes.primaryName">
+          (<span class="text-muted" ng-bind="identity.nickname"></span>)
+          </span>
+          <button class="mar-left15 visible-xs-inline-block visible-sm-inline-block btn btn-default" ng-click="openShareModal()">
+          <span class="glyphicon glyphicon-share mar-right5"></span> Share
+          </button>
+          <span ng-if="identity.data.trustDistance === 0" class="label label-default pull-right">viewpoint</span>
+          <span ng-if="identity.data.trustDistance > 0" ng-bind="identity.data.trustDistance | ordinal" class="label label-default pull-right"></span>
+          <span ng-if="identity.data.trustDistance === false" class="label label-default pull-right">unconnected</span>
+        </h4>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xs-12 col-sm-6 col-md-12 mar-bot10 mar-top10">
+        <div class="mar-bot10" ng-if="authentication.user && !identity.hasProperName && !nameAdded">
+          <a href="" ng-click="addName()" ng-hide="addingName">Add name</a>
+          <form class="form-inline" ng-show="addingName" ng-submit="addName(name)">
+            <div class="form-group">
+              <input focus-on="addNameFocus" type="text" class="form-control" ng-model="name" placeholder="Add name">
+            </div>
+            <button type="submit" class="btn btn-default"><span class="glyphicon glyphicon-plus"></span></button>
+          </form>
+        </div>
+        <p>
+          <b>Received:
+          <span ng-if="identity.data.receivedPositive || identity.data.receivedNegative">
+          <span ng-bind="identity.data.receivedPositive / (identity.data.receivedPositive+identity.data.receivedNeutral+identity.data.receivedNegative) * 100 | number:0">
+          </span>% positive
+          </span>
+          <span ng-if="!(identity.data.receivedPositive || identity.data.receivedNegative)">
+          &mdash;
+          </span>
+          </b><br>
+          Sent:
+          <span ng-if="identity.data.sentPositive || identity.data.sentNegative">
+          <span ng-bind="identity.data.sentPositive / (identity.data.sentPositive+identity.data.sentNeutral+identity.data.sentNegative) * 100 | number:0">
+          </span>% positive
+          </span>
+          <span ng-if="!(identity.data.sentPositive || identity.data.sentNegative)">
+          &mdash;
+          </span>
+        </p>
+        <!--
+          <p class="received-stats">
+          <div><strong>Received</strong></div>
+          <div>
+          <strong>
+          <span class="positive"><span class="glyphicon glyphicon-thumbs-up"></span> <span ng-bind="identity.data.receivedPositive">-</span></span>
+          <span class="neutral"><span class="glyphicon glyphicon-question-sign"></span> <span ng-bind="identity.data.receivedNeutral">-</span></span>
+          <span class="negative"><span class="glyphicon glyphicon-thumbs-down"></span> <span ng-bind="identity.data.receivedNegative">-</span></span>
+          </strong>
+          </div>
+          </p>
+          <p>
+          <div>Sent</div>
+          <div>
+          <span class="positive"><span class="glyphicon glyphicon-thumbs-up"></span> <span ng-bind="identity.data.sentPositive">-</span></span>
+          <span class="neutral"><span class="glyphicon glyphicon-question-sign"></span> <span ng-bind="identity.data.sentNeutral">-</span></span>
+          <span class="negative"><span class="glyphicon glyphicon-thumbs-down"></span> <span ng-bind="identity.data.sentNegative">-</span></span>
+          </div>
+          </p> -->
+        <div ng-if="scores.verifier && scores.verifier.score > 0" class="text-center alert alert-info">
+          <span class="fa fa-shield" style="font-size:2em"></span>
+          <p>This identity is a <b>trusted verifier</b> in this web of trust.
+            It can grant verification checkmarks.
+          </p>
+        </div>
+        <div ng-if="isUniqueType" class="mar-top10 quick-contact">
+          <ul class="list-unstyled">
+            <li ng-repeat="a in attributes" ng-if="a.quickContact"><a ng-href="{{a.link}}"><span ng-class="a.iconStyle"></span><span ng-bind="a.linkName || a.value"></span></a></li>
+            <li ng-if="stats.first_seen">
+              <span class="fa fa-calendar"></span>First seen:
+              <span ng-if="stats.first_seen" ng-bind="stats.first_seen|date:'mediumDate'"></span>
+              <span ng-if="!stats.first_seen">&mdash;</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-xs-12 col-sm-6 col-md-12 mar-top10">
+        <div ng-if="isUniqueType && hasThumbsUp" class="stats-box mar-bot10">
+          <h5>Thumbs up</h5>
+          <a ng-repeat="msg in thumbsUp | orderBy:'authorTrustDistance'"
+            ng-class="{ 'hidden-xs': $index > 3, 'hidden-sm': $index > 4 }"
+            class="mar-right5 mar-bot5"
+            ui-sref="identities.show({ type: msg.linkToAuthor.type, value: msg.linkToAuthor.value })"
+            title=""
+            uib-tooltip="{{ msg.author_name || msg.linkToAuthor.value }}">
+            <identicon ipfs="ipfs" identity="msg.author" class="no-glow" border="3" width="60"></identicon>
+          </a>
+        </div>
+        <div ng-if="isUniqueType && hasThumbsDown" class="stats-box mar-bot10">
+          <h5>Thumbs down</h5>
+          <a ng-repeat="msg in thumbsDown | orderBy:'authorTrustDistance'"
+            ng-class="{ 'hidden-xs': $index > 3, 'hidden-sm': $index > 4 }"
+            class="mar-right5 mar-bot5"
+            ui-sref="identities.show({ type: msg.linkToAuthor.type, value: msg.linkToAuthor.value })"
+            title=""
+            uib-tooltip="{{ msg.author_name || msg.linkToAuthor.value }}">
+            <identicon ipfs="ipfs" identity="msg.author" class="no-glow" border="3" width="60"></identicon>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
