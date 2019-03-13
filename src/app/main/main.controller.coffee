@@ -546,7 +546,7 @@ angular.module('irisAngular').controller 'MainController', [
     $scope.toggleCollapsibleMenu = ->
       $scope.isCollapsed = !$scope.isCollapsed
 
-    $scope.processMessages = (messages, msgOptions) ->
+    $scope.processMessages = (messages, msgOptions = {}, options = {}) ->
       processMessage = (msg) ->
         msg.likes = 0
         updateReactions = (reactions) ->
@@ -559,6 +559,13 @@ angular.module('irisAngular').controller 'MainController', [
           $scope.$apply ->
             msg.likes = likes
             msg.liked = liked
+        if msg.signedData.sharedMsg and not options.noRecursion
+          $scope.irisIndex.gun.back(-1).get('messagesByHash').get(msg.signedData.sharedMsg).then (rawSharedMsg) ->
+            console.log 'yeah', rawSharedMsg
+            $window.irisLib.Message.fromSig(rawSharedMsg).then (sharedMsg) ->
+              console.log 'yees', sharedMsg
+              processMessage sharedMsg, null, { noRecursion: true }
+              $scope.$apply -> msg.sharedMsg = sharedMsg
         updateReactions(msg.reactions) if msg.reactions
         msg.repliesArr = msg.repliesArr or []
         msg.replies = msg.replies or {}
