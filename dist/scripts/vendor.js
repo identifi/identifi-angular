@@ -92301,6 +92301,10 @@ Gun.chain.then = function(cb) {
 	      this.gun.back(-1).get('messagesByHash').get(msg.signedData.replyTo).get('replies').get(hash).put(node);
 	      this.gun.back(-1).get('messagesByHash').get(msg.signedData.replyTo).get('replies').get(hash).put(node);
 	    }
+	    if (msg.signedData.sharedMsg) {
+	      this.gun.back(-1).get('messagesByHash').get(msg.signedData.sharedMsg).get('shares').get(hash).put(node);
+	      this.gun.back(-1).get('messagesByHash').get(msg.signedData.sharedMsg).get('shares').get(hash).put(node);
+	    }
 	    var indexKeys = Index.getMsgIndexKeys(msg);
 	    for (var index in indexKeys) {
 	      for (var i = 0; i < indexKeys[index].length; i++) {
@@ -92464,7 +92468,7 @@ Gun.chain.then = function(cb) {
 	  return Index;
 	}();
 
-	var version$1 = "0.0.93";
+	var version$1 = "0.0.94";
 
 	/*eslint no-useless-escape: "off", camelcase: "off" */
 

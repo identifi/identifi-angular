@@ -489,8 +489,11 @@ angular.module('irisAngular').controller 'MainController', [
       msg.strData = JSON.stringify(showRawData, undefined, 2)
 
     $scope.shareMessage = (msg, comment) ->
-      $scope.createMessage(null, { type: 'post', sharedMsg: msg.getHash(), comment })
-      msg.shares = msg.shares or 1
+      $scope.createMessage(null, { type: 'post', sharedMsg: msg.getHash(), comment }).then (r) ->
+        msg.shares = msg.shares or {}
+        msg.shares[r.getHash()] = r
+        msg.sharesArr = msg.sharesArr or []
+        msg.sharesArr.push(r)
       $scope.shareModal.close()
 
     $scope.msgUtils =
@@ -512,12 +515,10 @@ angular.module('irisAngular').controller 'MainController', [
           replyTo: msg.getHash()
           comment: reply
         }).then (r) ->
-          $scope.irisIndex.addMessage(r)
           msg.replies = msg.replies or {}
           msg.replies[r.getHash()] = r
           msg.repliesArr = msg.repliesArr or []
           msg.repliesArr.push(r)
-          console.log 'msg replyTo', reply, msg
 
     $scope.openMessage = (event, message, size) ->
       t = event.target
@@ -561,6 +562,8 @@ angular.module('irisAngular').controller 'MainController', [
         updateReactions(msg.reactions) if msg.reactions
         msg.repliesArr = msg.repliesArr or []
         msg.replies = msg.replies or {}
+        msg.sharesArr = msg.sharesArr or []
+        msg.shares = msg.shares or {}
         updateReplies = (replies) ->
           for hash, replyRaw of replies
             $window.irisLib.Message.fromSig(replyRaw).then (r) ->
@@ -568,9 +571,17 @@ angular.module('irisAngular').controller 'MainController', [
                 msg.replies[r.getHash()] = r
                 processMessage r
                 $scope.$apply -> msg.repliesArr.push(r)
+        updateShares = (shares) ->
+          for hash, shareRaw of shares
+            $window.irisLib.Message.fromSig(shareRaw).then (r) ->
+              unless msg.shares[r.getHash()] and msg.shares[r.getHash()].author
+                msg.shares[r.getHash()] = r
+                processMessage r
+                $scope.$apply -> msg.sharesArr.push(r)
         if msg.gun
           msg.gun.get('replies').open updateReplies
           msg.gun.get('reactions').on updateReactions
+          msg.gun.get('shares').open updateShares
         msg.author = msg.getAuthor($scope.irisIndex)
         msg.author.gun.get('trustDistance').on (d) -> msg.authorTrustDistance = d
         msg.author.gun.get('attrs').open (d) ->
