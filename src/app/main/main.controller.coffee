@@ -489,7 +489,8 @@ angular.module('irisAngular').controller 'MainController', [
       msg.strData = JSON.stringify(showRawData, undefined, 2)
 
     $scope.shareMessage = (msg, comment) ->
-      null # TODO
+      $scope.createMessage(null, { type: 'post', sharedMsg: msg.getHash(), comment })
+      msg.shares = msg.shares or 1
       $scope.shareModal.close()
 
     $scope.msgUtils =

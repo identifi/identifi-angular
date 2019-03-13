@@ -20,15 +20,13 @@
     </p>
 
     <div ng-if="$ctrl.msg.isVerification || $ctrl.msg.isUnverification">
-      <div ng-repeat="a in $ctrl.msg.recipientArray">
-        <small>
-          <i class="fa fa-link" ng-if="$ctrl.msg.isVerification"></i>
-          <i class="fa fa-chain-broken" ng-if="$ctrl.msg.isUnverification"></i>
-          {{a.type}}:
-          <span ng-if="a.type == 'email' || a.type == 'url'" ng-bind-html="a.value | linky"></span>
-          <span ng-if="!(a.type == 'email' || a.type == 'url')" ng-bind="a.value"></span>
-        </small>
-      </div>
+        <div ng-repeat="a in $ctrl.msg.recipientArray">
+          <small>
+            <b ng-bind="a.type"></b>:
+            <span ng-if="a.type == 'email' || a.type == 'url'" ng-bind-html="a.value | linky"></span>
+            <span ng-if="!(a.type == 'email' || a.type == 'url')" ng-bind="a.value"></span>
+          </small>
+        </div>
     </div>
 
     <p>
