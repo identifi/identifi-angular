@@ -48,7 +48,7 @@
     hm-more-text="Show more"
     hm-less-text="Show less"></p>
 
-    <message ng-if="$ctrl.msg.sharedMsg && $ctrl.msgUtils" msg="$ctrl.msg.sharedMsg" ipfs="ipfs" auth="auth"></message>
+    <message ng-if="$ctrl.msg.sharedMsg && $ctrl.msgUtils" msg="$ctrl.msg.sharedMsg" ipfs="$ctrl.ipfs" auth="$ctrl.auth"></message>
 
     <span ng-class="{disabled: !$ctrl.auth.user}" class="pull-right" ng-if="$ctrl.msgUtils && $ctrl.msg.signedData.type == 'post'">
       <a class="msg-reaction" href="" ng-class="{active: $ctrl.msg.showCommentField}" ng-click="$ctrl.auth.user && ($ctrl.msg.showCommentField = !$ctrl.msg.showCommentField)"><i class="glyphicon glyphicon-comment"></i></a>
