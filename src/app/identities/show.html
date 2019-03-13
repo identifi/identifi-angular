@@ -5,8 +5,8 @@
       <div class="col-md-8 col-md-offset-3">
         <h4 ng-show="idType === 'keyID' || idType === 'uuid'">
           <identicon identity="idAttr" width=35></identicon>
-          <button class="btn btn-default mar-left15" ng-click="openShareModal()">
-          <span class="glyphicon glyphicon-qrcode mar-right5"></span> Share
+          <button class="btn btn-default mar-left15" ng-click="openSharePageModal()">
+            <span class="glyphicon glyphicon-qrcode mar-right5"></span> Share
           </button>
         </h4>
         <h4 ng-hide="idType === 'keyID' || idType === 'uuid'">
@@ -15,7 +15,7 @@
           <span ng-hide="idType === 'url'" ng-bind="idType" class="idType"></span>
           <a ng-href="{{idValue}}" ng-show="idType === 'url'" ng-bind="idType" class="idType"></a>
           </small>
-          <button class="btn btn-default mar-left15" ng-click="openShareModal()">
+          <button class="btn btn-default mar-left15" ng-click="openSharePageModal()">
           <span class="glyphicon glyphicon-qrcode mar-right5"></span> Share
           </button>
         </h4>

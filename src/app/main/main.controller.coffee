@@ -327,35 +327,24 @@ angular.module('irisAngular').controller 'MainController', [
     $scope.login = ->
       $scope.filters.maxDistance = -1 # because the user doesn't have a trust index yet
 
-    $scope.openLoginModal = ->
-      $scope.loginModal = $uibModal.open(
-        animation: $scope.animationsEnabled
-        templateUrl: 'app/main/login.modal.html'
-        size: 'lg'
-        scope: $scope
-      )
-      $scope.loginModal.result.then (->), (->) # avoid backdrop rejection console error
-      $scope.loginModal.rendered.then ->
+    $scope.openModal = (modalName, options) ->
+      options = Object.assign {size: 'lg', animation: true, scope: $scope}, options
+      $scope[modalName] = $uibModal.open(options)
+      $scope[modalName].result.then (->), (->) # avoid backdrop rejection console error
+      $scope[modalName].rendered.then ->
         document.activeElement.blur()
-        focus('newUser')
+        focus(options.focusTo) if options.focusTo
       $transitions.onStart {}, ->
-        $scope.loginModal.close()
+        $scope[modalName].close()
+
+    $scope.openLoginModal = ->
+      $scope.openModal('loginModal', {templateUrl: 'app/main/login.modal.html', focusTo: 'newUser'})
 
     $scope.openUploadModal = (callback, modalButtonText, squarify) ->
       $scope.uploadModalCallback = callback
       $scope.modalButtonText = modalButtonText or 'Upload'
       $scope.squarify = squarify
-      $scope.uploadModal = $uibModal.open(
-        animation: $scope.animationsEnabled
-        templateUrl: 'app/identities/upload.modal.html'
-        size: 'lg'
-        scope: $scope
-      )
-      $scope.uploadModal.result.then (->), (->) # avoid backdrop rejection console error
-      $scope.uploadModal.rendered.then ->
-        document.activeElement.blur()
-      $transitions.onStart {}, ->
-        $scope.uploadModal.close()
+      $scope.openModal('uploadModal', {templateUrl: 'app/identities/upload.modal.html'})
 
     $transitions.onStart {}, ->
       $scope.filters.type = null
@@ -446,20 +435,7 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.download('iris_private_key.txt', text, 'text/csv', 'utf-8')
 
     $scope.openLogoutModal = ->
-      $scope.logoutModal = $uibModal.open(
-        animation: $scope.animationsEnabled
-        templateUrl: 'app/main/logout.modal.html'
-        size: 'lg'
-        scope: $scope
-      )
-      $scope.logoutModal.result.then (->), (->) # avoid backdrop rejection console error
-      $scope.logoutModal.rendered.then ->
-        document.activeElement.blur()
-      $transitions.onStart {}, ->
-        $scope.logoutModal.close()
-
-    $scope.closeLogoutModal = ->
-      $scope.logoutModal.close()
+      $scope.openModal('logoutModal', {templateUrl: 'app/main/logout.modal.html'})
 
     $scope.logout = ->
       $scope.filters.maxDistance = 0
@@ -512,6 +488,10 @@ angular.module('irisAngular').controller 'MainController', [
         jws: msg.jws
       msg.strData = JSON.stringify(showRawData, undefined, 2)
 
+    $scope.shareMessage = (msg, comment) ->
+      null # TODO
+      $scope.shareModal.close()
+
     $scope.msgUtils =
       like: (msg) ->
         if msg.liked
@@ -523,12 +503,8 @@ angular.module('irisAngular').controller 'MainController', [
           msg.likes = if msg.likes then msg.likes + 1 else 1
           $scope.irisIndex.setReaction(msg, 'like')
       share: (msg) ->
-        if msg.shared
-          msg.shared = false
-          msg.shares = if msg.shares then msg.shares - 1 else 0
-        else
-          msg.shared = true
-          msg.shares = if msg.shares then msg.shares + 1 else 1
+        $scope.message = msg
+        $scope.openModal 'shareModal', { templateUrl: 'app/messages/share.modal.html', size: 'md' }
       replyTo: (msg, reply) ->
         $scope.createMessage(null, {
           type: 'post',
@@ -558,17 +534,7 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.message.signerKeyID = $scope.message.getSignerKeyID()
       $scope.message.verifiedBy = $scope.irisIndex.get('keyID', $scope.message.signerKeyID)
       $scope.message.verifiedByAttr = new $window.irisLib.Attribute('keyID', $scope.message.signerKeyID)
-      $scope.messageModal = $uibModal.open(
-        animation: $scope.animationsEnabled
-        templateUrl: 'app/messages/show.modal.html'
-        size: size
-        scope: $scope
-      )
-      $scope.messageModal.result.then (->), (->) # avoid backdrop rejection console error
-      $scope.messageModal.rendered.then ->
-        document.activeElement.blur()
-      $transitions.onStart {}, ->
-        $scope.messageModal.close()
+      $scope.openModal('messageModal', {templateUrl: 'app/messages/show.modal.html'})
 
     $scope.filters = $scope.filters or config.defaultFilters
 

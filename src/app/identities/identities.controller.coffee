@@ -252,31 +252,11 @@ angular.module('irisAngular').controller 'IdentitiesController', [
           $scope.irisIndex.addMessage(m)
           $scope.uploadModal.close()
 
-    $scope.openShareModal = () ->
-      $scope.shareModal = $uibModal.open(
-        animation: $scope.animationsEnabled
-        templateUrl: 'app/identities/share.modal.html'
-        size: 'md'
-        scope: $scope
-      )
-      $scope.shareModal.result.then (->), (->) # avoid backdrop rejection console error
-      $scope.shareModal.rendered.then ->
-        document.activeElement.blur()
-      $transitions.onStart {}, ->
-        $scope.shareModal.close()
+    $scope.openSharePageModal = () ->
+      $scope.openModal 'sharePageModal', { templateUrl: 'app/identities/share.modal.html', size: 'md' }
 
     $scope.openReadQRModal = () ->
-      $scope.readQRModal = $uibModal.open(
-        animation: $scope.animationsEnabled
-        templateUrl: 'app/identities/readqr.modal.html'
-        size: 'md'
-        scope: $scope
-      )
-      $scope.readQRModal.result.then (->), (->) # avoid backdrop rejection console error
-      $scope.readQRModal.rendered.then ->
-        document.activeElement.blur()
-      $transitions.onStart {}, ->
-        $scope.readQRModal.close()
+      $scope.openModal 'readQRModal', { templateUrl: 'app/identities/readqr.modal.html', size: 'md' }
 
     $scope.openCoverPhotoUploadModal = ->
       return unless $scope.authentication.identity

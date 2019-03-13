@@ -1,0 +1,14 @@
+<div class="panel panel-default">
+  <div class="panel-body">
+    <h3>Share message?</h3>
+    <form ng-submit="shareMessage(message, comment)">
+      <p>
+        <input type="text" class="form-control" placeholder="Add comment" ng-model="comment">
+      </p>
+      <p>
+        <message auth="authentication" ipfs="ipfs" show-recipient="true" msg="msg" page-info="info" ng-repeat="msg in [message]"></message>
+      </p>
+      <button class="btn btn-primary">Share</button>
+    </form>
+  </div>
+</div>
