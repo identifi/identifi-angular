@@ -22,10 +22,10 @@
           -->
           <div class="pull-right" ng-if="!a.isCurrent">
             <button autocomplete="off" name="confirm" class="btn btn-default btn-confirm" ng-click="createMessage($event, { type: 'verification' }, {verifiedAttr: a})" ng-disabled="!authentication.user" uib-tooltip="Verify" data-style="zoom-out">
-              <span class="positive glyphicon glyphicon-ok"></span> {{a.verifications||0}}
+              <span class="positive glyphicon glyphicon-ok"></span> {{a.verifications||a.conf}}
             </button>
             <button autocomplete="off" name="unverify" class="btn btn-default btn-unverify" ng-click="createMessage($event, { type: 'unverification' }, {verifiedAttr: a})" ng-disabled="!authentication.user" uib-tooltip="Unverify" data-style="zoom-out">
-              <span class="negative glyphicon glyphicon-remove"></span> {{a.unverifications||0}}
+              <span class="negative glyphicon glyphicon-remove"></span> {{a.unverifications||a.ref}}
             </button>
           </div>
           <div class="clear"></div>

@@ -104,7 +104,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
           return unless a.type and a.value
           a.attr = new $window.irisLib.Attribute(a.type, a.value)
           a.isCurrent = new $window.irisLib.Attribute($scope.idType, $scope.idValue).equals(a.attr)
-          a.order = if a.isCurrent then Infinity else a.verifications - 2 * a.unverifications
+          a.order = if a.isCurrent then Infinity else (a.verifications or a.conf) - 2 * (a.unverifications or a.ref)
           a.rowClass = 'cursor-default' if a.isCurrent
           switch a.type
             when 'email'
