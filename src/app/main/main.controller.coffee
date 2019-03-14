@@ -463,6 +463,8 @@ angular.module('irisAngular').controller 'MainController', [
             return false
           else if $scope.filters.type == 'rating:neutral' and data.rating != neutralRating
             return false
+        if $scope.filters.type == 'verification'
+          return data.type in ['verification', 'unverification']
         else if data.type != $scope.filters.type
           return false
       else

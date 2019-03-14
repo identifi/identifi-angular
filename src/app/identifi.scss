@@ -1644,11 +1644,13 @@ a {
 .right-addon input { padding-right: 30px; }
 
 .msg-reaction {
-  &:first-of-type {
-    margin-left: 0;
+  @media(min-width: 768px) {
+    margin-left: 45px;
+    &:first-of-type {
+      margin-left: 0;
+    }
   }
   color: inherit;
-  margin-left: 0px;
   margin-bottom: -15px;
   width:70px;
   text-align: right;
