@@ -10,7 +10,7 @@ ngf-multiple="true"
     <form ng-submit="createMessage($event, { type: 'post', comment: newMessage.comment }, { files: newMessage.files })">
       <div class="row" ng-if="newMessage.files && newMessage.files.length">
         <div class="col-xs-12">
-          <p>
+          <p ng-class="{'align-center': newMessage.files.length == 1}">
             <span ng-repeat="file in newMessage.files">
               <a ng-show="['video','image','audio'].indexOf(file.type.substr(0,5)) == -1"  ng-bind="file.name"></a>
               <img ngf-thumbnail="file || '/thumb.jpg'" ng-style="{'max-width': newMessage.files.length > 1 ? '150px' : '100%', 'max-height': newMessage.files.length > 1 ? '150px' : '450px'}" style="margin-right: 15px; margin-bottom: 15px;">
