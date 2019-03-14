@@ -711,7 +711,7 @@ angular.module('irisAngular').controller 'MainController', [
 
     # should be moved to iris-lib?
     $scope.setIdentityNames = (i, htmlSafe, setTitle) ->
-      i.verified = false
+      i.wellVerified = false
       return new Promise (resolve) ->
         i.gun.get('attrs').open (attrs) ->
           $scope.$apply ->
@@ -719,7 +719,7 @@ angular.module('irisAngular').controller 'MainController', [
             if mva.name
               i.primaryName = mva.name.attribute.value
               i.hasProperName = true
-              i.verified = true if mva.name.verified
+              i.wellVerified = true if mva.name.wellVerified
             else if mva.nickname
               i.primaryName = mva.nickname.attribute.value
               i.hasProperName = true

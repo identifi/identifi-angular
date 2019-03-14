@@ -96,11 +96,11 @@ angular.module('irisAngular').controller 'IdentitiesController', [
         attributes = attrs or []
         if attributes.length > 0
           c = attributes[0]
-          mostConfirmations = c.conf
+          mostConfirmations = c.verifications
         else
           mostConfirmations = 1
         $scope.attributes = Object.values(attributes).sort (a, b) ->
-          (b.conf - 2 * b.ref) - (a.conf - 2 * a.ref)
+          (b.verifications - 2 * b.unverifications) - (a.verifications - 2 * a.unverifications)
         for a in $scope.attributes
           return unless a.type and a.value
           a.attr = new $window.irisLib.Attribute(a.type, a.value)
@@ -180,10 +180,10 @@ angular.module('irisAngular').controller 'IdentitiesController', [
             a.linkName = a.value
             a.iconStyle = 'glyphicon glyphicon-link'
             a.btnStyle = 'btn-default'
-          if a.conf + a.ref > 0
-            percentage = a.conf * 100 / (a.conf + a.ref)
+          if a.verifications + a.unverifications > 0
+            percentage = a.verifications * 100 / (a.verifications + a.unverifications)
             if percentage >= 80
-              alpha = a.conf / mostConfirmations * 0.7 + 0.3
+              alpha = a.verifications / mostConfirmations * 0.7 + 0.3
               # a.rowStyle = 'background-color: rgba(223,240,216,' + alpha + ')'
             else if percentage >= 60
               a.rowClass = 'warning'

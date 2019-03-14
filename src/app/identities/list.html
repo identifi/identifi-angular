@@ -20,7 +20,7 @@
             <span ng-if="result.data.trustDistance > 0" ng-bind="result.data.trustDistance | ordinal" class="label label-default pull-right"></span>
             <span ng-if="result.data.trustDistance === false" class="label label-default pull-right">unconnected</span>
             <a ng-bind-html="result.primaryName|highlight:query.term" ui-sref="identities.show({ type: result.linkTo.type, value: result.linkTo.value })"></a>
-            <span class="glyphicon glyphicon-ok-sign" style="color:#337ab7" ng-if="result.verified"></span>
+            <span class="glyphicon glyphicon-ok-sign" style="color:#337ab7" ng-if="result.wellVerified"></span>
             <small ng-if="!(result.mostVerifiedAttributes.type||result.mostVerifiedAttributes.nickname)" class="list-group-item-text">
               <span ng-bind-html="result.data.attrs.type.type|highlight:query.term"></span>
             </small><br>

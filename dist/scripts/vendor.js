@@ -91005,12 +91005,12 @@ Gun.chain.then = function(cb) {
 	    _Object$keys(attrs).forEach(function (k) {
 	      var a = attrs[k];
 	      var keyExists = _Object$keys(mostVerifiedAttributes).indexOf(a.type) > -1;
-	      a.conf = isNaN(a.conf) ? 1 : a.conf;
-	      a.ref = isNaN(a.ref) ? 0 : a.ref;
-	      if (a.conf * 2 > a.ref * 3 && (!keyExists || a.conf - a.ref > mostVerifiedAttributes[a.type].verificationScore)) {
+	      a.verifications = isNaN(a.verifications) ? 1 : a.verifications;
+	      a.unverifications = isNaN(a.unverifications) ? 0 : a.unverifications;
+	      if (a.verifications * 2 > a.unverifications * 3 && (!keyExists || a.verifications - a.unverifications > mostVerifiedAttributes[a.type].verificationScore)) {
 	        mostVerifiedAttributes[a.type] = {
 	          attribute: a,
-	          verificationScore: a.conf - a.ref
+	          verificationScore: a.verifications - a.unverifications
 	        };
 	        if (a.verified) {
 	          mostVerifiedAttributes[a.type].verified = true;
@@ -91892,7 +91892,9 @@ Gun.chain.then = function(cb) {
 	        return resolve(r);
 	      });
 	    });
-	    if (msg.signedData.type === 'verification') {
+	    if (['verification', 'unverification'].indexOf(msg.signedData.type) > -1) {
+	      var isVerification = msg.signedData.type === 'verification';
+
 	      var _loop = function _loop() {
 	        if (_isArray2) {
 	          if (_i6 >= _iterator2.length) return 'break';
@@ -91906,18 +91908,28 @@ Gun.chain.then = function(cb) {
 	        var a = _ref2;
 
 	        var hasAttr = false;
+	        var v = {
+	          verifications: isVerification ? 1 : 0,
+	          unverifications: isVerification ? 0 : 1
+	        };
 	        _Object$keys(attrs).forEach(function (k) {
 	          // TODO: if author is self, mark as self verified
+	          // TODO: only 1 verif / unverif per author
 	          if (a.equals(attrs[k])) {
-	            attrs[k].conf = (attrs[k].conf || 0) + 1;
+	            attrs[k].verifications = (attrs[k].verifications || 0) + v.verifications;
+	            attrs[k].unverifications = (attrs[k].unverifications || 0) + v.unverifications;
 	            hasAttr = true;
 	          }
 	        });
 	        if (!hasAttr) {
-	          attrs[a.uri()] = { type: a.type, value: a.value, conf: 1, ref: 0 };
+	          attrs[a.uri()] = _Object$assign({ type: a.type, value: a.value }, v);
 	        }
 	        if (msg.goodVerification) {
-	          attrs[a.uri()].verified = true;
+	          if (isVerification) {
+	            attrs[a.uri()].wellVerified = true;
+	          } else {
+	            attrs[a.uri()].wellUnverified = true;
+	          }
 	        }
 	      };
 
@@ -92468,7 +92480,7 @@ Gun.chain.then = function(cb) {
 	  return Index;
 	}();
 
-	var version$1 = "0.0.94";
+	var version$1 = "0.0.95";
 
 	/*eslint no-useless-escape: "off", camelcase: "off" */
 

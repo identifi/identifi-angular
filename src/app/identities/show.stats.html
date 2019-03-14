@@ -45,7 +45,7 @@
             </span>
           </span>
           <span ng-bind="identity.primaryName"></span>
-          <span class="glyphicon glyphicon-ok-sign" style="color:#337ab7" uib-tooltip="Verified by a trusted verifier" ng-if="identity.verified"></span>
+          <span class="glyphicon glyphicon-ok-sign" style="color:#337ab7" uib-tooltip="Verified by a trusted verifier" ng-if="identity.wellVerified"></span>
           <span ng-hide="!identity.data.mostVerifiedAttributes.nickname || identity.data.mostVerifiedAttributes.nickname == identity.data.mostVerifiedAttributes.primaryName">
           (<span class="text-muted" ng-bind="identity.nickname"></span>)
           </span>
