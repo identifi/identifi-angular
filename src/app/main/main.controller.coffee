@@ -523,6 +523,7 @@ angular.module('irisAngular').controller 'MainController', [
           msg.repliesArr.push(r)
 
     $scope.openMessage = (event, message, size) ->
+      event.stopPropagation() if event
       t = event.target
       return if angular.element(t).closest('a').length
       $scope.setMsgRawData(message)
