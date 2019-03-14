@@ -12,6 +12,9 @@ ngf-multiple="true"
         <div class="col-xs-12">
           <p ng-class="{'align-center': newMessage.files.length == 1}">
             <span ng-repeat="file in newMessage.files" class="attachment">
+              <button type="button" class="close" aria-label="Close" ng-click="newMessage.files.splice($index,1)">
+                <span aria-hidden="true">&times;</span>
+              </button>
               <a ng-show="['video','image','audio'].indexOf(file.type.substr(0,5)) == -1"  ng-bind="file.name"></a>
               <img ngf-thumbnail="file || '/thumb.jpg'" ng-style="{'max-width': newMessage.files.length > 1 ? '150px' : '100%', 'max-height': newMessage.files.length > 1 ? '150px' : '450px'}">
               <audio controls ngf-src="file"></audio>

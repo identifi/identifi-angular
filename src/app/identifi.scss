@@ -1678,6 +1678,7 @@ a {
 }
 
 .attachment {
+  position: relative;
   display: inline-block;
   margin-right: 15px;
   margin-bottom: 15px;
@@ -1687,5 +1688,10 @@ a {
   video {
     max-width: 100%;
     max-height: 400px;
+  }
+  .close {
+    position: absolute;
+    right: 0;
+    top: 0;
   }
 }

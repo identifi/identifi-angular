@@ -48,9 +48,18 @@
     <message ng-if="$ctrl.msg.sharedMsg && $ctrl.msgUtils" msg="$ctrl.msg.sharedMsg" ipfs="$ctrl.ipfs" auth="$ctrl.auth"></message>
 
     <span ng-class="{disabled: !$ctrl.auth.user}" class="pull-right" ng-if="$ctrl.msgUtils && $ctrl.msg.signedData.type == 'post'">
-      <a class="msg-reaction" href="" ng-class="{active: $ctrl.msg.showCommentField}" ng-click="$ctrl.auth.user && ($ctrl.msg.showCommentField = !$ctrl.msg.showCommentField)"><i class="glyphicon glyphicon-comment"></i></a>
-      <a class="msg-reaction" href="" ng-click="$ctrl.auth.user && $ctrl.msgUtils.share($ctrl.msg)"><b ng-if="$ctrl.msg.sharesArr.length">{{$ctrl.msg.sharesArr.length}} </b><i class="glyphicon glyphicon-retweet"></i></a>
-      <a class="msg-reaction" ng-class="{active: $ctrl.msg.liked}" href="" ng-click="$ctrl.auth.user && $ctrl.msgUtils.like($ctrl.msg)"><b ng-if="$ctrl.msg.likes || $ctrl.msg.liked">{{$ctrl.msg.likes || 1}} </b><i class="glyphicon" ng-class="{'glyphicon-heart-empty': !$ctrl.msg.liked, 'glyphicon-heart': $ctrl.msg.liked,}"></i></a>
+      <a class="msg-reaction" href="" ng-class="{active: $ctrl.msg.showCommentField}" ng-click="$ctrl.auth.user && ($ctrl.msg.showCommentField = !$ctrl.msg.showCommentField)">
+        <b ng-if="$ctrl.msg.repliesArr.length">{{$ctrl.msg.repliesArr.length}} </b>
+        <i class="glyphicon glyphicon-comment"></i>
+      </a>
+      <a class="msg-reaction" href="" ng-click="$ctrl.auth.user && $ctrl.msgUtils.share($ctrl.msg)">
+        <b ng-if="$ctrl.msg.sharesArr.length">{{$ctrl.msg.sharesArr.length}} </b>
+        <i class="glyphicon glyphicon-retweet"></i>
+      </a>
+      <a class="msg-reaction" ng-class="{active: $ctrl.msg.liked}" href="" ng-click="$ctrl.auth.user && $ctrl.msgUtils.like($ctrl.msg)">
+        <b ng-if="$ctrl.msg.likes || $ctrl.msg.liked">{{$ctrl.msg.likes || 1}} </b>
+        <i class="glyphicon" ng-class="{'glyphicon-heart-empty': !$ctrl.msg.liked, 'glyphicon-heart': $ctrl.msg.liked,}"></i>
+      </a>
     </span>
 
     <form class="form-inline" ng-submit="$ctrl.msgUtils.replyTo($ctrl.msg, reply)" ng-show="$ctrl.auth.user && $ctrl.msg.showCommentField">
