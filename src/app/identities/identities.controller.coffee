@@ -99,12 +99,12 @@ angular.module('irisAngular').controller 'IdentitiesController', [
           mostConfirmations = c.verifications
         else
           mostConfirmations = 1
-        $scope.attributes = Object.values(attributes).sort (a, b) ->
-          (b.verifications - 2 * b.unverifications) - (a.verifications - 2 * a.unverifications)
+        $scope.attributes = Object.values(attributes)
         for a in $scope.attributes
           return unless a.type and a.value
           a.attr = new $window.irisLib.Attribute(a.type, a.value)
           a.isCurrent = new $window.irisLib.Attribute($scope.idType, $scope.idValue).equals(a.attr)
+          a.order = if a.isCurrent then Infinity else a.verifications - 2 * a.unverifications
           a.rowClass = 'cursor-default' if a.isCurrent
           switch a.type
             when 'email'
@@ -192,7 +192,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
             else
               a.rowClass = 'danger'
           $scope.hasQuickContacts = $scope.hasQuickContacts or a.quickContact
-        $scope.attributesLength = Object.keys($scope.attributes).length
+        $scope.attributesLength = $scope.attributes.length
 
     $scope.attributeClicked = (event, attr) ->
       if attr.connectingMsgs

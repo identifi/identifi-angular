@@ -1,7 +1,7 @@
 <!-- <input id="authenticity_token" name="authenticity_token" type="hidden" value="z1JM7ffnFK7gOv6S3yzG9UFyakukYHikAU94/3TcT2o="> -->
 <table class="table truncated-table table-hover">
   <tbody>
-    <tr ng-repeat-start="a in attributes" style="{{a.rowStyle}}" ng-class="a.rowClass" ng-click="!a.isCurrent && attributeClicked($event, a)" class="id-row">
+    <tr ng-repeat-start="a in attributes | orderBy:'order':true" style="{{!a.isCurrent && a.rowStyle}}" ng-class="!a.isCurrent && a.rowClass" ng-click="!a.isCurrent && attributeClicked($event, a)" class="id-row">
       <td>
         <div>
           <div class="pull-left mar-right15">
