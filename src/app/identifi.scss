@@ -1676,3 +1676,16 @@ a {
 .cursor-default {
   cursor: default !important;
 }
+
+.attachment {
+  display: inline-block;
+  margin-right: 15px;
+  margin-bottom: 15px;
+  &:last-of-type {
+    margin-right: 0;
+  }
+  video {
+    max-width: 100%;
+    max-height: 400px;
+  }
+}

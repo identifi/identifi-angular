@@ -29,16 +29,13 @@
         </div>
     </div>
 
-    <p ng-class="{'align-center': $ctrl.msg.attachments.length == 1}">
-      <span ng-repeat="attachment in $ctrl.msg.attachments">
+    <div ng-class="{'align-center': $ctrl.msg.attachments.length == 1}">
+      <span ng-repeat="attachment in $ctrl.msg.attachments" class="attachment">
         <a ng-show="['video','image','audio'].indexOf(attachment.typeSubstr) == -1"  ng-bind="attachment.name"></a>
-        <img ng-show="attachment.type && attachment.typeSubstr == 'image'" alt="{{attachment.uri}}" ng-src="{{attachment.src}}" ng-style="{'max-width': $ctrl.msg.attachments.length > 1 ? '150px' : '100%', 'max-height': $ctrl.msg.attachments.length > 1 ? '150px' : '450px'}" style="margin-right: 15px; margin-bottom: 15px">
-        <video ng-show="attachment.type && ['video','audio'].indexOf(attachment.typeSubstr) != -1" controls ng-src="{{attachment.src}}" style="max-width: 100%; margin-right: 15px; margin-bottom: 15px">
+        <img ng-show="attachment.type && attachment.typeSubstr == 'image'" alt="{{attachment.uri}}" ng-src="{{attachment.src}}" ng-style="{'max-width': $ctrl.msg.attachments.length > 1 ? '150px' : '100%', 'max-height': $ctrl.msg.attachments.length > 1 ? '150px' : '450px'}">
+        <video ng-show="attachment.type && ['video','audio'].indexOf(attachment.typeSubstr) != -1" controls ng-src="{{attachment.src}}" style="max-width: 100%;">
       </span>
-    </p>
-
-    <p ng-if="$ctrl.msg.attachments">
-    </p>
+    </div>
 
     <p style="white-space: pre-line;"
     ng-if="$ctrl.msg.signedData.comment"

@@ -652,7 +652,6 @@ angular.module('irisAngular').controller 'MainController', [
             if msg.linkToAuthor.type in ['keyID', 'uuid']
               msg.recipient_name = msg.recipient_name.slice(0, 6) + '...'
           alpha = undefined
-          msg.iconStyle = ''
           msg.bgColor = ''
           msg.iconCount = new Array(1)
           switch msg.signedData.type

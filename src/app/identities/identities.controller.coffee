@@ -175,6 +175,8 @@ angular.module('irisAngular').controller 'IdentitiesController', [
               else
                 a.iconStyle = 'glyphicon glyphicon-link'
                 a.btnStyle = 'btn-default'
+            else
+              a.iconStyle = 'glyphicon glyphicon-star'
           if a.value and a.value.match /^\/ipfs\/[1-9A-Za-z]{40,60}$/
             a.link = 'https://ipfs.io' + a.value
             a.linkName = a.value
