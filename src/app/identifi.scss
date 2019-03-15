@@ -1219,18 +1219,6 @@ h1 {
   margin-bottom: 40px;
 }
 
-.container {
-  @media (max-width: 767px) {
-    padding-left: 0;
-    padding-right: 0;
-  }
-}
-
-.navbar .container {
-  padding-left: 15px;
-  padding-right: 15px;
-}
-
 #user-box a {
   color: #000000;
 }
@@ -1575,8 +1563,10 @@ a {
     margin-top: 25px;
   }
 
-  .jumbotron {
+  .container .jumbotron {
     margin: 0;
+    margin-top: -20px;
+    border-radius: 0;
   }
 
   .no-padding-xs {
@@ -1604,6 +1594,13 @@ a {
 
   .navbar-form {
     width: auto;
+  }
+
+  #messages {
+    margin: 0;
+    & > div {
+      padding: 0;
+    }
   }
 
   #attributes .table {
