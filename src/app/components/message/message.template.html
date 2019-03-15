@@ -68,13 +68,5 @@
       </div>
       <button type="submit" class="btn btn-primary">Post</button>
     </form>
-
-    <div ng-repeat="m in $ctrl.msg.repliesArr | orderBy:'signedData.timestamp' : true" class="mar-top15 clear">
-      <a ui-sref="identities.show({ type: m.linkToAuthor.type, value: m.linkToAuthor.value })" class="id-link">
-        <identicon ipfs="$ctrl.ipfs" identity="m.author" class="mar-right5" border="3" width="35"></identicon>
-        <span ng-bind="m.author_name"></span>
-      </a> - <a ui-sref="messages.show({ id: (m.ipfsUri || m.hash) })" ng-bind="m.signedData.timestamp|date:'medium'" class="text-muted small mar-right15" style="display:inline-block;"></a>
-      <span ng-bind="m.signedData.comment"></span>
-    </div>
   </div>
 </div>
