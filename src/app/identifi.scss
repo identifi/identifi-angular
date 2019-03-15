@@ -1571,6 +1571,17 @@ a {
 
   .no-padding-xs {
     padding: 0 !important;
+    .panel, .msg {
+      margin: 0;
+      border-radius: 0;
+      border-bottom: 0;
+    }
+    .msg:first-of-type, .msg:last-of-type {
+      border-radius: 0;
+    }
+    .panel-heading {
+      border-bottom: 0;
+    }
   }
 
   .jumbotron {
