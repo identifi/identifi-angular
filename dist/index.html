@@ -23,6 +23,20 @@
     <meta name="msapplication-config" content="/assets/images/browserconfig.xml">
     <meta name="theme-color" content="#ffffff">
 
+    <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('assets/js/sw.js').then(function(registration) {
+          // Registration was successful
+          console.log('ServiceWorker registration successful with scope: ', registration.scope);
+        }, function(err) {
+          // registration failed :(
+          console.log('ServiceWorker registration failed: ', err);
+        });
+      });
+    }
+    </script>
+
     <link rel="stylesheet" href="styles/vendor.css">
 
     <link rel="stylesheet" href="styles/app.css">
