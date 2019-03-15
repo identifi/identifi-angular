@@ -1219,12 +1219,37 @@ h1 {
   margin-bottom: 40px;
 }
 
+/*
+.container {
+  padding-left: 0;
+  padding-right: 0;
+}
+*/
+
 #user-box a {
   color: #000000;
 }
 
 .message-panel:hover a.text-muted, a.text-muted:hover {
   color: inherit;
+}
+
+message {
+  .msg {
+    margin-bottom: 0;
+    border-radius: 0;
+  }
+  &:first-of-type {
+    .msg {
+      border-radius: 4px 4px 0 0;
+    }
+  }
+  &:last-of-type {
+    .msg {
+      border-radius: 0 0 4px 4px;
+      margin-bottom: 20px;
+    }
+  }
 }
 
 .modal-content {
