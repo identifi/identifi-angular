@@ -1219,12 +1219,17 @@ h1 {
   margin-bottom: 40px;
 }
 
-/*
 .container {
-  padding-left: 0;
-  padding-right: 0;
+  @media (max-width: 767px) {
+    padding-left: 0;
+    padding-right: 0;
+  }
 }
-*/
+
+.navbar .container {
+  padding-left: 15px;
+  padding-right: 15px;
+}
 
 #user-box a {
   color: #000000;
@@ -1238,6 +1243,7 @@ message {
   .msg {
     margin-bottom: 0;
     border-radius: 0;
+    border-bottom: 0;
   }
   &:first-of-type {
     .msg {
@@ -1248,6 +1254,7 @@ message {
     .msg {
       border-radius: 0 0 4px 4px;
       margin-bottom: 20px;
+      border-bottom: 1px;
     }
   }
 }
