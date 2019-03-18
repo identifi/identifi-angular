@@ -151,13 +151,14 @@ angular.module('irisAngular').controller 'MainController', [
           $scope.authentication.identity.mva = mva
           eve.off() if mva.profilePhoto
         startAt = new Date()
+        console.log startAt
         $scope.authentication.identity.gun.get('received').map().once (m) ->
           return if m.pubKey == $scope.viewpoint.value
+          console.log 'you got a msg'
           $window.irisLib.Message.fromSig(m).then (msg) ->
             if new Date(msg.signedData.timestamp) > startAt
               author = msg.getAuthor($scope.irisIndex)
               $scope.setIdentityNames(author).then (name) ->
-                $scope.notifications.count += 1
                 NotificationService.create
                   message: "#{name} sent you a message!"
                   onClick: () -> $state.go 'identities.show', { type: $scope.authentication.user.idType, value: $scope.authentication.user.idValue }
