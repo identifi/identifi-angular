@@ -1,13 +1,12 @@
 <div class="panel panel-default" ng-if="!authentication.user">
   <div class="panel-body">
-    <form class="form-inline" ng-submit="createUser(newUserName)">
+    <form class="form-inline createuser-form" ng-submit="createUser(newUserName)">
       <div class="form-group">
         <input focus-on="newUser" style="min-width:200px" type="text" id="newUserName" class="form-control" ng-disabled="creatingUser" ng-model="newUserName" placeholder="What's your name?">
       </div>
       <i class="hidden-xs mar-right5"></i>
       <button type="submit" id="createUserBtn" class="btn btn-primary" ng-disabled="!newUserName || creatingUser">Go!</button>
       <i class="mar-left15 hidden-xs"></i>
-      <i class="mar-top5 visible-xs"></i>
       <div class="form-group">
         or <a ng-click="openLoginModal()" href="">Log in</a>
       </div>

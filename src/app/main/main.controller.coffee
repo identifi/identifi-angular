@@ -18,11 +18,13 @@ angular.module('irisAngular').controller 'MainController', [
   ($scope, $rootScope, $location, $http, $state, config,
   localStorageService, clipboard, $uibModal, $window, $stateParams,
   $transitions, $q, focus, NotificationService) ->
-    hosts = ['https://gun-us.herokuapp.com/gun', 'https://gun-eu.herokuapp.com/gun']
+    opt =
+      peers: ['https://gun-us.herokuapp.com/gun', 'https://gun-eu.herokuapp.com/gun']
     if $window.location.protocol != "https:"
-      hosts.push('http://localhost:8765/gun')
-
-    $scope.gun = new Gun(hosts)
+      opt.peers.push('http://localhost:8765/gun')
+    opt.store = RindexedDB(opt)
+    console.log opt
+    $scope.gun = new Gun(opt)
 
     # TODO: move everything to main controller?
     # set authentication
