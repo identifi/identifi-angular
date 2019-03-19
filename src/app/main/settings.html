@@ -74,7 +74,7 @@
         <p><a href="https://ipfs.io">IPFS</a> stores static content: messages and image files.</p>
         <p ng-hide="ipfsPeers && ipfsPeers.length"><small>No IPFS peers</small></p>
       </div>
-      <div class="table-responsive">
+      <div ng-if="ipfsPeers && ipfsPeers.length" class="table-responsive">
         <table class="table table-striped">
           <tbody>
             <tr ng-repeat="peer in ipfsPeers">

@@ -177,6 +177,9 @@ angular.module('irisAngular').controller 'MainController', [
     else
       $scope.loadDefaultIndex()
 
+    $scope.openReadQRModal = () ->
+      $scope.openModal 'readQRModal', { templateUrl: 'app/identities/readqr.modal.html', size: 'md' }
+
     $scope.updateIpfsPeers = () ->
       $scope.ipfs.swarm.peers (err, peerInfos) ->
         if err

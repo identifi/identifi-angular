@@ -257,9 +257,6 @@ angular.module('irisAngular').controller 'IdentitiesController', [
     $scope.openSharePageModal = () ->
       $scope.openModal 'sharePageModal', { templateUrl: 'app/identities/share.modal.html', size: 'md' }
 
-    $scope.openReadQRModal = () ->
-      $scope.openModal 'readQRModal', { templateUrl: 'app/identities/readqr.modal.html', size: 'md' }
-
     $scope.openCoverPhotoUploadModal = ->
       return unless $scope.authentication.identity
       $scope.openUploadModal($scope.uploadCoverPhoto, 'Upload cover photo', false)
