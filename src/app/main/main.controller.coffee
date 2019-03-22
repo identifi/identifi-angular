@@ -472,9 +472,6 @@ angular.module('irisAngular').controller 'MainController', [
           return data.type in ['verification', 'unverification']
         else if data.type != $scope.filters.type
           return false
-      else
-        if data.type in ['verification', 'unverification']
-          return false
       if $scope.filters.maxDistance > -1
         if typeof msg.authorTrustDistance != 'number'
           return false
