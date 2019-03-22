@@ -23,7 +23,6 @@ angular.module('irisAngular').controller 'MainController', [
     if $window.location.protocol != "https:"
       opt.peers.push('http://localhost:8765/gun')
     opt.store = RindexedDB(opt)
-    console.log opt
     $scope.gun = new Gun(opt)
 
     # TODO: move everything to main controller?
@@ -353,7 +352,7 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.openModal('uploadModal', {templateUrl: 'app/identities/upload.modal.html'})
 
     $transitions.onStart {}, ->
-      $scope.filters.type = null
+      $scope.filters.type = config.defaultFilters.type
 
     $scope.msgs.list = []
     $scope.msgs.seen = {}

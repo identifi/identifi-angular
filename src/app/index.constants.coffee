@@ -1,6 +1,6 @@
 angular.module('irisAngular')
   .constant 'config',
     defaultFilters:
-      type: null
+      type: 'post'
       limit: 10
       maxDistance: 0
