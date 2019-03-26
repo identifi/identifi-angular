@@ -77269,11 +77269,11 @@ angular
 			|| num_is(v)){ // by "number" we mean integers or decimals.
 				return true; // simple values are valid.
 			}
-			return Val.rel.is(v) || false; // is the value a soul relation? Then it is valid and return it. If not, everything else remaining is an invalid data type. Custom extensions can be built on top of these primitives to support other types.
+			return Val.link.is(v) || false; // is the value a soul relation? Then it is valid and return it. If not, everything else remaining is an invalid data type. Custom extensions can be built on top of these primitives to support other types.
 		}
 		Val.link = Val.rel = {_: '#'};
 		;(function(){
-			Val.rel.is = function(v){ // this defines whether an object is a soul relation or not, they look like this: {'#': 'UUID'}
+			Val.link.is = function(v){ // this defines whether an object is a soul relation or not, they look like this: {'#': 'UUID'}
 				if(v && v[rel_] && !v._ && obj_is(v)){ // must be an object.
 					var o = {};
 					obj_map(v, map, o);
@@ -77292,7 +77292,7 @@ angular
 				}
 			}
 		}());
-		Val.rel.ify = function(t){ return obj_put({}, rel_, t) } // convert a soul into a relation and return it.
+		Val.link.ify = function(t){ return obj_put({}, rel_, t) } // convert a soul into a relation and return it.
 		Type.obj.has._ = '.';
 		var rel_ = Val.link._, u;
 		var bi_is = Type.bi.is;
@@ -77478,7 +77478,7 @@ angular
 					env.map = env;
 				}
 				if(env.soul){
-					at.rel = Val.rel.ify(env.soul);
+					at.link = Val.link.ify(env.soul);
 				}
 				env.shell = (as||{}).shell;
 				env.graph = env.graph || {};
@@ -77493,16 +77493,16 @@ angular
 				at.env = env;
 				at.soul = soul;
 				if(Node.ify(at.obj, map, at)){
-					at.rel = at.rel || Val.rel.ify(Node.soul(at.node));
+					at.link = at.link || Val.link.ify(Node.soul(at.node));
 					if(at.obj !== env.shell){
-						env.graph[Val.rel.is(at.rel)] = at.node;
+						env.graph[Val.link.is(at.link)] = at.node;
 					}
 				}
 				return at;
 			}
 			function map(v,k,n){
 				var at = this, env = at.env, is, tmp;
-				if(Node._ === k && obj_has(v,Val.rel._)){
+				if(Node._ === k && obj_has(v,Val.link._)){
 					return n._; // TODO: Bug?
 				}
 				if(!(is = valid(v,k,n, at,env))){ return }
@@ -77511,8 +77511,8 @@ angular
 					if(obj_has(v, Node._) && Node.soul(v)){ // ? for safety ?
 						at.node._ = obj_copy(v._);
 					}
-					at.node = Node.soul.ify(at.node, Val.rel.is(at.rel));
-					at.rel = at.rel || Val.rel.ify(Node.soul(at.node));
+					at.node = Node.soul.ify(at.node, Val.link.is(at.link));
+					at.link = at.link || Val.link.ify(Node.soul(at.node));
 				}
 				if(tmp = env.map){
 					tmp.call(env.as || {}, v,k,n, at);
@@ -77531,14 +77531,14 @@ angular
 				}
 				tmp = node(env, {obj: v, path: at.path.concat(k)});
 				if(!tmp.node){ return }
-				return tmp.rel; //{'#': Node.soul(tmp.node)};
+				return tmp.link; //{'#': Node.soul(tmp.node)};
 			}
 			function soul(id){ var at = this;
-				var prev = Val.link.is(at.rel), graph = at.env.graph;
-				at.rel = at.rel || Val.rel.ify(id);
-				at.rel[Val.rel._] = id;
+				var prev = Val.link.is(at.link), graph = at.env.graph;
+				at.link = at.link || Val.link.ify(id);
+				at.link[Val.link._] = id;
 				if(at.node && at.node[Node._]){
-					at.node[Node._][Val.rel._] = id;
+					at.node[Node._][Val.link._] = id;
 				}
 				if(obj_has(graph, prev)){
 					graph[id] = graph[prev];
@@ -77578,13 +77578,13 @@ angular
 			}
 			function map(v,k){ var tmp, obj;
 				if(Node._ === k){
-					if(obj_empty(v, Val.rel._)){
+					if(obj_empty(v, Val.link._)){
 						return;
 					}
 					this.obj[k] = obj_copy(v);
 					return;
 				}
-				if(!(tmp = Val.rel.is(v))){
+				if(!(tmp = Val.link.is(v))){
 					this.obj[k] = v;
 					return;
 				}
@@ -77812,25 +77812,9 @@ angular
 			Gun.on.get = function(msg, gun){
 				var root = gun._, get = msg.get, soul = get[_soul], node = root.graph[soul], has = get[_has], tmp;
 				var next = root.next || (root.next = {}), at = next[soul];
-				if(obj_has(soul, '*')){ // TEMPORARY HACK FOR MARTTI, TESTING
-					var graph = {};
-					Gun.obj.map(root.graph, function(node, s){
-						if(Gun.text.match(s, soul)){
-							graph[s] = Gun.obj.copy(node);
-						}
-					});
-					if(!Gun.obj.empty(graph)){
-						root.on('in', {
-							'@': msg['#'],
-							how: '*',
-							put: graph,
-							$: gun
-						});
-					}
-				} // TEMPORARY HACK FOR MARTTI, TESTING
 				if(!node){ return root.on('get', msg) }
 				if(has){
-					if(!obj_has(node, has)){ return root.on('get', msg) }
+					if('string' != typeof has || !obj_has(node, has)){ return root.on('get', msg) }
 					node = Gun.state.to(node, has);
 					// If we have a key in-memory, do we really need to fetch?
 					// Maybe... in case the in-memory key we have is a local write
@@ -77876,7 +77860,7 @@ angular
 		var list_is = Gun.list.is;
 		var text = Gun.text, text_is = text.is, text_rand = text.random;
 		var obj = Gun.obj, obj_is = obj.is, obj_has = obj.has, obj_to = obj.to, obj_map = obj.map, obj_copy = obj.copy;
-		var state_lex = Gun.state.lex, _soul = Gun.val.rel._, _has = '.', node_ = Gun.node._, rel_is = Gun.val.link.is;
+		var state_lex = Gun.state.lex, _soul = Gun.val.link._, _has = '.', node_ = Gun.node._, rel_is = Gun.val.link.is;
 		var empty = {}, u;
 
 		console.debug = function(i, s){ return (console.debug.i && i === console.debug.i && console.debug.i++) && (console.log.apply(console, arguments) || s) };
@@ -77971,6 +77955,7 @@ angular
 					at.on('in', at);
 					return;
 				}*/
+				if(at.lex){ msg.get = obj_to(at.lex, msg.get) }
 				if(get['#'] || at.soul){
 					get['#'] = get['#'] || at.soul;
 					msg['#'] || (msg['#'] = text_rand(9));
@@ -77993,6 +77978,17 @@ angular
 							get: back.get
 						});
 						if(tmp){ return }
+					} else
+					if('string' != typeof get){
+						var put = {}, meta = (back.put||{})._;
+						Gun.obj.map(back.put, function(v,k){
+							if(!Gun.text.match(k, get)){ return }
+							put[k] = v;
+						})
+						if(!Gun.obj.empty(put)){
+							put._ = meta;
+							back.on('in', {$: back.$, put: put, get: back.get})
+						}
 					}
 					root.ask(ack, msg);
 					return root.on('in', msg);
@@ -78092,7 +78088,6 @@ angular
 			relate(cat, msg, at, rel);
 			echo(cat, msg, eve);
 		}
-		var C = 0;
 
 		function relate(at, msg, from, rel){
 			if(!rel || node_ === at.get){ return }
@@ -78138,11 +78133,11 @@ angular
 			if(!(at = next[key])){
 				return;
 			}
-			//if(data && data[_soul] && (tmp = Gun.val.rel.is(data)) && (tmp = (cat.root.$.get(tmp)._)) && obj_has(tmp, 'put')){
+			//if(data && data[_soul] && (tmp = Gun.val.link.is(data)) && (tmp = (cat.root.$.get(tmp)._)) && obj_has(tmp, 'put')){
 			//	data = tmp.put;
 			//}
 			if(at.has){
-				//if(!(data && data[_soul] && Gun.val.rel.is(data) === Gun.node.soul(at.put))){
+				//if(!(data && data[_soul] && Gun.val.link.is(data) === Gun.node.soul(at.put))){
 				if(u === at.put || !Gun.val.link.is(data)){
 					at.put = data;
 				}
@@ -78165,7 +78160,10 @@ angular
 			if(!(at.has || at.soul)){ return }
 			var tmp = at.map, root = at.root;
 			at.map = null;
-			if(at.has){ at.link = null }
+			if(at.has){
+				if(at.dub && at.root.stop){ at.dub = null }
+				at.link = null;
+			}
 			//if(!root.now || !root.now[at.id]){
 			if(!at.pass){
 				if((!msg['@']) && null === tmp){ return }
@@ -78205,7 +78203,7 @@ angular
 		function ack(msg, ev){
 			var as = this.as, get = as.get || empty, at = as.$._, tmp = (msg.put||empty)[get['#']];
 			if(at.ack){ at.ack = (at.ack + 1) || 1; }
-			if(!msg.put || (get['.'] && !obj_has(tmp, at.get))){
+			if(!msg.put || ('string' == typeof get['.'] && !obj_has(tmp, at.get))){
 				if(at.put !== u){ return }
 				at.on('in', {
 					get: at.get,
@@ -78224,7 +78222,7 @@ angular
 		var empty = {}, u;
 		var obj = Gun.obj, obj_has = obj.has, obj_put = obj.put, obj_del = obj.del, obj_to = obj.to, obj_map = obj.map;
 		var text_rand = Gun.text.random;
-		var _soul = Gun.val.rel._, node_ = Gun.node._;
+		var _soul = Gun.val.link._, node_ = Gun.node._;
 	})(USE, './chain');
 
 	;USE(function(module){
@@ -78261,12 +78259,18 @@ angular
 			} else
 			if(tmp = rel.is(key)){
 				return this.get(tmp, cb, as);
+			} else
+			if(obj.is(key)){
+				gun = this;
+				if(tmp = ((tmp = key['#'])||empty)['='] || tmp){ gun = gun.get(tmp) }
+				gun._.lex = key;
+				return gun;
 			} else {
 				(as = this.chain())._.err = {err: Gun.log('Invalid get request!', key)}; // CLEAN UP
 				if(cb){ cb.call(as, as._.err) }
 				return as;
 			}
-			if(tmp = cat.stun){ // TODO: Refactor?
+			if(tmp = this._.stun){ // TODO: Refactor?
 				gun._.stun = gun._.stun || tmp;
 			}
 			if(cb && cb instanceof Function){
@@ -78291,10 +78295,9 @@ angular
 		}
 		function soul(gun, cb, opt, as){
 			var cat = gun._, acks = 0, tmp;
-			if(tmp = cat.soul){ return cb(tmp, as, cat), gun }
-			if(tmp = cat.link){ return cb(tmp, as, cat), gun }
+			if(tmp = cat.soul || cat.link || cat.dub){ return cb(tmp, as, cat), gun }
 			gun.get(function(msg, ev){
-				if(u === msg.put && (tmp = (obj_map(cat.root.opt.peers, function(v,k,t){t(k)})||[]).length) && acks++ <= tmp){
+				if(u === msg.put && (tmp = (obj_map(cat.root.opt.peers, function(v,k,t){t(k)})||[]).length) && ++acks < tmp){
 					return;
 				}
 				ev.rid(msg);
@@ -78362,7 +78365,18 @@ angular
 			// #soul.has=value>state
 			// ~who#where.where=what>when@was
 			// TODO: BUG! Put probably cannot handle plural chains!
-			var gun = this, at = (gun._), root = at.root.$, tmp;
+			var gun = this, at = (gun._), root = at.root.$, ctx = root._, M = 100, tmp;
+			if(!ctx.puta){ if(tmp = ctx.puts){ if(tmp > M){ // without this, when synchronous, writes to a 'not found' pile up, when 'not found' resolves it recursively calls `put` which incrementally resolves each write. Stack overflow limits can be as low as 10K, so this limit is hardcoded to 1% of 10K.
+				(ctx.stack || (ctx.stack = [])).push([gun, data, cb, as]);
+				if(ctx.puto){ return }
+				ctx.puto = setTimeout(function drain(){
+					var d = ctx.stack.splice(0,M), i = 0, at; ctx.puta = true;
+					while(at = d[i++]){ at[0].put(at[1], at[2], at[3]) } delete ctx.puta;
+					if(ctx.stack.length){ return ctx.puto = setTimeout(drain, 0) }
+					ctx.stack = ctx.puts = ctx.puto = null;
+				}, 0);
+				return gun;
+			} ++ctx.puts } else { ctx.puts = 1 } }
 			as = as || {};
 			as.data = data;
 			as.via = as.$ = as.via || as.$ || gun;
@@ -78398,10 +78412,11 @@ angular
 					if(!soul && Gun.val.is(msg.put)){
 						return Gun.log("The reference you are saving is a", typeof msg.put, '"'+ msg.put +'", not a node (object)!');
 					}
-					gun.put(Gun.val.rel.ify(soul), cb, as);
+					gun.put(Gun.val.link.ify(soul), cb, as);
 				}, true);
 				return gun;
 			}
+			if(at.has && (tmp = Gun.val.link.is(data))){ at.dub = tmp }
 			as.ref = as.ref || (root._ === (tmp = at.back))? gun : tmp.$;
 			if(as.ref._.soul && Gun.val.is(as.data) && at.get){
 				as.data = obj_put({}, at.get, as.data);
@@ -78456,7 +78471,9 @@ angular
 					if(!ack.lack){ this.off() } // One response is good enough for us currently. Later we may want to adjust this.
 					if(!as.ack){ return }
 					as.ack(ack, this);
+					//--C;
 				}, as.opt);
+				//C++;
 				// NOW is a hack to get synchronous replies to correctly call.
 				// and STOP is a hack to get async behavior to correctly call.
 				// neither of these are ideal, need to be fixed without hacks,
@@ -78471,6 +78488,7 @@ angular
 			}, as);
 			if(as.res){ as.res() }
 		} function no(v,k){ if(v){ return true } }
+		//console.debug(999,1); var C = 0; setInterval(function(){ try{ debug.innerHTML = C }catch(e){console.log(e)} }, 500);
 
 		function map(v,k,n, at){ var as = this;
 			var is = Gun.is(v);
@@ -78497,7 +78515,7 @@ angular
 		function soul(id, as, msg, eve){
 			var as = as.as, cat = as.at; as = as.as;
 			var at = ((msg || {}).$ || {})._ || {};
-			id = at.dub = at.dub || id || Gun.node.soul(cat.obj) || Gun.node.soul(msg.put || at.put) || Gun.val.rel.is(msg.put || at.put) || (as.via.back('opt.uuid') || Gun.text.random)(); // TODO: BUG!? Do we really want the soul of the object given to us? Could that be dangerous?
+			id = at.dub = at.dub || id || Gun.node.soul(cat.obj) || Gun.node.soul(msg.put || at.put) || Gun.val.link.is(msg.put || at.put) || (as.via.back('opt.uuid') || Gun.text.random)(); // TODO: BUG!? Do we really want the soul of the object given to us? Could that be dangerous?
 			if(eve){ eve.stun = true }
 			if(!id){ // polyfill async uuid for SEA
 				at.via.back('opt.uuid')(function(err, id){ // TODO: improve perf without anonymous callback
@@ -78556,7 +78574,7 @@ angular
 					if(node_ == at.get){
 						as.soul = (at.put||empty)['#'] || at.dub;
 					}
-					as.soul = as.soul || at.soul || at.soul || (opt.uuid || as.via.back('opt.uuid') || Gun.text.random)();
+					as.soul = as.soul || at.soul || at.link || (opt.uuid || as.via.back('opt.uuid') || Gun.text.random)();
 				}
 				if(!as.soul){ // polyfill async uuid for SEA
 					as.via.back('opt.uuid')(function(err, soul){ // TODO: improve perf without anonymous callback
@@ -78659,6 +78677,7 @@ angular
 		}
 
 		function val(msg, eve, to){
+			if(!msg.$){ eve.off(); return }
 			var opt = this.as, cat = opt.at, gun = msg.$, at = gun._, data = at.put || msg.put, link, tmp;
 			if(tmp = msg.$$){
 				link = tmp = (msg.$$._);
@@ -78750,8 +78769,9 @@ angular
 		}
 		function each(v,k){
 			if(n_ === k){ return }
-			var msg = this.msg, gun = msg.$, at = this.at, tmp = (gun.get(k)._);
-			(tmp.echo || (tmp.echo = {}))[at.id] = tmp.echo[at.id] || at;
+			var msg = this.msg, gun = msg.$, at = gun._, cat = this.at, tmp = at.lex;
+			if(tmp && !Gun.text.match(k, tmp['.'] || tmp['#'] || tmp)){ return } // TODO: Ugly hack!
+			((tmp = gun.get(k)._).echo || (tmp.echo = {}))[cat.id] = tmp.echo[cat.id] || cat;
 		}
 		var obj_map = Gun.obj.map, noop = function(){}, event = {stun: noop, off: noop}, n_ = Gun.node._, u;
 	})(USE, './map');
@@ -78809,7 +78829,7 @@ angular
 					});
 				});
 				setTimeout(function(){
-					root.on('out', {put: send, '#': root.ask(ack), I: root.$});
+					root.on('out', {put: send, '#': root.ask(ack)});
 				},1);
 			}
 
@@ -79786,7 +79806,7 @@ Gun.chain.load = function(cb, opt, at){
         key = pair.epriv || pair;
       }
       var msg = (typeof data == 'string')? data : JSON.stringify(data);
-      var rand = {s: shim.random(8), iv: shim.random(16)};
+      var rand = {s: shim.random(9), iv: shim.random(15)}; // consider making this 9 and 15 or 18 or 12 to reduce == padding.
       var ct = await aeskey(key, rand.s, opt).then((aes) => (/*shim.ossl ||*/ shim.subtle).encrypt({ // Keeping the AES key scope as private as possible...
         name: opt.name || 'AES-GCM', iv: new Uint8Array(rand.iv)
       }, aes, new shim.TextEncoder().encode(msg)));
@@ -80599,9 +80619,9 @@ Gun.chain.then = function(cb) {
 			key = ''+key;
 			if(!t && u !== val){ 
 				radix.last = (key < radix.last)? radix.last : key;
-				radix.sort = null;
+				delete (radix.$||{})[_];
 			}
-			t = t || radix[_] || (radix[_] = {});
+			t = t || radix.$ || (radix.$ = {});
 			var i = 0, l = key.length-1, k = key[i], at, tmp;
 			while(!(at = t[k]) && i < l){
 				k += key[++i];
@@ -80609,9 +80629,9 @@ Gun.chain.then = function(cb) {
 			if(!at){
 				if(!map(t, function(r, s){
 					var ii = 0, kk = '';
-					while(s[ii] == key[ii]){
+					if((s||'').length){ while(s[ii] == key[ii]){
 						kk += s[ii++];
-					}
+					} }
 					if(kk){
 						if(u === val){
 							if(ii <= l){ return }
@@ -80619,47 +80639,52 @@ Gun.chain.then = function(cb) {
 						}
 						var __ = {};
 						__[s.slice(ii)] = r;
-						(__[key.slice(ii)] = {})[$] = val;
-						(t[kk] = {})[_] = __;
+						ii = key.slice(ii);
+						('' === ii)? (__[''] = val) : ((__[ii] = {})[''] = val);
+						t[kk] = __;
 						delete t[s];
 						return true;
 					}
 				})){
 					if(u === val){ return; }
-					(t[k] || (t[k] = {}))[$] = val;
+					(t[k] || (t[k] = {}))[''] = val;
 				}
 				if(u === val){
 					return tmp;
 				}
 			} else 
 			if(i == l){
-				if(u === val){ return (u === (tmp = at[$]))? at[_] : tmp }
-				at[$] = val;
+				if(u === val){ return (u === (tmp = at['']))? at : tmp }
+				at[''] = val;
 			} else {
-				if(u !== val){ at.sort = null }
-				return radix(key.slice(++i), val, at[_] || (at[_] = {}));
+				if(u !== val){ delete at[_] }
+				return radix(key.slice(++i), val, at || (at = {}));
 			}
 		}
 		return radix;
 	};
 
 	Radix.map = function map(radix, cb, opt, pre){ pre = pre || [];
-		var t = radix[_] || radix, keys = radix.sort || (radix.sort = Object.keys(t).sort()), i = 0, l = keys.length;
-		for(;i < l; i++){ var key = keys[i], tree = t[key], tmp;
-			if(u !== (tmp = tree[$])){
-				tmp = cb(tmp, pre.join('') + key, key, pre);
+		var t = ('function' == typeof radix)? radix.$ || {} : radix;
+		if(!t){ return }
+		var keys = (t[_]||no).sort || (t[_] = function $(){ $.sort = Object.keys(t).sort(); return $ }()).sort;
+		//var keys = Object.keys(t).sort();
+		var i = 0, l = keys.length;
+		for(;i < l; i++){ var key = keys[i], tree = t[key], tmp, p;
+			if(!tree || '' === key || _ === key){ continue }
+			p = pre.slice(); p.push(key);
+			if(u !== (tmp = tree[''])){
+				tmp = cb(tmp, p.join(''), key, pre);
 				if(u !== tmp){ return tmp }
-			} else 
+			} else
 			if(opt){
-				cb(u, pre.join(''), key, pre);
-			}
-			if(tmp = tree[_]){
-				pre.push(key);
-				tmp = map(tree, cb, opt, pre);
-				//tmp = map(tmp, cb, opt, pre);
+				tmp = cb(u, pre.join(''), key, pre);
 				if(u !== tmp){ return tmp }
-				pre.pop();
 			}
+			pre = p;
+			tmp = map(tree, cb, opt, pre);
+			if(u !== tmp){ return tmp }
+			pre.pop();
 		}
 	};
 
@@ -80674,7 +80699,7 @@ Gun.chain.then = function(cb) {
 	}
 	
 	var map = Gun.obj.map, no = {}, u;
-	var $ = String.fromCharCode(30), _ = String.fromCharCode(29);
+	var _ = String.fromCharCode(24);
 	
 }());
 ;(function(){
@@ -80684,15 +80709,21 @@ Gun.chain.then = function(cb) {
 		opt = opt || {};
 		opt.log = opt.log || console.log;
 		opt.file = String(opt.file || 'radata');
+		var has = (Radisk.has || (Radisk.has = {}))[opt.file];
+		if(has){ return has }
+
 		opt.pack = opt.pack || (opt.memory? (opt.memory * 1000 * 1000) : 1399000000) * 0.3; // max_old_space_size defaults to 1400 MB.
-		opt.until = opt.until || opt.wait || 9;
-		opt.batch = opt.batch || 10 * 1000;
+		opt.until = opt.until || opt.wait || 250;
+		opt.batch = opt.batch || (10 * 1000);
 		opt.chunk = opt.chunk || (1024 * 1024 * 10); // 10MB
 		opt.code = opt.code || {};
 		opt.code.from = opt.code.from || '!';
+		//opt.jsonify = true; // TODO: REMOVE!!!!
 
 		function ename(t){ return encodeURIComponent(t).replace(/\*/g, '%2A') }
+		function atomic(v){ return u !== v && (!v || 'object' != typeof v) }
 		var map = Gun.obj.map;
+		var LOG = false;
 
 		if(!opt.store){
 			return opt.log("ERROR: Radisk needs `opt.store` interface with `{get: fn, put: fn (, list: fn)}`!");
@@ -80715,25 +80746,29 @@ Gun.chain.then = function(cb) {
 		var r = function(key, val, cb){
 			key = ''+key;
 			if(val instanceof Function){
+				var o = cb;
 				cb = val;
 				val = r.batch(key);
 				if(u !== val){
+					cb(u, val, o);
+					if(atomic(val)){ return }
 					// if a node is requested and some of it is cached... the other parts might not be.
-					return cb(u, val);
 				}
 				if(r.thrash.at){
 					val = r.thrash.at(key);
 					if(u !== val){
+						cb(u, val, o);
+						if(atomic(val)){ cb(u, val, o); return }
 						// if a node is requested and some of it is cached... the other parts might not be.
-						return cb(u, val);
 					}
 				}
-				return r.read(key, cb);
+				return r.read(key, cb, o);
 			}
 			r.batch(key, val);
 			if(cb){ r.batch.acks.push(cb) }
 			if(++r.batch.ed >= opt.batch){ return r.thrash() } // (2)
-			clearTimeout(r.batch.to); // (1)
+			if(r.batch.to){ return }
+			//clearTimeout(r.batch.to); // (1) // THIS LINE IS EVIL! NEVER USE IT! ALSO NEVER DELETE THIS SO WE NEVER MAKE THE SAME MISTAKE AGAIN!
 			r.batch.to = setTimeout(r.thrash, opt.until || 1);
 		}
 
@@ -80752,9 +80787,11 @@ Gun.chain.then = function(cb) {
 			r.batch = Radix();
 			r.batch.acks = [];
 			r.batch.ed = 0;
+			//var id = Gun.text.random(2), S = (+new Date); console.log("<<<<<<<<<<<<", id);
 			r.save(batch, function(err, ok){
-				if(++i > 1){ return }
+				if(++i > 1){ opt.log('RAD ERR: Radisk has callbacked multiple times, please report this as a BUG at github.com/amark/gun/issues ! ' + i); return }
 				if(err){ opt.log('err', err) }
+				//console.log(">>>>>>>>>>>>", id, ((+new Date) - S), batch.acks.length);
 				map(batch.acks, function(cb){ cb(err, ok) });
 				thrash.at = null;
 				thrash.ing = false;
@@ -80769,7 +80806,7 @@ Gun.chain.then = function(cb) {
 			4. Read the previous file to that into memory
 			5. Scan through the in memory radix for all values lexically less than the limit.
 			6. Merge and write all of those to the in-memory file and back to disk.
-			7. If file to large, split. More details needed here.
+			7. If file too large, split. More details needed here.
 		*/
 		r.save = function(rad, cb){
 			var s = function Span(){};
@@ -80815,28 +80852,32 @@ Gun.chain.then = function(cb) {
 			Therefore it is unavoidable that a read will have to happen,
 			the question is just how long you delay it.
 		*/
-		r.write = function(file, rad, cb, force){
+		r.write = function(file, rad, cb, o){
+			o = ('object' == typeof o)? o : {force: o};
 			var f = function Fractal(){};
 			f.text = '';
 			f.count = 0;
 			f.file = file;
 			f.each = function(val, key, k, pre){
+				//console.log("RAD:::", JSON.stringify([val, key, k, pre]));
 				if(u !== val){ f.count++ }
 				if(opt.pack <= (val||'').length){ return cb("Record too big!"), true }
 				var enc = Radisk.encode(pre.length) +'#'+ Radisk.encode(k) + (u === val? '' : ':'+ Radisk.encode(val)) +'\n';
-				if((opt.chunk < f.text.length + enc.length) && (1 < f.count) && !force){
+				if((opt.chunk < f.text.length + enc.length) && (1 < f.count) && !o.force){
 					f.text = '';
 					f.limit = Math.ceil(f.count/2);
 					f.count = 0;
 					f.sub = Radix();
-					Radix.map(rad, f.slice)
+					Radix.map(rad, f.slice);
 					return true;
 				}
 				f.text += enc;
 			}
 			f.write = function(){
 				var tmp = ename(file);
+				var start; LOG && (start = (+new Date)); // comment this out!
 				opt.store.put(tmp, f.text, function(err){
+					LOG && console.log("wrote JSON in", (+new Date) - start); // comment this out!
 					if(err){ return cb(err) }
 					r.list.add(tmp, cb);
 				});
@@ -80847,7 +80888,7 @@ Gun.chain.then = function(cb) {
 					var name = f.file;
 					f.file = key;
 					f.count = 0;
-					r.write(name, f.sub, f.next, force);
+					r.write(name, f.sub, f.next, o);
 					return true;
 				}
 				f.sub(key, val);
@@ -80856,51 +80897,73 @@ Gun.chain.then = function(cb) {
 				if(err){ return cb(err) }
 				f.sub = Radix();
 				if(!Radix.map(rad, f.slice)){
-					r.write(f.file, f.sub, cb, force);
+					r.write(f.file, f.sub, cb, o);
 				}
 			}
+			if(opt.jsonify){ return r.write.jsonify(f, file, rad, cb, o) } // temporary testing idea
 			if(!Radix.map(rad, f.each, true)){ f.write() }
+		}
+
+		r.write.jsonify = function(f, file, rad, cb, o){
+			var raw;
+			var start; LOG && (start = (+new Date)); // comment this out!
+			try{raw = JSON.stringify(rad.$);
+			}catch(e){ return cb("Record too big!") }
+			LOG && console.log("stringified JSON in", (+new Date) - start); // comment this out!
+			if(opt.chunk < raw.length && !o.force){
+				if(Radix.map(rad, f.each, true)){ return }
+			}
+			f.text = raw;
+			f.write();
 		}
 
 		;(function(){
 			var Q = {};
-			r.read = function(key, cb, next){
-				if(RAD && !next){ // cache
+			r.read = function(key, cb, o){
+				o = o || {};
+				if(RAD && !o.next){ // cache
 					var val = RAD(key);
-					if(u !== val){
+					//if(u !== val){
+						//cb(u, val, o);
+						if(atomic(val)){ cb(u, val, o); return }
 						// if a node is requested and some of it is cached... the other parts might not be.
-						return cb(u, val);
-					}
+					//}
 				}
 				var g = function Get(){}, tmp;
 				g.lex = function(file){
 					file = (u === file)? u : decodeURIComponent(file);
-					if(!file || file > (next || key)){
-						if(next){ g.file = file }
+					if(!file || file > (o.next || key)){
+						if(o.next){ g.file = file }
 						if(tmp = Q[g.file]){
-							tmp.push({key: key, ack: cb, file: g.file});
+							tmp.push({key: key, ack: cb, file: g.file, opt: o});
 							return true;
 						}
-						Q[g.file] = [{key: key, ack: cb, file: g.file}];
+						Q[g.file] = [{key: key, ack: cb, file: g.file, opt: o}];
 						r.parse(g.file, g.it);
 						return true;
 					}
 					g.file = file;
 				}
-				g.it = function(err, disk){
+				g.it = function(err, disk, info){
 					if(g.err = err){ opt.log('err', err) }
+					g.info = info;
 					if(disk){ RAD = g.disk = disk }
 					disk = Q[g.file]; delete Q[g.file];
 					map(disk, g.ack);
 				}
 				g.ack = function(as){
 					if(!as.ack){ return }
-					var tmp = as.key, rad = g.disk || noop, data = rad(tmp), last = rad.last;
-					if(data){ as.ack(g.err, data) }
-					else if(!as.file){ return as.ack(g.err, u) }
-					if(!last || last === tmp){ return as.ack(g.err, u) } // is this correct?
-					if(last > tmp && 0 > last.indexOf(tmp)){ return as.ack(g.err, u) }
-					r.read(tmp, as.ack, as.file);
+					var tmp = as.key, o = as.opt, info = g.info, rad = g.disk || noop, data = rad(tmp), last = rad.last;
+					o.parsed = (o.parsed || 0) + (info.parsed||0);
+					o.chunks = (o.chunks || 0) + 1;
+					if(!o.some){ o.some = (u !== data) }
+					if(u !== data){ as.ack(g.err, data, o) }
+					else if(!as.file){ !o.some && as.ack(g.err, u, o); return }
+					if(/*!last || */last === tmp){ !o.some && as.ack(g.err, u, o); return }
+					if(last && last > tmp && 0 != last.indexOf(tmp)){ !o.some && as.ack(g.err, u, o); return }
+					if(o.some && o.parsed >= o.limit){ return }
+					o.next = as.file;
+					r.read(tmp, as.ack, o);
 				}
 				r.list(g.lex);
 			}
@@ -80915,14 +80978,13 @@ Gun.chain.then = function(cb) {
 				Then we can work on the harder problem of being multi-process.
 			*/
 			var Q = {}, s = String.fromCharCode(31);
-			r.parse = function(file, cb){ var q;
+			r.parse = function(file, cb, raw){ var q;
 				if(q = Q[file]){ return q.push(cb) } q = Q[file] = [cb];
-				var p = function Parse(){};
+				var p = function Parse(){}, info = {};
 				p.disk = Radix();
 				p.read = function(err, data){ var tmp;
 					delete Q[file];
 					if((p.err = err) || (p.not = !data)){
-						//return cb(err, u);//map(q, p.ack);
 						return map(q, p.ack);
 					}
 					if(typeof data !== 'string'){
@@ -80930,12 +80992,34 @@ Gun.chain.then = function(cb) {
 							if(opt.pack <= data.length){
 								p.err = "Chunk too big!";
 							} else {
-								data = data.toString();
+								data = data.toString(); // If it crashes, it crashes here. How!?? We check size first!
 							}
 						}catch(e){ p.err = e }
 						if(p.err){ return map(q, p.ack) }
 					}
+					info.parsed = data.length;
+
+					var start; LOG && (start = (+new Date)); // keep this commented out in production!
+					if(opt.jsonify){ // temporary testing idea
+						try{
+							var json = JSON.parse(data);
+							p.disk.$ = json;
+							LOG && console.log('parsed JSON in', (+new Date) - start); // keep this commented out in production!
+							map(q, p.ack);
+							return;
+						}catch(e){ tmp = e }
+						if('{' === data[0]){
+							p.err = tmp || "JSON error!";
+							return map(q, p.ack);
+						}
+					}
+
+					var start; LOG && (start = (+new Date)); // keep this commented out in production!
 					var tmp = p.split(data), pre = [], i, k, v;
+					if(!tmp || 0 !== tmp[1]){
+						p.err = "File '"+file+"' does not have root radix! ";
+						return map(q, p.ack);
+					}
 					while(tmp){
 						k = v = u;
 						i = tmp[1];
@@ -80953,6 +81037,7 @@ Gun.chain.then = function(cb) {
 						if(u !== k && u !== v){ p.disk(pre.join(''), v) }
 						tmp = p.split(tmp[2]);
 					}
+					LOG && console.log('parsed JSON in', (+new Date) - start); // keep this commented out in production!
 					//cb(err, p.disk);
 					map(q, p.ack);
 				};
@@ -80969,9 +81054,10 @@ Gun.chain.then = function(cb) {
 				}
 				p.ack = function(cb){ 
 					if(!cb){ return }
-					if(p.err || p.not){ return cb(p.err, u) }
-					cb(u, p.disk);
+					if(p.err || p.not){ return cb(p.err, u, info) }
+					cb(u, p.disk, info);
 				}
+				if(raw){ return p.read(null, raw) }
 				opt.store.get(ename(file), p.read);
 			}
 		}());
@@ -80994,8 +81080,11 @@ Gun.chain.then = function(cb) {
 					return cb(u, 1);
 				}
 				dir(file, true);
+				cb.listed = (cb.listed || 0) + 1;
 				r.write(f, dir, function(err, ok){
 					if(err){ return cb(err) }
+					cb.listed = (cb.listed || 0) - 1;
+					if(cb.listed !== 0){ return }
 					cb(u, 1);
 				}, true);
 			}
@@ -81032,6 +81121,7 @@ Gun.chain.then = function(cb) {
 		}());
 
 		var noop = function(){}, RAD, u;
+		Radisk.has[opt.file] = r;
 		return r;
 	}
 
@@ -81107,62 +81197,90 @@ Gun.chain.then = function(cb) {
 
 }());
 var Gun = (typeof window !== "undefined")? window.Gun : require('../gun');
-
+ 
 Gun.on('create', function(root){
-	this.to.next(root);
-	var opt = root.opt, u;
-	if(false === opt.radisk){ return }
-	var Radisk = (Gun.window && Gun.window.Radisk) || require('./radisk');
-	var Radix = Radisk.Radix;
-
-	opt.store = opt.store || (!Gun.window && require('./rfs')(opt));
-	var rad = Radisk(opt), esc = String.fromCharCode(27);
-
-	root.on('put', function(msg){
-		this.to.next(msg);
-		var id = msg['#'], track = !msg['@'], acks = track? 0 : u; // only ack non-acks.
-		if(msg.rad && !track){ return } // don't save our own acks
-		Gun.graph.is(msg.put, null, function(val, key, node, soul){
-			if(track){ ++acks }
-			val = Radisk.encode(val, null, esc)+'>'+Radisk.encode(Gun.state.is(node, key), null, esc);
-			rad(soul+'.'+key, val, (track? ack : u));
-		});
-		function ack(err, ok){
-			acks--;
-			if(ack.err){ return }
-			if(ack.err = err){
-				root.on('in', {'@': id, err: err});
-				return;
-			}
-			if(acks){ return }
-			root.on('in', {'@': id, ok: 1});
-		}
-	});
-
-	root.on('get', function(msg){
-		this.to.next(msg);
-		var id = msg['#'], soul = msg.get['#'], key = msg.get['.']||'', tmp = soul+'.'+key, node;
-		rad(tmp, function(err, val){
-			if(val){
-				if(val && typeof val !== 'string'){
-					if(key){
-						val = u;
-					} else {
-						Radix.map(val, each) 
-					}
-				}
-				if(!node && val){ each(val, key) }
-			}
-			root.on('in', {'@': id, put: Gun.graph.node(node), err: err? err : u, rad: Radix});
-		});
-		function each(val, key){
-			tmp = val.lastIndexOf('>');
-			var state = Radisk.decode(val.slice(tmp+1), null, esc);
-			val = Radisk.decode(val.slice(0,tmp), null, esc);
-			node = Gun.state.ify(node, key, state, val, soul);
-		}
-	});
-
+    this.to.next(root);
+    var opt = root.opt, u;
+    if(false === opt.radisk){ return }
+    var Radisk = (Gun.window && Gun.window.Radisk) || require('./radisk');
+    var Radix = Radisk.Radix;
+ 
+    opt.store = opt.store || (!Gun.window && require('./rfs')(opt));
+    var rad = Radisk(opt), esc = String.fromCharCode(27);
+ 
+    root.on('put', function(msg){
+        this.to.next(msg);
+        var id = msg['#'] || Gun.text.random(3), track = !msg['@'], acks = track? 0 : u; // only ack non-acks.
+        if(msg.rad && !track){ return } // don't save our own acks
+        Gun.graph.is(msg.put, null, function(val, key, node, soul){
+            if(track){ ++acks }
+            //console.log('put:', soul, key, val);
+            val = Radisk.encode(val, null, esc)+'>'+Radisk.encode(Gun.state.is(node, key), null, esc);
+            rad(soul+esc+key, val, (track? ack : u));
+        });
+        function ack(err, ok){
+            acks--;
+            if(ack.err){ return }
+            if(ack.err = err){
+                root.on('in', {'@': id, err: err});
+                return;
+            }
+            if(acks){ return }
+            //console.log("PAT!", id);
+            root.on('in', {'@': id, ok: 1});
+        }
+    });
+ 
+    root.on('get', function(msg){
+        this.to.next(msg);
+        var id = msg['#'], get = msg.get, soul = msg.get['#'], has = msg.get['.']||'', opt = {}, graph, lex, key, tmp;
+        if(typeof soul == 'string'){
+            key = soul;
+        } else 
+        if(soul){
+            if(tmp = soul['*']){ opt.limit = 1 }
+            key = tmp || soul['='];
+        }
+        if(key && !opt.limit){ // a soul.has must be on a soul, and not during soul*
+            if(typeof has == 'string'){
+                key = key+esc+(opt.atom = has);
+            } else 
+            if(has){
+                if(tmp = has['*']){ opt.limit = 1 }
+                if(key){ key = key+esc + (tmp || (opt.atom = has['='])) }
+            }
+        }
+        if((tmp = get['%']) || opt.limit){
+            opt.limit = (tmp <= (opt.pack || (1000 * 100)))? tmp : 1;
+        }
+        //var start = (+new Date); // console.log("GET!", id, JSON.stringify(key));
+        rad(key||'', function(err, data, o){
+            if(data){
+                if(typeof data !== 'string'){
+                    if(opt.atom){
+                        data = u;
+                    } else {
+                        Radix.map(data, each) 
+                    }
+                }
+                if(!graph && data){ each(data, '') }
+            }
+            //console.log("GOT!", id, JSON.stringify(key), ((+new Date) - start));
+            root.on('in', {'@': id, put: graph, err: err? err : u, rad: Radix});
+        }, opt);
+        function each(val, has, a,b){
+            if(!val){ return }
+            has = (key+has).split(esc);
+            var soul = has.slice(0,1)[0];
+            has = has.slice(-1)[0];
+            opt.count = (opt.count || 0) + val.length;
+            tmp = val.lastIndexOf('>');
+            var state = Radisk.decode(val.slice(tmp+1), null, esc);
+            val = Radisk.decode(val.slice(0,tmp), null, esc);
+            (graph = graph || {})[soul] = Gun.state.ify(graph[soul], has, state, val, soul);
+            if(opt.limit && opt.limit <= opt.count){ return true }
+        }
+    });
 });
 ;(function(){
   var Gun = (typeof window !== "undefined")? window.Gun : require('../gun');
@@ -81175,115 +81293,47 @@ Gun.on('create', function(root){
   function Store(opt){
     opt = opt || {};
     opt.file = String(opt.file || 'radata');
-    var db = null;
+    if(Gun.TESTING){ opt.file = 'radatatest' }
+    opt.chunk = opt.chunk || (1024 * 1024); // 1MB
+    var db = null, u;
 
-    opt.indexedDB = opt.indexedDB || window.indexedDB;
-    // Initialize indexedDB. Version 1.
-    var request = opt.indexedDB.open(opt.file, 1)
+    try{opt.indexedDB = opt.indexedDB || indexedDB}catch(e){}
+    try{if(!opt.indexedDB || 'file:' == location.protocol){
+      var store = {}, s = {};
+      store.put = function(f, d, cb){ s[f] = d; cb(null, 1) };
+      store.get = function(f, cb){ cb(null, s[f] || u) };
+      console.log('Warning: No indexedDB exists to persist data to!');
+      return store;
+    }}catch(e){}
+    
+    var store = function Store(){};
+    store.start = function(){
+      var o = indexedDB.open(opt.file, 1);
+      o.onupgradeneeded = function(eve){ (eve.target.result).createObjectStore(opt.file) }
+      o.onsuccess = function(){ db = o.result }
+      o.onerror = function(eve){ console.log(eve||1); }
+    }; store.start();
 
-    // Create schema. onupgradeneeded is called only when DB is first created or when the DB version increases.
-    request.onupgradeneeded = function(event){
-      var db = event.target.result;
-      db.createObjectStore(opt.file);
+    store.put = function(key, data, cb){
+      if(!db){ setTimeout(function(){ store.put(key, data, cb) },1); return }
+      var tx = db.transaction([opt.file], 'readwrite');
+      var obj = tx.objectStore(opt.file);
+      var req = obj.put(data, ''+key);
+      req.onsuccess = obj.onsuccess = tx.onsuccess = function(){ cb(null, 1) }
+      req.onabort = obj.onabort = tx.onabort = function(eve){ cb(eve||'put.tx.abort') }
+      req.onerror = obj.onerror = tx.onerror = function(eve){ cb(eve||'put.tx.error') }
     }
 
-    // onsuccess is called when the DB is ready.
-    request.onsuccess = function(){
-      db = request.result;
+    store.get = function(key, cb){
+      if(!db){ setTimeout(function(){ store.get(key, cb) },9); return }
+      var tx = db.transaction([opt.file], 'readonly');
+      var obj = tx.objectStore(opt.file);
+      var req = obj.get(''+key);
+      req.onsuccess = function(){ cb(null, req.result) }
+      req.onabort = function(eve){ cb(eve||4) }
+      req.onerror = function(eve){ cb(eve||5) }
     }
-
-    request.onerror = function(event){
-      console.log('ERROR: RAD IndexedDB generic error:', event);
-    };
-
-    var store = function Store(){}, u;
-
-    store.put = function(file, data, cb){
-      cb = cb || function(){};
-      var doPut = function(){
-        // Start a transaction. The transaction will be automaticallt closed when the last success/error handler took no new action.
-        var transaction = db.transaction([opt.file], 'readwrite');
-
-        // Add or update data.
-        var radStore = transaction.objectStore(opt.file);
-        var putRequest = radStore.put(data, file);
-        putRequest.onsuccess = radStore.onsuccess = transaction.onsuccess = function(){
-          //console.log('RAD IndexedDB put transaction was succesful.');
-          cb(null, 1);
-        };
-        putRequest.onabort = radStore.onabort = transaction.onabort = function(){
-          var es = 'ERROR: RAD IndexedDB put transaction was aborted.';
-          console.log(es);
-          cb(es, undefined);
-        };
-        putRequest.onerror = radStore.onerror = transaction.onerror = function(event){
-          var es = 'ERROR: RAD IndexedDB put transaction was in error: ' + JSON.stringify(event)
-          console.log(es);
-          cb(es, undefined);
-        };
-      }
-      if(!db){
-        waitDbReady(doPut, 100, function(){
-          var es = 'ERROR: Timeout: RAD IndexedDB not ready.';
-          console.log(es);
-          cb(es, undefined);
-        }, 10)
-      } else {
-        doPut();
-      }
-    };
-
-    store.get = function(file, cb){
-      cb = cb || function(){};
-      var doGet = function(){
-        // Start a transaction. The transaction will be automaticallt closed when the last success/error handler took no new action.
-        var transaction = db.transaction([opt.file], 'readwrite');
-
-        // Read data.
-        var radStore = transaction.objectStore(opt.file);
-        var getRequest = radStore.get(file);
-        getRequest.onsuccess = function(){
-          //console.log('RAD IndexedDB get transaction was succesful.');
-          cb(null, getRequest.result);
-        };
-        getRequest.onabort = function(){
-          var es = 'ERROR: RAD IndexedDB get transaction was aborted.';
-          console.log(es);
-          cb(es, undefined);
-        };
-        getRequest.onerror = function(event){
-          var es = 'ERROR: RAD IndexedDB get transaction was in error: ' + JSON.stringify(event)
-          console.log(es);
-          cb(es, undefined);
-        };
-      }
-      if(!db){
-        waitDbReady(doGet, 100, function(){
-          var es = 'ERROR: Timeout: RAD IndexedDB not ready.';
-          console.log(es);
-          cb(es, undefined);
-        }, 10)
-      } else {
-        doGet();
-      }
-    };
-
-    var waitDbReady = function(readyFunc, checkInterval, timeoutFunc, timeoutSecs){
-      var startTime = new Date();
-      var checkFunc = function(){
-        if(db){
-          readyFunc(); 
-        } else {
-          if((new Date() - startTime) / 1000 >= timeoutSecs){
-            timeoutFunc();
-          } else {
-            setTimeout(checkFunc, checkInterval);
-          }
-        }
-      };
-      checkFunc();
-    };
-
+    setInterval(function(){ db && db.close(); db = null; store.start() }, 1000 * 15); // reset webkit bug?
     return store;
   }
 
@@ -81293,7 +81343,6 @@ Gun.on('create', function(root){
     module.exports = Store;
   }
 }());
-
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('gun')) :
 	typeof define === 'function' && define.amd ? define(['gun'], factory) :
