@@ -1,9 +1,13 @@
 'use strict';
 
 describe('iris', function() {
+  var until = protractor.ExpectedConditions;
+
   it('should have a title', function() {
-    browser.get('http://localhost:3000');
-    expect(browser.getTitle()).toEqual('Iris');
+    browser.get('');
+    browser.wait(until.titleIs('Iris'), 1000, 'Title was not Iris within 1s').then(() => {
+      expect(browser.getTitle()).toEqual('Iris');
+    });
   });
 
   it('should create a new user', function() {
@@ -11,7 +15,6 @@ describe('iris', function() {
     element(by.id('createUserBtn')).click();
 
     var info = element(by.css('.alert-info .h3'));
-    var until = protractor.ExpectedConditions;
 
     browser.wait(until.presenceOf(info), 10000, 'Element taking too long to appear in the DOM').then(() => {
       expect(info.isPresent()).toBe(true);
