@@ -1,14 +1,21 @@
 'use strict';
 
-describe('angularjs homepage todo list', function() {
-  it('should create a new user', function() {
+describe('iris', function() {
+  it('should have a title', function() {
     browser.get('http://localhost:3000');
+    expect(browser.getTitle()).toEqual('Iris');
+  });
 
-    element(by.id('newUserName')).sendKeys('Test User');
+  it('should create a new user', function() {
+    element(by.model('newUserName')).sendKeys('Test User');
     element(by.id('createUserBtn')).click();
 
-    var info = element(by.css('alert-info h3'));
-    expect(info.toExist());
+    var info = element(by.css('.alert-info .h3'));
+    var until = protractor.ExpectedConditions;
+
+    browser.wait(until.presenceOf(info), 10000, 'Element taking too long to appear in the DOM').then(() => {
+      expect(info.isPresent()).toBe(true);
+    });
     /*
     var todoList = element.all(by.repeater('todo in todoList.todos'));
     expect(todoList.count()).toEqual(3);
