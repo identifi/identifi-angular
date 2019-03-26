@@ -1,17 +1,17 @@
 var CACHE_NAME = 'iris-cache-v1';
 var urlsToCache = [
-  'index.html',
-  'assets/scripts/app.js',
-  'assets/scripts/vendor.js',
-  'assets/js/ipfs.min.js',
-  'assets/images/cover.jpg',
-  'assets/fonts/Lato-900/Lato-900.woff2',
-  'assets/fonts/Lato-700/Lato-700.woff2',
-  'assets/fonts/Lato-300/Lato-300.woff2',
-  'assets/fonts/Lato-regular/Lato-regular.woff2',
-  'fonts/fontawesome-webfont.woff2?v=4.7.0',
-  'fonts/glyphicons-halflings-regular.woff2',
-  'assets/images/favicon.ico'
+  '/index.html',
+  '/scripts/app.js',
+  '/scripts/vendor.js',
+  '/assets/js/ipfs.min.js',
+  '/assets/images/cover.jpg',
+  '/assets/fonts/Lato-900/Lato-900.woff2',
+  '/assets/fonts/Lato-700/Lato-700.woff2',
+  '/assets/fonts/Lato-300/Lato-300.woff2',
+  '/assets/fonts/Lato-regular/Lato-regular.woff2',
+  '/fonts/fontawesome-webfont.woff2',
+  '/fonts/glyphicons-halflings-regular.woff2',
+  '/assets/images/favicon.ico'
 ];
 
 self.addEventListener('install', function(event) {
@@ -29,6 +29,7 @@ self.addEventListener('fetch', function(event) {
   event.respondWith(
     caches.match(event.request)
       .then(function(response) {
+        console.log('cache hit', event.request);
         // Cache hit - return response
         if (response) {
           return response;

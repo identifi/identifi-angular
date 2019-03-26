@@ -3,6 +3,7 @@
   "name": "iris",
   "description": "A social networking application that stores everything on its users' devices which communicate directly with each other.",
   "version": "1.22.46",
+  "display": "standalone",
   "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
   "browser_action": {
     "browser_style": true,
