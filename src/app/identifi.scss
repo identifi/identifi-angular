@@ -1711,6 +1711,18 @@ a {
 .left-addon input  { padding-left:  30px; }
 .right-addon input { padding-right: 30px; }
 
+.msg.panel-default {
+  &:hover {
+    background-color: #f7f7f7;
+  }
+}
+
+.no-hover {
+  &:hover {
+    background-color: inherit !important;
+  }
+}
+
 .msg-reaction {
   @media(min-width: 768px) {
     margin-left: 45px;
