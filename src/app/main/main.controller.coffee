@@ -152,7 +152,6 @@ angular.module('irisAngular').controller 'MainController', [
           $scope.authentication.identity.mva = mva
           eve.off() if mva.profilePhoto
         startAt = new Date()
-        console.log startAt
         $scope.authentication.identity.gun.get('received').map().once (m) ->
           return if m.pubKey == $scope.viewpoint.value
           console.log 'you got a msg'
@@ -234,7 +233,6 @@ angular.module('irisAngular').controller 'MainController', [
             if options.getJson
               file = JSON.parse(file.toString())
             if options.base64type
-              console.log options.base64type
               file = 'data:' + options.base64type + ';base64,' + file.toString('base64')
             resolve file
 
