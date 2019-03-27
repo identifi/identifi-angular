@@ -1,6 +1,6 @@
 <div class="container no-padding-xs">
   <section>
-    <div class="mar-top25-xs"></div>
+    <div class="mar-top45-xs"></div>
     <div ng-if="!query.term" ng-include="'app/main/getstarted.partial.html'"></div>
 
     <table ng-init="filters.limit = 10" id="search-results" class="table table-hover" infinite-scroll="filters.limit = filters.limit + 1" infinite-scroll-distance="1" infinite-scroll-disabled="!irisIndex || !ids || !ids.list || ids.list.length < filters.limit || filteredIds.length < filters.limit">

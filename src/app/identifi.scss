@@ -1213,7 +1213,9 @@ body {
 }
 
 /* For fixed header */
-body { padding-top: 70px; }
+@media (min-width: 768px) {
+  body { padding-top: 70px; }
+}
 
 h1 {
   margin-bottom: 40px;
@@ -1389,6 +1391,10 @@ a {
 }
 
 .stats-box {
+  @media (max-height: 767px) {
+    padding-top: 20px;
+  }
+
   h4 { display: inline; }
 
   .profile-image {
@@ -1578,8 +1584,12 @@ a {
     margin-top: -130px;
   }
 
-  .mar-top25-xs {
-    margin-top: 25px;
+  .mar-top45-xs {
+    margin-top: 45px;
+  }
+
+  .mar-top20-xs {
+    margin-top: 20px;
   }
 
   .container .jumbotron {

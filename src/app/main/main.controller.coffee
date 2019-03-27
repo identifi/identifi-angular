@@ -667,7 +667,7 @@ angular.module('irisAngular').controller 'MainController', [
               msg.bgColor = 'background-color: #FFF0DE;border-color:#FFE2C6;'
               msg.isUnverification = true
             when 'post'
-              msg.iconStyle = 'fa fa-pencil'
+              msg.iconStyle = '' # fa fa-pencil
               msg.isPost = true
             when 'rating'
               rating = msg.signedData.rating
