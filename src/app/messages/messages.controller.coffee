@@ -56,28 +56,8 @@ angular.module('irisAngular').controller 'MessagesController', [
           $scope.message.verifiedByAttr = new $window.irisLib.Attribute('keyID', $scope.message.signerKeyID)
           $scope.message.ipfsUri = hash if isIpfsHash
 
-        requests = []
-        requests.push new Promise (resolve) ->
-          $scope.irisIndex.gun.get('messagesByHash').get(hash).on (res) ->
-            if res.sig
-              $window.irisLib.Message.fromSig(res).then (m) ->
-                resolve(m)
-                unless isIpfsHash
-                  buffer = $scope.ipfs.types.Buffer.from(JSON.stringify(res))
-                  $scope.ipfs.add(buffer).then (files) ->
-                    console.log 'added to ipfs', files[0].path
-                    $scope.irisIndex.gun.get('messagesByHash').get(hash).get('ipfsUri').put '/ipfs/' + files[0].path
-                    $scope.message.ipfsUri = files[0].path
-        if isIpfsHash
-          requests.push new Promise (resolve, reject) ->
-            $scope.ipfsGet(hash).then (res) ->
-              s = JSON.parse(res.toString())
-              console.log 'msg from ipfs', res, s
-              $window.irisLib.Message.fromSig(s).then (m) -> resolve(m)
-            .catch (e) ->
-              console.log e
-              reject()
-        Promise.race(requests).then (m) ->
+        $scope.irisIndex.getMessageByHash(hash).then (m) ->
+          console.log 'yeeaaaah'
           $scope.message = m
           processResponse()
 
