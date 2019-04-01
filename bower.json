@@ -1,6 +1,6 @@
 {
   "name": "iris-angular",
-  "version": "1.22.46",
+  "version": "1.22.47",
   "dependencies": {
     "jquery": "~3.3.1",
     "angular": "^1.7.8",
