@@ -57,7 +57,6 @@ angular.module('irisAngular').controller 'MessagesController', [
           $scope.message.ipfsUri = hash if isIpfsHash
 
         $scope.irisIndex.getMessageByHash(hash).then (m) ->
-          console.log 'yeeaaaah'
           $scope.message = m
           processResponse()
 
