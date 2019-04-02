@@ -563,11 +563,9 @@ angular.module('irisAngular').controller 'MainController', [
             msg.likes = likes
             msg.liked = liked
         if msg.signedData.sharedMsg and not options.noRecursion
-          $scope.irisIndex.gun.back(-1).get('messagesByHash').get(msg.signedData.sharedMsg).then (rawSharedMsg) ->
-            if rawSharedMsg
-              $window.irisLib.Message.fromSig(rawSharedMsg).then (sharedMsg) ->
-                processMessage sharedMsg, null, { noRecursion: true }
-                $scope.$apply -> msg.sharedMsg = sharedMsg
+          $scope.irisIndex.getMessageByHash(msg.signedData.sharedMsg).then (m) ->
+            processMessage m, null, { noRecursion: true }
+            $scope.$apply -> msg.sharedMsg = m
         updateReactions(msg.reactions) if msg.reactions
         msg.repliesArr = msg.repliesArr or []
         msg.replies = msg.replies or {}
