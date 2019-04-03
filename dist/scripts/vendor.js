@@ -92286,7 +92286,7 @@ Gun.on('create', function(root){
 	        _this.gun.get('trustedIndexes').map().once(function (val, uri) {
 	          if (val) {
 	            // TODO: only get new messages?
-	            _this.gun.user(uri).get('identifi').get('messagesByDistance').map(function (val, key) {
+	            _this.gun.user(uri).get('iris').get('messagesByDistance').map(function (val, key) {
 	              var d = _Number$parseInt(key.split(':')[0]);
 	              console.log('got msg with d', d, key);
 	              if (!isNaN(d) && d <= _this.options.indexSync.subscribe.maxMsgDistance) {
@@ -92298,7 +92298,7 @@ Gun.on('create', function(root){
 	                });
 	              }
 	            });
-	            _this.gun.user(uri).get('identifi').get('reactions').map(function (reaction, msgHash) {
+	            _this.gun.user(uri).get('iris').get('reactions').map(function (reaction, msgHash) {
 	              _this.gun.get('messagesByHash').get(msgHash).get('reactions').get(uri).put(reaction);
 	              _this.gun.get('messagesByHash').get(msgHash).get('reactions').get(uri).put(reaction);
 	            });
@@ -92327,7 +92327,10 @@ Gun.on('create', function(root){
 	    user.auth(keypair);
 	    this.writable = true;
 	    options.viewpoint = new Attribute('keyID', Key.getId(keypair));
-	    var i = new Index(user.get('identifi'), options);
+	    var identifi = user.get('identifi');
+	    var gunRoot = user.get('iris');
+	    gunRoot.put(identifi); // temp migration identifi -> iris
+	    var i = new Index(gunRoot, options);
 	    i.gun.get('viewpoint').put(options.viewpoint);
 	    var uri = options.viewpoint.uri();
 	    var g = i.gun.get('identitiesBySearchKey').get(uri);
@@ -92359,15 +92362,20 @@ Gun.on('create', function(root){
 	    return key;
 	  };
 
+	  // TODO: GUN indexing module that does this automatically
+
+
 	  Index.getMsgIndexKeys = function getMsgIndexKeys(msg) {
 	    var keys = {};
 	    var distance = parseInt(msg.distance);
 	    distance = _Number$isNaN(distance) ? 99 : distance;
 	    distance = ('00' + distance).substring(distance.toString().length); // pad with zeros
+	    var timestamp = Math.floor(Date.parse(msg.timestamp || msg.signedData.timestamp) / 1000);
 	    var hashSlice = msg.getHash().substr(0, 9);
 	    keys.messagesByHash = [msg.getHash()];
-	    keys.messagesByTimestamp = [Math.floor(Date.parse(msg.timestamp || msg.signedData.timestamp) / 1000) + ':' + hashSlice];
+	    keys.messagesByTimestamp = [timestamp + ':' + hashSlice];
 	    keys.messagesByDistance = [distance + ':' + keys.messagesByTimestamp[0]];
+	    keys.messagesByType = [msg.signedData.type + ':' + timestamp + ':' + hashSlice];
 
 	    keys.messagesByAuthor = [];
 	    var authors = msg.getAuthorArray();
@@ -92818,7 +92826,7 @@ Gun.on('create', function(root){
 	    var msgs = [];
 	    if (this.options.indexSync.importOnAdd.enabled) {
 	      await util$1.timeoutPromise(new _Promise(function (resolve) {
-	        _this2.gun.user(gunUri).get('identifi').get('messagesByDistance').map(function (val, key) {
+	        _this2.gun.user(gunUri).get('iris').get('messagesByDistance').map(function (val, key) {
 	          var d = _Number$parseInt(key.split(':')[0]);
 	          if (!isNaN(d) && d <= maxMsgDistance) {
 	            Message.fromSig(val).then(function (msg) {
@@ -93138,7 +93146,7 @@ Gun.on('create', function(root){
 	    if (this.options.indexSync.query.enabled) {
 	      this.gun.get('trustedIndexes').map().once(function (val, key) {
 	        if (val) {
-	          _this4.gun.user(key).get('identifi').get('identitiesByTrustDistance').map().once(function (id, k) {
+	          _this4.gun.user(key).get('iris').get('identitiesByTrustDistance').map().once(function (id, k) {
 	            if (_Object$keys(seen).length >= limit) {
 	              // TODO: turn off .map cb
 	              return;
@@ -93149,7 +93157,7 @@ Gun.on('create', function(root){
 	            var soul = Gun.node.soul(id);
 	            if (soul && !seen.hasOwnProperty(soul)) {
 	              seen[soul] = true;
-	              callback(new Identity(_this4.gun.user(key).get('identifi').get('identitiesByTrustDistance').get(k)));
+	              callback(new Identity(_this4.gun.user(key).get('iris').get('identitiesByTrustDistance').get(k)));
 	            }
 	          });
 	        }
@@ -93206,7 +93214,7 @@ Gun.on('create', function(root){
 	      if (_this5.options.indexSync.query.enabled) {
 	        _this5.gun.get('trustedIndexes').map().once(function (val, key) {
 	          if (val) {
-	            _this5.gun.user(key).get('identifi').get('messagesByHash').get(hash).on(function (d) {
+	            _this5.gun.user(key).get('iris').get('messagesByHash').get(hash).on(function (d) {
 	              console.log('got msg ' + hash + ' from friend\'s gun index ' + val);
 	              resolveIfHashMatches(d);
 	            });
@@ -93241,7 +93249,7 @@ Gun.on('create', function(root){
 	    if (this.options.indexSync.query.enabled) {
 	      this.gun.get('trustedIndexes').map().once(function (val, key) {
 	        if (val) {
-	          var n = _this6.gun.user(key).get('identifi').get('messagesByTimestamp');
+	          var n = _this6.gun.user(key).get('iris').get('messagesByTimestamp');
 	          _this6._getMsgs(n, cb, limit, cursor, desc, filter);
 	        }
 	      });
@@ -93274,7 +93282,7 @@ Gun.on('create', function(root){
 	    if (this.options.indexSync.query.enabled) {
 	      this.gun.get('trustedIndexes').map().once(function (val, key) {
 	        if (val) {
-	          var n = _this7.gun.user(key).get('identifi').get('messagesByDistance');
+	          var n = _this7.gun.user(key).get('iris').get('messagesByDistance');
 	          _this7._getMsgs(n, cb, limit, cursor, desc, filter);
 	        }
 	      });
@@ -93291,7 +93299,7 @@ Gun.on('create', function(root){
 	  return Index;
 	}();
 
-	var version$1 = "0.0.97";
+	var version$1 = "0.0.98";
 
 	/*eslint no-useless-escape: "off", camelcase: "off" */
 
