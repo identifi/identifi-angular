@@ -356,7 +356,7 @@ angular.module('irisAngular').controller 'MainController', [
     $scope.msgs.seen = {}
     $scope.filteredMsgs = []
     $scope.loadMsgs = (cursor) ->
-      limit = 1000
+      limit = 1
       if cursor == undefined and $scope.msgs.list.length
         cursor = $scope.msgs.list[$scope.msgs.list.length - 1].cursor
       found = 0
@@ -610,9 +610,13 @@ angular.module('irisAngular').controller 'MainController', [
             if attachment.uri
               type = attachment.type or 'image'
               typeSubstr = attachment.type.substr(0,5)
-              $scope.ipfsGet(attachment.uri, {base64type: type}).then (src) ->
-                $scope.$apply ->
-                  msg.attachments.push Object.assign {src, type, typeSubstr}, attachment
+              if typeSubstr in ['audio', 'video']
+                msg.attachments.push Object.assign {type, typeSubstr}, attachment
+                console.log msg.attachments
+              else
+                $scope.ipfsGet(attachment.uri, {base64type: type}).then (src) ->
+                  $scope.$apply ->
+                    msg.attachments.push Object.assign {src, type, typeSubstr}, attachment
           addAttachment(attachment) for attachment in msg.signedData.attachments
         $scope.$apply ->
           # TODO: make sure message signature is checked

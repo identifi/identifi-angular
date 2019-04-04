@@ -33,7 +33,8 @@
       <span ng-repeat="attachment in $ctrl.msg.attachments" class="attachment">
         <a ng-show="['video','image','audio'].indexOf(attachment.typeSubstr) == -1"  ng-bind="attachment.name"></a>
         <img ng-show="attachment.type && attachment.typeSubstr == 'image'" alt="{{attachment.uri}}" ng-src="{{attachment.src}}" ng-style="{'max-width': $ctrl.msg.attachments.length > 1 ? '150px' : '100%', 'max-height': $ctrl.msg.attachments.length > 1 ? '150px' : '450px'}">
-        <video ng-show="attachment.type && ['video','audio'].indexOf(attachment.typeSubstr) != -1" controls ng-src="{{attachment.src}}" style="max-width: 100%;">
+        <videostream ng-if="attachment.typeSubstr == 'video' || attachment.typeSubstr == 'audio'" ipfs="$ctrl.ipfs" uri="attachment.uri"></videostream>
+        <span ng-bind-html="attachment.element" ng-if="attachment.element"></span>
       </span>
     </div>
 
