@@ -10,6 +10,10 @@ angular.module 'irisAngular'
         el = document.createElement('video')
         el.setAttribute('controls', true)
         el.setAttribute('style', 'max-width: 100%;')
+        el.setAttribute('preload', 'metadata')
+        el.addEventListener 'loadedmetadata', () ->
+          el.play() # make it display poster (preview image). may load unnecessary amount of data?
+          el.pause()
         stream = null
         videostream = new window.videostream
           createReadStream: (opts) ->

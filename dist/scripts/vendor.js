@@ -92327,9 +92327,9 @@ Gun.on('create', function(root){
 	    user.auth(keypair);
 	    this.writable = true;
 	    options.viewpoint = new Attribute('keyID', Key.getId(keypair));
-	    var identifi = user.get('identifi');
+	    // const identifi = user.get(`identifi`);
 	    var gunRoot = user.get('iris');
-	    gunRoot.put(identifi); // temp migration identifi -> iris
+	    // gunRoot.put(identifi); // temp migration identifi -> iris, but fails due to gun error
 	    var i = new Index(gunRoot, options);
 	    i.gun.get('viewpoint').put(options.viewpoint);
 	    var uri = options.viewpoint.uri();

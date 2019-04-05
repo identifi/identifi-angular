@@ -126,7 +126,7 @@ angular.module('irisAngular').controller 'MainController', [
     $scope.loadDefaultIndex = ->
       $scope.irisIndex = null
       $scope.viewpoint = {type: 'keyID', value: $scope.defaultIndexKeyID}
-      setIndex new $window.irisLib.Index($scope.gun.user($scope.defaultIndexKeyID).get('identifi'), {ipfs: $scope.ipfs})
+      setIndex new $window.irisLib.Index($scope.gun.user($scope.defaultIndexKeyID).get('iris'), {ipfs: $scope.ipfs})
 
     $scope.loginWithKey = (privateKeySerialized, self) ->
       $scope.irisIndex = null
@@ -356,7 +356,7 @@ angular.module('irisAngular').controller 'MainController', [
     $scope.msgs.seen = {}
     $scope.filteredMsgs = []
     $scope.loadMsgs = (cursor) ->
-      limit = 1
+      limit = 1000
       if cursor == undefined and $scope.msgs.list.length
         cursor = $scope.msgs.list[$scope.msgs.list.length - 1].cursor
       found = 0
