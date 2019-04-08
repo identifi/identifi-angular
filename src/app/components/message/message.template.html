@@ -1,26 +1,26 @@
-<div class="panel msg" ng-class="{'panel-info':$ctrl.msg.isVerification, 'panel-default':$ctrl.msg.isPost}" style="{{$ctrl.msg.bgColor}}" ng-if="$ctrl.msg.signedData">
-  <div class="message-panel" ng-class="{ 'panel-body': !$ctrl.msg.isVerification, 'panel-heading': $ctrl.msg.isVerification || $ctrl.msg.isUnverification }">
+<div class="panel msg" ng-class="{'panel-info':msg.isVerification, 'panel-default':msg.isPost}" style="{{msg.bgColor}}" ng-if="msg.signedData">
+  <div class="message-panel" ng-class="{ 'panel-body': !msg.isVerification, 'panel-heading': msg.isVerification || msg.isUnverification }">
     <p class="">
-      <span class="mar-left5 pull-right" ng-class="$ctrl.msg.iconStyle" ng-repeat="n in $ctrl.msg.iconCount track by $index"></span>
-      <span class="mar-left5 pull-right fa fa-refresh" uib-tooltip="Pending" ng-if="$ctrl.msg.local"></span>
+      <span class="mar-left5 pull-right" ng-class="msg.iconStyle" ng-repeat="n in msg.iconCount track by $index"></span>
+      <span class="mar-left5 pull-right fa fa-refresh" uib-tooltip="Pending" ng-if="msg.local"></span>
       <strong>
-        <a ui-sref="identities.show({ type: $ctrl.msg.linkToAuthor.type, value: $ctrl.msg.linkToAuthor.value })" class="id-link">
-          <identicon ipfs="$ctrl.ipfs" identity="$ctrl.msg.author" class="mar-right5" border="3" width="35"></identicon>
-          <span ng-bind="$ctrl.msg.author_name"></span>
+        <a ui-sref="identities.show({ type: msg.linkToAuthor.type, value: msg.linkToAuthor.value })" class="id-link">
+          <identicon ipfs="ipfs" identity="msg.author" class="mar-right5" border="3" width="35"></identicon>
+          <span ng-bind="msg.author_name"></span>
         </a>
       </strong>
-      <span ng-show="!$ctrl.msg.sameAuthorAndRecipient">
+      <span ng-show="!msg.sameAuthorAndRecipient">
         <small><i class="glyphicon glyphicon-play"></i></small>
-        <a ui-sref="identities.show({ type: $ctrl.msg.linkToRecipient.type, value: $ctrl.msg.linkToRecipient.value })" class="id-link">
-          <identicon ng-if="$ctrl.showRecipient" ipfs="$ctrl.ipfs" identity="$ctrl.msg.recipient" class="mar-right5" border="3" width="35"></identicon>
-          <span ng-bind="($ctrl.msg.recipientIsSelf && $ctrl.pageInfo.primaryName)||$ctrl.msg.recipient_name"></span>
+        <a ui-sref="identities.show({ type: msg.linkToRecipient.type, value: msg.linkToRecipient.value })" class="id-link">
+          <identicon ng-if="showRecipient" ipfs="ipfs" identity="msg.recipient" class="mar-right5" border="3" width="35"></identicon>
+          <span ng-bind="(msg.recipientIsSelf && pageInfo.primaryName)||msg.recipient_name"></span>
         </a>
       </span>
-       - <a ui-sref="messages.show({ id: ($ctrl.msg.ipfsUri || $ctrl.msg.hash) })" ng-bind="$ctrl.msg.signedData.timestamp|date:'medium'" class="text-muted small" style="display:inline-block;"></a>
+       - <a ui-sref="messages.show({ id: (msg.ipfsUri || msg.hash) })" ng-bind="msg.signedData.timestamp|date:'medium'" class="text-muted small" style="display:inline-block;"></a>
     </p>
 
-    <div ng-if="$ctrl.msg.isVerification || $ctrl.msg.isUnverification">
-        <div ng-repeat="a in $ctrl.msg.recipientArray">
+    <div ng-if="msg.isVerification || msg.isUnverification">
+        <div ng-repeat="a in msg.recipientArray">
           <small>
             <b ng-bind="a.type"></b>:
             <span ng-if="a.type == 'email' || a.type == 'url'" ng-bind-html="a.value | linky"></span>
@@ -29,41 +29,41 @@
         </div>
     </div>
 
-    <div ng-class="{'align-center': $ctrl.msg.attachments.length == 1}">
-      <span ng-repeat="attachment in $ctrl.msg.attachments" class="attachment">
+    <div ng-class="{'align-center': msg.attachments.length == 1}">
+      <span ng-repeat="attachment in msg.attachments" class="attachment">
         <a ng-show="['video','image','audio'].indexOf(attachment.typeSubstr) == -1"  ng-bind="attachment.name"></a>
-        <img ng-show="attachment.type && attachment.typeSubstr == 'image'" alt="{{attachment.uri}}" ng-src="{{attachment.src}}" ng-style="{'max-width': $ctrl.msg.attachments.length > 1 ? '150px' : '100%', 'max-height': $ctrl.msg.attachments.length > 1 ? '150px' : '450px'}">
-        <videostream ng-if="attachment.typeSubstr == 'video' || attachment.typeSubstr == 'audio'" ipfs="$ctrl.ipfs" uri="attachment.uri"></videostream>
+        <img ng-show="attachment.type && attachment.typeSubstr == 'image'" alt="{{attachment.uri}}" ng-src="{{attachment.src}}" ng-style="{'max-width': msg.attachments.length > 1 ? '150px' : '100%', 'max-height': msg.attachments.length > 1 ? '150px' : '450px'}">
+        <videostream ng-if="attachment.typeSubstr == 'video' || attachment.typeSubstr == 'audio'" ipfs="ipfs" uri="attachment.uri"></videostream>
         <span ng-bind-html="attachment.element" ng-if="attachment.element"></span>
       </span>
     </div>
 
     <p style="white-space: pre-line;"
-    ng-if="$ctrl.msg.signedData.comment"
+    ng-if="msg.signedData.comment"
     hm-read-more
     hm-limit="280"
-    hm-text="{{ $ctrl.msg.signedData.comment|linky }}"
+    hm-text="{{ msg.signedData.comment|linky }}"
     hm-more-text="Show more"
     hm-less-text="Show less"></p>
 
-    <message ng-if="$ctrl.msg.sharedMsg && $ctrl.msgUtils" msg="$ctrl.msg.sharedMsg" ipfs="$ctrl.ipfs" auth="$ctrl.auth"></message>
+    <message ng-if="msg.sharedMsg && msgUtils" msg="msg.sharedMsg"></message>
 
-    <span ng-class="{disabled: !$ctrl.auth.user}" class="pull-right" ng-if="$ctrl.msgUtils && $ctrl.msg.signedData.type == 'post'">
-      <a class="msg-reaction" href="" ng-class="{active: $ctrl.msg.showCommentField}" ng-click="$ctrl.auth.user && ($ctrl.msg.showCommentField = !$ctrl.msg.showCommentField)">
-        <b ng-if="$ctrl.msg.repliesArr.length">{{$ctrl.msg.repliesArr.length}} </b>
+    <span ng-class="{disabled: !authentication.user}" class="pull-right" ng-if="msgUtils && msg.signedData.type == 'post'">
+      <a class="msg-reaction" href="" ng-class="{active: msg.showCommentField}" ng-click="authentication.user && (msg.showCommentField = !msg.showCommentField)">
+        <b ng-if="msg.repliesArr.length">{{msg.repliesArr.length}} </b>
         <i class="glyphicon glyphicon-comment"></i>
       </a>
-      <a class="msg-reaction" href="" ng-click="$ctrl.auth.user && $ctrl.msgUtils.share($ctrl.msg)">
-        <b ng-if="$ctrl.msg.sharesArr.length">{{$ctrl.msg.sharesArr.length}} </b>
+      <a class="msg-reaction" href="" ng-click="authentication.user && msgUtils.share(msg)">
+        <b ng-if="msg.sharesArr.length">{{msg.sharesArr.length}} </b>
         <i class="glyphicon glyphicon-retweet"></i>
       </a>
-      <a class="msg-reaction" ng-class="{active: $ctrl.msg.liked}" href="" ng-click="$ctrl.auth.user && $ctrl.msgUtils.like($ctrl.msg)">
-        <b ng-if="$ctrl.msg.likes || $ctrl.msg.liked">{{$ctrl.msg.likes || 1}} </b>
-        <i class="glyphicon" ng-class="{'glyphicon-heart-empty': !$ctrl.msg.liked, 'glyphicon-heart': $ctrl.msg.liked,}"></i>
+      <a class="msg-reaction" ng-class="{active: msg.liked}" href="" ng-click="authentication.user && msgUtils.like(msg)">
+        <b ng-if="msg.likes || msg.liked">{{msg.likes || 1}} </b>
+        <i class="glyphicon" ng-class="{'glyphicon-heart-empty': !msg.liked, 'glyphicon-heart': msg.liked,}"></i>
       </a>
     </span>
 
-    <form class="form-inline" ng-submit="$ctrl.msgUtils.replyTo($ctrl.msg, reply)" ng-show="$ctrl.auth.user && $ctrl.msg.showCommentField">
+    <form class="form-inline" ng-submit="msgUtils.replyTo(msg, reply)" ng-show="authentication.user && msg.showCommentField">
       <div class="form-group">
         <input focus-on="addNameFocus" type="text" class="form-control" ng-model="reply" placeholder="Write a reply">
       </div>
