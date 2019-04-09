@@ -28,32 +28,33 @@ angular.module 'irisAngular'
           window.irisLib.Message.fromSig(replyRaw).then (r) ->
             unless msg.replies[r.getHash()] and msg.replies[r.getHash()].author
               msg.replies[r.getHash()] = r
-              msg.repliesArr.push(r)
+              msg.repliesArr = Object.values(msg.replies)
       updateShares = (shares) ->
         for hash, shareRaw of shares
           window.irisLib.Message.fromSig(shareRaw).then (r) ->
             unless msg.shares[r.getHash()] and msg.shares[r.getHash()].author
               msg.shares[r.getHash()] = r
-              msg.sharesArr.push(r)
+              msg.sharesArr = Object.values(msg.shares)
       if msg.gun
         msg.gun.get('replies').open updateReplies
         msg.gun.get('reactions').on updateReactions
         msg.gun.get('shares').open updateShares
-      # msg.author = msg.getAuthor(scope.irisIndex) # moved to processMessage
-      # msg.author.gun.get('trustDistance').on (d) -> msg.authorTrustDistance = d
+      unless msg.author
+        msg.author = msg.getAuthor(scope.irisIndex)
+        msg.author.gun.get('trustDistance').on (d) -> msg.authorTrustDistance = d
       msg.author.gun.get('attrs').open (d) ->
         mva = window.irisLib.Identity.getMostVerifiedAttributes(d)
         if mva.name
-          msg.author_name = mva.name.attribute.value
+          scope.$apply -> msg.author_name = mva.name.attribute.value
         else if mva.nickname
-          msg.author_name = mva.nickname.attribute.value
+          scope.$apply -> msg.author_name = mva.nickname.attribute.value
       msg.recipient = msg.getRecipient(scope.irisIndex)
       msg.recipient.gun.get('attrs').open (d) ->
         mva = window.irisLib.Identity.getMostVerifiedAttributes(d)
         if mva.name
-          msg.recipient_name = mva.name.attribute.value
+          scope.$apply -> msg.recipient_name = mva.name.attribute.value
         else if mva.nickname
-          msg.recipient_name = mva.nickname.attribute.value
+          scope.$apply -> msg.recipient_name = mva.nickname.attribute.value
       if msg.signedData.attachments
         msg.attachments = []
         addAttachment = (attachment) ->
@@ -65,7 +66,8 @@ angular.module 'irisAngular'
               console.log msg.attachments
             else
               scope.ipfsGet(attachment.uri, {base64type: type}).then (src) ->
-                msg.attachments.push Object.assign {src, type, typeSubstr}, attachment
+                scope.$apply ->
+                  msg.attachments.push Object.assign {src, type, typeSubstr}, attachment
         addAttachment(attachment) for attachment in msg.signedData.attachments
       # TODO: make sure message signature is checked
       i = undefined

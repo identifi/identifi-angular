@@ -231,6 +231,10 @@ angular.module('irisAngular').controller 'IdentitiesController', [
         $scope.processMessages [msg], { recipientIsSelf: true }
         $scope.$apply ->
           if msg.isPositive()
+            unless msg.linkToAuthor
+              msg.authorArray = msg.getAuthorArray()
+              for a in msg.authorArray
+                msg.linkToAuthor = a unless msg.linkToAuthor
             if $scope.thumbsUp.length < 12 and not thumbsUpObj[JSON.stringify(msg.signedData.author)]
               thumbsUpObj[JSON.stringify(msg.signedData.author)] = true
               $scope.thumbsUp.push msg
