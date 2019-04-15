@@ -92288,10 +92288,8 @@ Gun.on('create', function(root){
 	            // TODO: only get new messages?
 	            _this.gun.user(uri).get('iris').get('messagesByDistance').map(function (val, key) {
 	              var d = _Number$parseInt(key.split(':')[0]);
-	              console.log('got msg with d', d, key);
 	              if (!isNaN(d) && d <= _this.options.indexSync.subscribe.maxMsgDistance) {
 	                Message.fromSig(val).then(function (msg) {
-	                  console.log('adding msg ' + msg.hash + ' from trusted index');
 	                  if (_this.options.indexSync.msgTypes.all || _this.options.indexSync.msgTypes.hasOwnProperty(msg.signedData.type)) {
 	                    _this.addMessage(msg, { checkIfExists: true });
 	                  }
@@ -92512,6 +92510,10 @@ Gun.on('create', function(root){
 
 
 	  Index.prototype.get = function get(a, b) {
+	    var _this2 = this;
+
+	    var reload = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
 	    if (!a) {
 	      throw new Error('get failed: param must be a string, received ' + (typeof a === 'undefined' ? 'undefined' : _typeof(a)) + ' ' + a);
 	    }
@@ -92528,7 +92530,82 @@ Gun.on('create', function(root){
 	      }
 	      attr = new Attribute(type, value);
 	    }
-	    return new Identity(this.gun.get('identitiesBySearchKey').get(attr.uri()), attr);
+	    if (reload) {
+	      // 1) get verifications connecting attr to other attributes
+	      // 2) recurse
+	      // 3) get messages received by this list of attributes
+	      // 4) calculate stats
+	      // 5) update identity index entry
+	      var o = {
+	        attributes: {},
+	        sent: {},
+	        received: {},
+	        receivedPositive: 0,
+	        receivedNeutral: 0,
+	        receivedNegative: 0,
+	        sentPositive: 0,
+	        sentNeutral: 0,
+	        sentNegative: 0
+	      };
+	      var node = this.gun.get('identities').set(o);
+	      var updateIdentityByLinkedAttribute = function updateIdentityByLinkedAttribute(attribute) {
+	        _this2.gun.get('verificationsByRecipient').get(attribute.uri()).map().once(function (val) {
+	          var m = Message.fromSig(val);
+	          var recipients = m.getRecipientArray();
+	          for (var i = 0; i < recipients.length; i++) {
+	            var a2 = recipients[i];
+	            if (!o.attributes.hasOwnProperty(a2.uri())) {
+	              // TODO remove attribute from identity if not enough verifications / too many unverifications
+	              o.attributes[a2.uri()] = a2;
+	              _this2.gun.get('messagesByRecipient').get(a2.uri()).map().once(function (val) {
+	                var m2 = Message.fromSig(val);
+	                if (!o.received.hasOwnProperty(m2.getHash())) {
+	                  o.received[m2.getHash()] = m2;
+	                  if (m2.isPositive()) {
+	                    o.receivedPositive++;
+	                    m2.getAuthor(_this2).gun.get('trustDistance').on(function (d) {
+	                      if (typeof d === 'number') {
+	                        if (typeof o.trustDistance !== 'number' || o.trustDistance > d + 1) {
+	                          o.trustDistance = d + 1;
+	                          node.get('trustDistance').put(d + 1);
+	                        }
+	                      }
+	                    });
+	                  } else if (m2.isNegative()) {
+	                    o.receivedNegative++;
+	                  } else {
+	                    o.receivedNeutral++;
+	                  }
+	                  node.put(o);
+	                }
+	              });
+	              _this2.gun.get('messagesByAuthor').get(a2.uri()).map().once(function (val) {
+	                var m2 = Message.fromSig(val);
+	                if (!o.sent.hasOwnProperty(m2.getHash())) {
+	                  o.sent[m2.getHash()] = m2;
+	                  if (m2.isPositive()) {
+	                    o.sentPositive++;
+	                  } else if (m2.isNegative()) {
+	                    o.sentNegative++;
+	                  } else {
+	                    o.sentNeutral++;
+	                  }
+	                  node.put(o);
+	                }
+	              });
+	              updateIdentityByLinkedAttribute(a2);
+	            }
+	          }
+	        });
+	      };
+	      updateIdentityByLinkedAttribute(attr);
+	      if (this.writable) {
+	        this._addIdentityToIndexes(node);
+	      }
+	      return new Identity(node, attr);
+	    } else {
+	      return new Identity(this.gun.get('identitiesBySearchKey').get(attr.uri()), attr);
+	    }
 	  };
 
 	  Index.prototype._getMsgs = async function _getMsgs(msgIndex, callback, limit, cursor, desc, filter) {
@@ -92575,7 +92652,7 @@ Gun.on('create', function(root){
 
 
 	  Index.prototype.getSentMsgs = async function getSentMsgs(identity, callback, limit) {
-	    var _this2 = this;
+	    var _this3 = this;
 
 	    var cursor = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
 	    var filter = arguments[4];
@@ -92584,8 +92661,8 @@ Gun.on('create', function(root){
 	    if (this.options.indexSync.query.enabled) {
 	      this.gun.get('trustedIndexes').map().once(function (val, key) {
 	        if (val) {
-	          var n = _this2.gun.user(key).get('iris').get('messagesByAuthor').get(identity.linkTo.uri());
-	          _this2._getMsgs(n, callback, limit, cursor, filter);
+	          var n = _this3.gun.user(key).get('iris').get('messagesByAuthor').get(identity.linkTo.uri());
+	          _this3._getMsgs(n, callback, limit, cursor, filter);
 	        }
 	      });
 	    }
@@ -92599,7 +92676,7 @@ Gun.on('create', function(root){
 
 
 	  Index.prototype.getReceivedMsgs = async function getReceivedMsgs(identity, callback, limit) {
-	    var _this3 = this;
+	    var _this4 = this;
 
 	    var cursor = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
 	    var filter = arguments[4];
@@ -92608,8 +92685,8 @@ Gun.on('create', function(root){
 	    if (this.options.indexSync.query.enabled) {
 	      this.gun.get('trustedIndexes').map().once(function (val, key) {
 	        if (val) {
-	          var n = _this3.gun.user(key).get('iris').get('messagesByRecipient').get(identity.linkTo.uri());
-	          _this3._getMsgs(n, callback, limit, cursor, filter);
+	          var n = _this4.gun.user(key).get('iris').get('messagesByRecipient').get(identity.linkTo.uri());
+	          _this4._getMsgs(n, callback, limit, cursor, filter);
 	        }
 	      });
 	    }
@@ -92777,7 +92854,6 @@ Gun.on('create', function(root){
 	      for (var j = 0; j < identityIndexKeysBefore[index].length; j++) {
 	        var key = identityIndexKeysBefore[index][j];
 	        if (!identityIndexKeysAfter[index] || identityIndexKeysAfter[index].indexOf(key) === -1) {
-	          console.log('removing stale key ' + key + ' from index ' + index);
 	          this.gun.get(index).get(key).put(null);
 	        }
 	      }
@@ -92833,7 +92909,7 @@ Gun.on('create', function(root){
 	  };
 
 	  Index.prototype.addTrustedIndex = async function addTrustedIndex(gunUri) {
-	    var _this4 = this;
+	    var _this5 = this;
 
 	    var maxMsgsToCrawl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.options.indexSync.importOnAdd.maxMsgCount;
 	    var maxMsgDistance = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : this.options.indexSync.importOnAdd.maxMsgDistance;
@@ -92841,7 +92917,6 @@ Gun.on('create', function(root){
 	    if (gunUri === this.viewpoint.value) {
 	      return;
 	    }
-	    console.log('addTrustedIndex', gunUri);
 	    var exists = await this.gun.get('trustedIndexes').get(gunUri).then();
 	    if (exists) {
 	      return;
@@ -92850,7 +92925,7 @@ Gun.on('create', function(root){
 	    var msgs = [];
 	    if (this.options.indexSync.importOnAdd.enabled) {
 	      await util$1.timeoutPromise(new _Promise(function (resolve) {
-	        _this4.gun.user(gunUri).get('iris').get('messagesByDistance').map(function (val, key) {
+	        _this5.gun.user(gunUri).get('iris').get('messagesByDistance').map(function (val, key) {
 	          var d = _Number$parseInt(key.split(':')[0]);
 	          if (!isNaN(d) && d <= maxMsgDistance) {
 	            Message.fromSig(val).then(function (msg) {
@@ -92977,7 +93052,7 @@ Gun.on('create', function(root){
 
 
 	  Index.prototype.addMessages = async function addMessages(msgs) {
-	    var _this5 = this;
+	    var _this6 = this;
 
 	    var msgsByAuthor = {};
 	    if (Array.isArray(msgs)) {
@@ -93045,7 +93120,7 @@ Gun.on('create', function(root){
 	      while (author && knownIdentity) {
 	        if (author.indexOf(knownIdentity.key) === 0) {
 	          try {
-	            await util$1.timeoutPromise(_this5.addMessage(msgsByAuthor[author], { checkIfExists: true }), 10000);
+	            await util$1.timeoutPromise(_this6.addMessage(msgsByAuthor[author], { checkIfExists: true }), 10000);
 	          } catch (e) {
 	            console.log('adding failed:', e, _JSON$stringify(msgsByAuthor[author], null, 2));
 	          }
@@ -93074,6 +93149,8 @@ Gun.on('create', function(root){
 
 
 	  Index.prototype.addMessage = async function addMessage(msg) {
+	    var _this7 = this;
+
 	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
 	    if (msg.constructor.name !== 'Message') {
@@ -93081,7 +93158,11 @@ Gun.on('create', function(root){
 	    }
 	    var hash = msg.getHash();
 	    if (true === options.checkIfExists) {
-	      var exists = await this.gun.get('messagesByHash').get(hash).once().then();
+	      var exists = await new _Promise(function (resolve) {
+	        _this7.gun.get('messagesByHash').get(hash).get(function (soul) {
+	          resolve(soul);
+	        }, true);
+	      });
 	      if (exists) {
 	        return;
 	      }
@@ -93112,7 +93193,6 @@ Gun.on('create', function(root){
 	        }
 	      } else if (typeof indexKeys[index] === 'object') {
 	        for (var _key in indexKeys[index]) {
-	          console.log('indexing ' + index + '.' + _key + '.' + indexKeys[index][_key]);
 	          this.gun.get(index).get(_key).get(indexKeys[index][_key]).put(node);
 	          this.gun.get(index).get(_key).get(indexKeys[index][_key]).put(node);
 	        }
@@ -93140,17 +93220,17 @@ Gun.on('create', function(root){
 
 
 	  Index.prototype.search = async function search(value, type, callback, limit) {
-	    var _this6 = this;
+	    var _this8 = this;
 
 	    // TODO: param 'exact', type param
 	    var seen = {};
 	    function searchTermCheck(key) {
 	      var arr = key.split(':');
-	      if (arr.length < 3) {
+	      if (arr.length < 2) {
 	        return false;
 	      }
-	      var keyValue = arr[1];
-	      var keyType = arr[2];
+	      var keyValue = arr[0];
+	      var keyType = arr[1];
 	      if (keyValue.indexOf(encodeURIComponent(value)) !== 0) {
 	        return false;
 	      }
@@ -93159,7 +93239,8 @@ Gun.on('create', function(root){
 	      }
 	      return true;
 	    }
-	    this.gun.get('identitiesByTrustDistance').map().once(function (id, key) {
+	    this.gun.get('identitiesBySearchKey').get({ '.': { '*': value, '%': 2000 } }).once().map().once(function (id, key) {
+	      console.log('got result', key, id);
 	      if (_Object$keys(seen).length >= limit) {
 	        // TODO: turn off .map cb
 	        return;
@@ -93170,7 +93251,7 @@ Gun.on('create', function(root){
 	      var soul = Gun.node.soul(id);
 	      if (soul && !seen.hasOwnProperty(soul)) {
 	        seen[soul] = true;
-	        var identity = new Identity(_this6.gun.get('identitiesByTrustDistance').get(key));
+	        var identity = new Identity(_this8.gun.get('identitiesBySearchKey').get(key));
 	        identity.cursor = key;
 	        callback(identity);
 	      }
@@ -93178,7 +93259,7 @@ Gun.on('create', function(root){
 	    if (this.options.indexSync.query.enabled) {
 	      this.gun.get('trustedIndexes').map().once(function (val, key) {
 	        if (val) {
-	          _this6.gun.user(key).get('iris').get('identitiesByTrustDistance').map().once(function (id, k) {
+	          _this8.gun.user(key).get('iris').get('identitiesBySearchKey').map().once(function (id, k) {
 	            if (_Object$keys(seen).length >= limit) {
 	              // TODO: turn off .map cb
 	              return;
@@ -93189,7 +93270,7 @@ Gun.on('create', function(root){
 	            var soul = Gun.node.soul(id);
 	            if (soul && !seen.hasOwnProperty(soul)) {
 	              seen[soul] = true;
-	              callback(new Identity(_this6.gun.user(key).get('iris').get('identitiesByTrustDistance').get(k)));
+	              callback(new Identity(_this8.gun.user(key).get('iris').get('identitiesBySearchKey').get(k)));
 	            }
 	          });
 	        }
@@ -93203,7 +93284,7 @@ Gun.on('create', function(root){
 
 
 	  Index.prototype.getMessageByHash = function getMessageByHash(hash) {
-	    var _this7 = this;
+	    var _this9 = this;
 
 	    var isIpfsUri = hash.indexOf('Qm') === 0;
 	    return new _Promise(async function (resolve) {
@@ -93212,19 +93293,19 @@ Gun.on('create', function(root){
 	        var m = await Message.fromSig(obj);
 	        var h = void 0;
 	        var republished = false;
-	        if (isIpfsUri && _this7.options.ipfs) {
-	          h = await m.saveToIpfs(_this7.options.ipfs);
+	        if (isIpfsUri && _this9.options.ipfs) {
+	          h = await m.saveToIpfs(_this9.options.ipfs);
 	          republished = true;
 	        } else {
 	          h = m.getHash();
 	        }
-	        if (h === hash || isIpfsUri && !_this7.options.ipfs) {
+	        if (h === hash || isIpfsUri && !_this9.options.ipfs) {
 	          // does not check hash validity if it's an ipfs uri and we don't have ipfs
-	          if (!isIpfsUri && _this7.options.ipfs && _this7.writable && !republished) {
-	            m.saveToIpfs(_this7.options.ipfs).then(function (ipfsUri) {
+	          if (!isIpfsUri && _this9.options.ipfs && _this9.writable && !republished) {
+	            m.saveToIpfs(_this9.options.ipfs).then(function (ipfsUri) {
 	              obj.ipfsUri = ipfsUri;
-	              _this7.gun.get('messagesByHash').get(hash).put(obj);
-	              _this7.gun.get('messagesByHash').get(ipfsUri).put(obj);
+	              _this9.gun.get('messagesByHash').get(hash).put(obj);
+	              _this9.gun.get('messagesByHash').get(ipfsUri).put(obj);
 	            });
 	          }
 	          resolve(m);
@@ -93232,21 +93313,21 @@ Gun.on('create', function(root){
 	          console.error('queried index for message ' + hash + ' but received ' + h);
 	        }
 	      };
-	      if (isIpfsUri && _this7.options.ipfs) {
-	        _this7.options.ipfs.cat(hash).then(function (file) {
-	          var s = _this7.options.ipfs.types.Buffer.from(file).toString('utf8');
+	      if (isIpfsUri && _this9.options.ipfs) {
+	        _this9.options.ipfs.cat(hash).then(function (file) {
+	          var s = _this9.options.ipfs.types.Buffer.from(file).toString('utf8');
 	          console.log('got msg ' + hash + ' from ipfs');
 	          resolveIfHashMatches(s);
 	        });
 	      }
-	      _this7.gun.get('messagesByHash').get(hash).on(function (d) {
+	      _this9.gun.get('messagesByHash').get(hash).on(function (d) {
 	        console.log('got msg ' + hash + ' from own gun index');
 	        resolveIfHashMatches(d);
 	      });
-	      if (_this7.options.indexSync.query.enabled) {
-	        _this7.gun.get('trustedIndexes').map().once(function (val, key) {
+	      if (_this9.options.indexSync.query.enabled) {
+	        _this9.gun.get('trustedIndexes').map().once(function (val, key) {
 	          if (val) {
-	            _this7.gun.user(key).get('iris').get('messagesByHash').get(hash).on(function (d) {
+	            _this9.gun.user(key).get('iris').get('messagesByHash').get(hash).on(function (d) {
 	              console.log('got msg ' + hash + ' from friend\'s gun index ' + val);
 	              resolveIfHashMatches(d);
 	            });
@@ -93264,14 +93345,13 @@ Gun.on('create', function(root){
 	  Index.prototype.getMessagesByTimestamp = function getMessagesByTimestamp(callback, limit) {
 	    var cursor = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
 
-	    var _this8 = this;
+	    var _this10 = this;
 
 	    var desc = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
 	    var filter = arguments[4];
 
 	    var seen = {};
 	    var cb = function cb(msg) {
-	      console.log('hash', msg.hash);
 	      if ((!limit || _Object$keys(seen).length <= limit) && !seen.hasOwnProperty(msg.hash)) {
 	        seen[msg.hash] = true;
 	        callback(msg);
@@ -93281,8 +93361,8 @@ Gun.on('create', function(root){
 	    if (this.options.indexSync.query.enabled) {
 	      this.gun.get('trustedIndexes').map().once(function (val, key) {
 	        if (val) {
-	          var n = _this8.gun.user(key).get('iris').get('messagesByTimestamp');
-	          _this8._getMsgs(n, cb, limit, cursor, desc, filter);
+	          var n = _this10.gun.user(key).get('iris').get('messagesByTimestamp');
+	          _this10._getMsgs(n, cb, limit, cursor, desc, filter);
 	        }
 	      });
 	    }
@@ -93296,7 +93376,7 @@ Gun.on('create', function(root){
 	  Index.prototype.getMessagesByDistance = function getMessagesByDistance(callback, limit) {
 	    var cursor = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
 
-	    var _this9 = this;
+	    var _this11 = this;
 
 	    var desc = arguments[3];
 	    var filter = arguments[4];
@@ -93314,8 +93394,8 @@ Gun.on('create', function(root){
 	    if (this.options.indexSync.query.enabled) {
 	      this.gun.get('trustedIndexes').map().once(function (val, key) {
 	        if (val) {
-	          var n = _this9.gun.user(key).get('iris').get('messagesByDistance');
-	          _this9._getMsgs(n, cb, limit, cursor, desc, filter);
+	          var n = _this11.gun.user(key).get('iris').get('messagesByDistance');
+	          _this11._getMsgs(n, cb, limit, cursor, desc, filter);
 	        }
 	      });
 	    }

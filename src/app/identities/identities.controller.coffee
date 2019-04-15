@@ -282,7 +282,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
         $scope.tabs[2].active = true if $scope.tabs
       if $state.is 'identities.show'
         $scope.setPageTitle $scope.idValue
-      $scope.identity = $scope.irisIndex.get($scope.idType, $scope.idValue)
+      $scope.identity = $scope.irisIndex.get($scope.idType, $scope.idValue) # , true)
       $scope.setIdentityNames($scope.identity, false, true)
       $scope.identity.gun.on (data) ->
         $scope.identity.data = data
