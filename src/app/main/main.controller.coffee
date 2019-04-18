@@ -187,7 +187,7 @@ angular.module('irisAngular').controller 'MainController', [
           console.error 'failed to fetch ipfs peers', err
         else
           $scope.$apply ->
-            $scope.ipfsPeers = peerInfos
+            $scope.ipfsPeers = peerInfos if Array.isArray(peerInfos)
 
     $scope.ipfs.on 'ready', ->
       $scope.ipfsReady = true
@@ -349,9 +349,6 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.modalButtonText = modalButtonText or 'Upload'
       $scope.squarify = squarify
       $scope.openModal('uploadModal', {templateUrl: 'app/identities/upload.modal.html'})
-
-    $transitions.onStart {}, ->
-      $scope.filters.type = config.defaultFilters.type
 
     $scope.msgs.list = []
     $scope.msgs.seen = {}
@@ -542,7 +539,8 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.message.verifiedByAttr = new $window.irisLib.Attribute('keyID', $scope.message.signerKeyID)
       $scope.openModal('messageModal', {templateUrl: 'app/messages/show.modal.html'})
 
-    $scope.filters = $scope.filters or config.defaultFilters
+    unless $scope.filters
+      $scope.filters = Object.assign {}, config.defaultFilters
 
     $scope.isCollapsed = false
     # $scope.menu = Menus.getMenu('topbar')
@@ -556,10 +554,6 @@ angular.module('irisAngular').controller 'MainController', [
         msg.author = msg.getAuthor($scope.irisIndex)
         msg.author.gun.get('trustDistance').on (d) -> msg.authorTrustDistance = d
       return messages
-
-    # Collapsing the menu after navigation
-    $scope.$on '$stateChangeSuccess', ->
-      $scope.isCollapsed = false
 
     scrollTo = (el) ->
       if !el

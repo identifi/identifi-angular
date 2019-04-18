@@ -12,7 +12,7 @@ angular.module('irisAngular').controller 'MessagesController', [
   'config'
   '$timeout'
   'localStorageService'
-  ($scope, $rootScope, $window, $stateParams, $location, $http, $state, Messages, config, $timeout, localStorageService) -> #, Authentication
+  ($scope, $rootScope, $window, $stateParams, $location, $http, $state, config, $timeout, localStorageService) -> #, Authentication
     $scope.idType = $stateParams.type
     $scope.idValue = $stateParams.value
 
@@ -39,6 +39,9 @@ angular.module('irisAngular').controller 'MessagesController', [
 
     $scope.setFilters = (filters) ->
       angular.extend $scope.filters, {limit: 10}, filters
+
+    if $state.is 'messages.list'
+      $scope.filters.type = config.defaultFilters.type
 
     # Find existing Message
     $scope.findOne = ->

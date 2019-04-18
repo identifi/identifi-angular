@@ -54,6 +54,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
 
     if $state.is 'identities.show'
       $scope.filters.maxDistance = 0
+      $scope.filters.type = null
 
     $scope.addEntry = (event, entry) ->
       if entry.email
