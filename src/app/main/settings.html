@@ -96,6 +96,45 @@
         </table>
       </div>
     </div>
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        Trusted indexes
+      </div>
+      <div class="panel-body">
+        <p><small><b>query</b> = when you search for content on Iris, include results from the index</small></p>
+        <p><small><b>subscribe</b> = process new messages that are added to the index, potentially adding them to your own index</small></p>
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <td>index</td>
+              <td>query</td>
+              <td>subscribe</td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr ng-repeat="index in trustedIndexes">
+              <td>
+                <small ng-bind="index"></small>
+              </td>
+              <td>
+                <input type="checkbox" checked="checked">
+              </td>
+              <td>
+                <input type="checkbox" checked="checked">
+              </td>
+            </tr>
+            <tr>
+              <td colspan="4">
+                <form class="form-inline" ng-submit="addTrustedIndex(trustedIndexKey)">
+                  <input class="form-control" type="text" placeholder="public key" ng-model="trustedIndexKey">
+                  <input class="btn btn-primary" type="submit" value="Add trusted index">
+                </form>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
     <!--
     <div class="panel panel-default">
       <div class="panel-heading">

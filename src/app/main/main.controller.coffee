@@ -109,6 +109,8 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.msgs.list = []
       $scope.msgs.seen = {}
       $scope.irisIndex = results
+      $scope.irisIndex.gun.get('trustedIndexes').open (r) ->
+        $scope.trustedIndexes = Object.keys(r)
       setTimeout () ->
         $scope.$broadcast('rzSliderForceRender')
       , 1000
