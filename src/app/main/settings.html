@@ -112,9 +112,12 @@
             </tr>
           </thead>
           <tbody>
-            <tr ng-repeat="index in trustedIndexes">
+            <tr ng-repeat="i in trustedIndexes">
               <td>
-                <small ng-bind="index"></small>
+                <identicon uib-tooltip="{{i.attribute.value}}" identity="i.attribute" class="mar-right5" border="3" width="30"></identicon>
+                <a ui-sref="identities.show({ type: i.attribute.type, value: i.attribute.value })">
+                  <identicon ipfs="ipfs" identity="i.identity" border="3" width="30"></identicon>
+                </a>
               </td>
               <td>
                 <input type="checkbox" checked="checked">
