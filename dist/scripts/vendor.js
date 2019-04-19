@@ -92307,7 +92307,7 @@ Gun.on('create', function(root){
 
 	  Index.prototype.debug = function debug(msg) {
 	    if (this.options.debug) {
-	      this.debug(msg);
+	      console.log(msg);
 	    }
 	  };
 
@@ -93441,7 +93441,7 @@ Gun.on('create', function(root){
 	  return Index;
 	}();
 
-	var version$1 = "0.0.99";
+	var version$1 = "0.0.100";
 
 	/*eslint no-useless-escape: "off", camelcase: "off" */
 

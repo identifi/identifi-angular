@@ -144,7 +144,7 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.ids.list = []
       $scope.msgs.list = []
       $scope.msgs.seen = {}
-      $window.irisLib.Index.create($scope.gun, $scope.privateKey, {self, ipfs: $scope.ipfs}).then (i) ->
+      $window.irisLib.Index.create($scope.gun, $scope.privateKey, {self, ipfs: $scope.ipfs, debug: true}).then (i) ->
         setIndex(i)
         $scope.loggingIn = false
         $scope.authentication.identity = $scope.irisIndex.get('keyID', keyID)
