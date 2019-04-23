@@ -433,9 +433,9 @@ angular.module('irisAngular').controller 'MainController', [
           $scope.privateKey = key
           $scope.privateKeySerialized = $window.irisLib.Key.toJwk($scope.privateKey)
 
-    $scope.download = (filename, data, type, charset = 'utf-8') ->
+    $scope.download = (filename, data, type, charset = 'utf-8', href) ->
       hiddenElement = document.createElement('a')
-      hiddenElement.href = "data:#{type};charset=#{charset},#{encodeURI(data)}"
+      hiddenElement.href = href or "data:#{type};charset=#{charset},#{encodeURI(data)}"
       hiddenElement.target = '_blank'
       hiddenElement.download = filename
       hiddenElement.click()

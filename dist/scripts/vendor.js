@@ -92220,10 +92220,12 @@ Gun.on('create', function(root){
 	// temp method for GUN search
 	async function searchText(node, callback, query, limit) {
 	  var cursor = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '';
+	  var desc = arguments[5];
 
 	  var seen = {};
 	  console.log('cursor', cursor, 'query', query);
-	  node.get({ '.': { '<': cursor, '-': true }, '%': 20 * 1000 }).map().on(function (value, key) {
+	  var q = desc ? { '<': cursor } : { '>': cursor };
+	  node.get({ '.': q, '%': 20 * 1000 }).map().on(function (value, key) {
 	    console.log('searchText', value, key);
 	    if (key.indexOf(query) === 0) {
 	      if (typeof limit === 'number' && _Object$keys(seen).length >= limit) {

@@ -31,8 +31,12 @@
 
     <div ng-class="{'align-center': msg.attachments.length == 1}">
       <span ng-repeat="attachment in msg.attachments" class="attachment">
-        <a ng-show="['video','image','audio'].indexOf(attachment.typeSubstr) == -1"  ng-bind="attachment.name" ng-href="{{attachment.src}}"></a>
-        <img ng-show="attachment.type && attachment.typeSubstr == 'image'" alt="{{attachment.uri}}" ng-src="{{attachment.src}}" ng-style="{'max-width': msg.attachments.length > 1 ? '150px' : '100%', 'max-height': msg.attachments.length > 1 ? '150px' : '450px'}">
+        <a ng-if="['video','image','audio'].indexOf(attachment.typeSubstr) == -1" download="{{attachment.name}}" ng-click="download(attachment.name, null, null, null, attachment.src)">
+          <i class="fa fa-download mar-right5"></i> {{attachment.name}}
+        </a>
+        <a ng-if="attachment.type && attachment.typeSubstr == 'image'" ng-href="{{attachment.src}}" target="_blank">
+          <img alt="{{attachment.uri}}" ng-src="{{attachment.src}}" ng-style="{'max-width': msg.attachments.length > 1 ? '150px' : '100%', 'max-height': msg.attachments.length > 1 ? '150px' : '450px'}">
+        </a>
         <videostream ng-if="attachment.typeSubstr == 'video' || attachment.typeSubstr == 'audio'" ipfs="ipfs" uri="attachment.uri"></videostream>
         <span ng-bind-html="attachment.element" ng-if="attachment.element"></span>
       </span>
