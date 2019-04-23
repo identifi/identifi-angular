@@ -78,7 +78,7 @@ angular.module('irisAngular').controller 'MainController', [
       searchKey = (query or $scope.query.term or '').toLowerCase().trim()
       $scope.searchKey = searchKey
       $scope.previousSearchKey = searchKey
-      limit = limit or 1000
+      limit = limit or 10
       cursor = false
       if $scope.ids.list.length
         cursor = $scope.ids.list[$scope.ids.list.length - 1].cursor
@@ -98,7 +98,7 @@ angular.module('irisAngular').controller 'MainController', [
               i.linkTo = linkTo
         $scope.setIdentityNames(i, true)
 
-      $scope.irisIndex.search(searchKey, undefined, resultFound, limit)
+      $scope.irisIndex.search(searchKey, undefined, resultFound, limit, cursor)
       return new Promise (resolve) -> # TODO: uib-typeahead is limited, but something better pls
         setTimeout ->
           resolve($scope.ids.list)
@@ -109,8 +109,8 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.msgs.list = []
       $scope.msgs.seen = {}
       $scope.irisIndex = results
+      $scope.trustedIndexes = []
       $scope.irisIndex.gun.get('trustedIndexes').open (r) ->
-        $scope.trustedIndexes = []
         for k, v of r
           $scope.trustedIndexes.push
             index: k
@@ -361,9 +361,10 @@ angular.module('irisAngular').controller 'MainController', [
     $scope.msgs.seen = {}
     $scope.filteredMsgs = []
     $scope.loadMsgs = (cursor) ->
-      limit = 1000
+      limit = 10
       if cursor == undefined and $scope.msgs.list.length
         cursor = $scope.msgs.list[$scope.msgs.list.length - 1].cursor
+      console.log 'cursor', cursor
       found = 0
       $scope.loadingMsgs = true
       filter = false
@@ -383,13 +384,13 @@ angular.module('irisAngular').controller 'MainController', [
       resultFound = (msg) ->
         console.log 'got msg', msg
         found += 1
-        # $scope.loadingMsgs = false if found >= limit
+        $scope.loadingMsgs = false if found >= limit
         return if $scope.msgs.seen[msg.getHash()]
         $scope.msgs.seen[msg.getHash()] = true
         $scope.processMessages [msg]
         $scope.$apply ->
           $scope.msgs.list.push msg
-      $scope.irisIndex.getMessagesByTimestamp(resultFound, limit)
+      $scope.irisIndex.getMessagesByTimestamp(resultFound, limit, cursor)
 
     $scope.$watch 'irisIndex', ->
       return unless $scope.irisIndex

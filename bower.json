@@ -42,7 +42,6 @@
         "lib/load.js",
         "sea.js",
         "lib/then.js",
-        "lib/multicast.js",
         "lib/radix.js",
         "lib/radisk.js",
         "lib/store.js",

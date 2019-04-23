@@ -77043,28 +77043,22 @@ angular
 			while(l > 0){ s += c.charAt(Math.floor(Math.random() * c.length)); l-- }
 			return s;
 		}
-		Type.text.match = function(t, o){ var r = false;
-			t = t || '';
-			o = Type.text.is(o)? {'=': o} : o || {}; // {'~', '=', '*', '<', '>', '+', '-', '?', '!'} // ignore case, exactly equal, anything after, lexically larger, lexically lesser, added in, subtacted from, questionable fuzzy match, and ends with.
-			if(Type.obj.has(o,'~')){ t = t.toLowerCase(); o['='] = (o['='] || o['~']).toLowerCase() }
-			if(Type.obj.has(o,'=')){ return t === o['='] }
-			if(Type.obj.has(o,'*')){ if(t.slice(0, o['*'].length) === o['*']){ r = true; t = t.slice(o['*'].length) } else { return false }}
-			if(Type.obj.has(o,'!')){ if(t.slice(-o['!'].length) === o['!']){ r = true } else { return false }}
-			if(Type.obj.has(o,'+')){
-				if(Type.list.map(Type.list.is(o['+'])? o['+'] : [o['+']], function(m){
-					if(t.indexOf(m) >= 0){ r = true } else { return true }
-				})){ return false }
+		Type.text.match = function(t, o){ var tmp, u;
+			if('string' !== typeof t){ return false }
+			if('string' == typeof o){ o = {'=': o} }
+			o = o || {};
+			tmp = (o['='] || o['*'] || o['>'] || o['<']);
+			if(t === tmp){ return true }
+			if(u !== o['=']){ return false }
+			tmp = (o['*'] || o['>'] || o['<']);
+			if(t.slice(0, (tmp||'').length) === tmp){ return true }
+			if(u !== o['*']){ return false }
+			if(u !== o['>'] && u !== o['<']){
+				return (t > o['>'] && t < o['<'])? true : false;
 			}
-			if(Type.obj.has(o,'-')){
-				if(Type.list.map(Type.list.is(o['-'])? o['-'] : [o['-']], function(m){
-					if(t.indexOf(m) < 0){ r = true } else { return true }
-				})){ return false }
-			}
-			if(Type.obj.has(o,'>')){ if(t > o['>']){ r = true } else { return false }}
-			if(Type.obj.has(o,'<')){ if(t < o['<']){ r = true } else { return false }}
-			function fuzzy(t,f){ var n = -1, i = 0, c; for(;c = f[i++];){ if(!~(n = t.indexOf(c, n+1))){ return false }} return true } // via http://stackoverflow.com/questions/9206013/javascript-fuzzy-search
-			if(Type.obj.has(o,'?')){ if(fuzzy(t, o['?'])){ r = true } else { return false }} // change name!
-			return r;
+			if(u !== o['>'] && t > o['>']){ return true }
+			if(u !== o['<'] && t < o['<']){ return true }
+			return false;
 		}
 		Type.list = {is: function(l){ return (l instanceof Array) }}
 		Type.list.slit = Array.prototype.slice;
@@ -78770,7 +78764,7 @@ angular
 		function each(v,k){
 			if(n_ === k){ return }
 			var msg = this.msg, gun = msg.$, at = gun._, cat = this.at, tmp = at.lex;
-			if(tmp && !Gun.text.match(k, tmp['.'] || tmp['#'] || tmp)){ return } // TODO: Ugly hack!
+			if(tmp && !Gun.text.match(k, tmp['.'] || tmp['#'] || tmp)){ return } // review?
 			((tmp = gun.get(k)._).echo || (tmp.echo = {}))[cat.id] = tmp.echo[cat.id] || cat;
 		}
 		var obj_map = Gun.obj.map, noop = function(){}, event = {stun: noop, off: noop}, n_ = Gun.node._, u;
@@ -78946,6 +78940,7 @@ angular
 	})(USE, './adapters/localStorage');
 
 	;USE(function(module){
+		var Gun = USE('../index');
 		var Type = USE('../type');
 
 		function Mesh(ctx){
@@ -78967,7 +78962,7 @@ angular
 					return;
 				}
 				// add hook for AXE?
-				//if (Gun.AXE && opt && opt.super) { Gun.AXE.say(msg, mesh.say, this); return; } // rogowski
+				if (Gun.AXE) { Gun.AXE.say(msg, mesh.say, this); return; }
 				mesh.say(msg);
 			}
 
@@ -78981,9 +78976,8 @@ angular
 				if(!raw){ return }
 				var dup = ctx.dup, id, hash, msg, tmp = raw[0];
 				if(opt.pack <= raw.length){ return mesh.say({dam: '!', err: "Message too big!"}, peer) }
-				try{msg = JSON.parse(raw);
-				}catch(e){opt.log('DAM JSON parse error', e)}
 				if('{' === tmp){
+					try{msg = JSON.parse(raw);}catch(e){opt.log('DAM JSON parse error', e)}
 					if(!msg){ return }
 					if(dup.check(id = msg['#'])){ return }
 					dup.track(id, true).it = msg; // GUN core also dedups, so `true` is needed.
@@ -79009,6 +79003,7 @@ angular
 					return;
 				} else
 				if('[' === tmp){
+					try{msg = JSON.parse(raw);}catch(e){opt.log('DAM JSON parse error', e)}
 					if(!msg){ return }
 					var i = 0, m;
 					while(m = msg[i++]){
@@ -79068,11 +79063,11 @@ angular
 				function send(raw, peer){
 					var wire = peer.wire;
 					try{
-						if(wire.send){
-							wire.send(raw);
-						} else
 						if(peer.say){
 							peer.say(raw);
+						} else
+						if(wire.send){
+							wire.send(raw);
 						}
 					}catch(e){
 						(peer.queue = peer.queue || []).push(raw);
@@ -79139,24 +79134,30 @@ angular
 					tmp = tmp.id = tmp.id || Type.text.random(9);
 					mesh.say({dam: '?'}, opt.peers[tmp] = peer);
 				}
-				if(!tmp.hied){ ctx.on(tmp.hied = 'hi', peer) }
-				tmp = peer.queue; peer.queue = [];
-				Type.obj.map(tmp, function(msg){
-					mesh.say(msg, peer);
-				});
+				if(!tmp.hied){ ctx.on(tmp.hied = 'hi', peer); }
+				// tmp = peer.queue; peer.queue = [];
+				// Type.obj.map(tmp, function(msg){
+				// 	mesh.say(msg, peer);
+				// });
 			}
 			mesh.bye = function(peer){
 				Type.obj.del(opt.peers, peer.id); // assume if peer.url then reconnect
 				ctx.on('bye', peer);
 			}
-
 			mesh.hear['!'] = function(msg, peer){ opt.log('Error:', msg.err) }
 			mesh.hear['?'] = function(msg, peer){
-				if(!msg.pid){ return mesh.say({dam: '?', pid: opt.pid, '@': msg['#']}, peer) }
+				if(!msg.pid){
+// 					return mesh.say({dam: '?', pid: opt.pid, '@': msg['#']}, peer);
+					mesh.say({dam: '?', pid: opt.pid, '@': msg['#']}, peer);
+					var tmp = peer.queue; peer.queue = [];
+					Type.obj.map(tmp, function(msg){
+						mesh.say(msg, peer);
+					});
+					return;
+				}
 				peer.id = peer.id || msg.pid;
 				mesh.hi(peer);
 			}
-
 			return mesh;
 		}
 
@@ -80622,6 +80623,7 @@ Gun.chain.then = function(cb) {
 				delete (radix.$||{})[_];
 			}
 			t = t || radix.$ || (radix.$ = {});
+			if(!key && Object.keys(t).length){ return t }
 			var i = 0, l = key.length-1, k = key[i], at, tmp;
 			while(!(at = t[k]) && i < l){
 				k += key[++i];
@@ -80669,16 +80671,22 @@ Gun.chain.then = function(cb) {
 		if(!t){ return }
 		var keys = (t[_]||no).sort || (t[_] = function $(){ $.sort = Object.keys(t).sort(); return $ }()).sort;
 		//var keys = Object.keys(t).sort();
+		opt = (true === opt)? {branch: true} : (opt || {});
+		if(opt.reverse){ keys = keys.slice().reverse() }
+		var start = opt.start, end = opt.end;
 		var i = 0, l = keys.length;
-		for(;i < l; i++){ var key = keys[i], tree = t[key], tmp, p;
+		for(;i < l; i++){ var key = keys[i], tree = t[key], tmp, p, pt;
 			if(!tree || '' === key || _ === key){ continue }
 			p = pre.slice(); p.push(key);
+			pt = p.join('');
+			if(u !== start && pt < (start||'').slice(0,pt.length)){ continue }
+			if(u !== end && (end || '\uffff') < pt){ continue }
 			if(u !== (tmp = tree[''])){
-				tmp = cb(tmp, p.join(''), key, pre);
+				tmp = cb(tmp, pt, key, pre);
 				if(u !== tmp){ return tmp }
 			} else
-			if(opt){
-				tmp = cb(u, pre.join(''), key, pre);
+			if(opt.branch){
+				tmp = cb(u, pt, key, pre);
 				if(u !== tmp){ return tmp }
 			}
 			pre = p;
@@ -80746,18 +80754,18 @@ Gun.chain.then = function(cb) {
 		var r = function(key, val, cb){
 			key = ''+key;
 			if(val instanceof Function){
-				var o = cb;
+				var o = cb || {};
 				cb = val;
 				val = r.batch(key);
 				if(u !== val){
-					cb(u, val, o);
+					cb(u, r.range(val, o), o);
 					if(atomic(val)){ return }
 					// if a node is requested and some of it is cached... the other parts might not be.
 				}
 				if(r.thrash.at){
 					val = r.thrash.at(key);
 					if(u !== val){
-						cb(u, val, o);
+						cb(u, r.range(val, o), o);
 						if(atomic(val)){ cb(u, val, o); return }
 						// if a node is requested and some of it is cached... the other parts might not be.
 					}
@@ -80917,6 +80925,17 @@ Gun.chain.then = function(cb) {
 			f.write();
 		}
 
+		r.range = function(tree, o){
+			if(!tree || !o){ return }
+			if(u === o.start && u === o.end){ return tree }
+			if(atomic(tree)){ return tree }
+			var sub = Radix();
+			Radix.map(tree, function(v,k){
+				sub(k,v);
+			}, o)
+			return sub('');
+		}
+
 		;(function(){
 			var Q = {};
 			r.read = function(key, cb, o){
@@ -80929,10 +80948,11 @@ Gun.chain.then = function(cb) {
 						// if a node is requested and some of it is cached... the other parts might not be.
 					//}
 				}
-				var g = function Get(){}, tmp;
-				g.lex = function(file){
+				var g = function Get(){};
+				g.lex = function(file){ var tmp;
 					file = (u === file)? u : decodeURIComponent(file);
-					if(!file || file > (o.next || key)){
+					tmp = o.next || key || (o.reverse? o.end || '\uffff' : o.start || '');
+					if(!file || (o.reverse? file < tmp : file > tmp)){
 						if(o.next){ g.file = file }
 						if(tmp = Q[g.file]){
 							tmp.push({key: key, ack: cb, file: g.file, opt: o});
@@ -80953,7 +80973,7 @@ Gun.chain.then = function(cb) {
 				}
 				g.ack = function(as){
 					if(!as.ack){ return }
-					var tmp = as.key, o = as.opt, info = g.info, rad = g.disk || noop, data = rad(tmp), last = rad.last;
+					var tmp = as.key, o = as.opt, info = g.info, rad = g.disk || noop, data = r.range(rad(tmp), o), last = rad.last;
 					o.parsed = (o.parsed || 0) + (info.parsed||0);
 					o.chunks = (o.chunks || 0) + 1;
 					if(!o.some){ o.some = (u !== data) }
@@ -80965,6 +80985,7 @@ Gun.chain.then = function(cb) {
 					o.next = as.file;
 					r.read(tmp, as.ack, o);
 				}
+				if(o.reverse){ g.lex.reverse = true }
 				r.list(g.lex);
 			}
 		}());
@@ -81066,9 +81087,10 @@ Gun.chain.then = function(cb) {
 			var dir, q, f = String.fromCharCode(28), ef = ename(f);
 			r.list = function(cb){
 				if(dir){
+					var tmp = {reverse: (cb.reverse)? 1 : 0};
 					Radix.map(dir, function(val, key){
 						return cb(key);
-					}) || cb();
+					}, tmp) || cb();
 					return;
 				}
 				if(q){ return q.push(cb) } q = [cb];
@@ -81113,9 +81135,7 @@ Gun.chain.then = function(cb) {
 				r.list.dir = dir = rad;
 				tmp = q; q = null;
 				Gun.list.map(tmp, function(cb){
-					Radix.map(dir, function(val, key){
-						return cb(key);
-					}) || cb();
+					r.list(cb);
 				});
 			}
 		}());
@@ -81199,6 +81219,7 @@ Gun.chain.then = function(cb) {
 var Gun = (typeof window !== "undefined")? window.Gun : require('../gun');
  
 Gun.on('create', function(root){
+    if(Gun.TESTING){ root.opt.file = 'radatatest' }
     this.to.next(root);
     var opt = root.opt, u;
     if(false === opt.radisk){ return }
@@ -81233,28 +81254,36 @@ Gun.on('create', function(root){
  
     root.on('get', function(msg){
         this.to.next(msg);
-        var id = msg['#'], get = msg.get, soul = msg.get['#'], has = msg.get['.']||'', opt = {}, graph, lex, key, tmp;
-        if(typeof soul == 'string'){
+        var id = msg['#'], get = msg.get, soul = msg.get['#'], has = msg.get['.']||'', opt = {}, graph, lex, key, tmp, force;
+        if('string' == typeof soul){
             key = soul;
         } else 
         if(soul){
-            if(tmp = soul['*']){ opt.limit = 1 }
-            key = tmp || soul['='];
+            if(u !== (tmp = soul['*'])){ opt.limit = force = 1 }
+            if(u !== soul['>']){ opt.start = soul['>'] }
+            if(u !== soul['<']){ opt.end = soul['<'] }
+            key = force? (''+tmp) : tmp || soul['='];
+            force = null;
         }
         if(key && !opt.limit){ // a soul.has must be on a soul, and not during soul*
-            if(typeof has == 'string'){
+            if('string' == typeof has){
                 key = key+esc+(opt.atom = has);
             } else 
             if(has){
-                if(tmp = has['*']){ opt.limit = 1 }
-                if(key){ key = key+esc + (tmp || (opt.atom = has['='])) }
+                if(u !== has['>']){ opt.start = has['>']; opt.limit = 1 }
+                if(u !== has['<']){ opt.end = has['<']; opt.limit = 1 }
+                if(u !== (tmp = has['*'])){ opt.limit = force = 1 }
+                if(key){ key = key+esc + (force? (''+(tmp||'')) : tmp || (opt.atom = has['='] || '')) }
             }
         }
         if((tmp = get['%']) || opt.limit){
             opt.limit = (tmp <= (opt.pack || (1000 * 100)))? tmp : 1;
         }
+        if(has['-'] || (soul||{})['-']){ opt.reverse = true }
+        //console.log("RAD get:", key, opt);
         //var start = (+new Date); // console.log("GET!", id, JSON.stringify(key));
         rad(key||'', function(err, data, o){
+            //console.log("RAD gat:", err, data, o);
             if(data){
                 if(typeof data !== 'string'){
                     if(opt.atom){
@@ -81283,17 +81312,10 @@ Gun.on('create', function(root){
     });
 });
 ;(function(){
-  var Gun = (typeof window !== "undefined")? window.Gun : require('../gun');
-
-  Gun.on('create', function(root){
-    this.to.next(root);
-    root.opt.store = root.opt.store || Store(root.opt);
-  });
 
   function Store(opt){
     opt = opt || {};
     opt.file = String(opt.file || 'radata');
-    if(Gun.TESTING){ opt.file = 'radatatest' }
     opt.chunk = opt.chunk || (1024 * 1024); // 1MB
     var db = null, u;
 
@@ -81307,6 +81329,9 @@ Gun.on('create', function(root){
     }}catch(e){}
     
     var store = function Store(){};
+    if(Store[opt.file]){ return Store[opt.file] }
+    Store[opt.file] = store;
+
     store.start = function(){
       var o = indexedDB.open(opt.file, 1);
       o.onupgradeneeded = function(eve){ (eve.target.result).createObjectStore(opt.file) }
@@ -81337,11 +81362,20 @@ Gun.on('create', function(root){
     return store;
   }
 
-  if(Gun.window){
-    Gun.window.RindexedDB = Store;
+  if(typeof window !== "undefined"){
+    (Store.window = window).RindexedDB = Store;
   } else {
-    module.exports = Store;
+    try{ module.exports = Store }catch(e){}
   }
+
+  try{
+    var Gun = Store.window.Gun || require('../gun');
+    Gun.on('create', function(root){
+      this.to.next(root);
+      root.opt.store = root.opt.store || Store(root.opt);
+    });
+  }catch(e){}
+
 }());
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('gun')) :
@@ -92184,11 +92218,14 @@ Gun.on('create', function(root){
 	var _Object$assign = unwrapExports(assign$1);
 
 	// temp method for GUN search
-	async function searchText(node, callback, query, limit, cursor, desc) {
+	async function searchText(node, callback, query, limit) {
+	  var cursor = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '';
+
 	  var seen = {};
-	  node.map(function (value, key) {
-	    var cursorCheck = !cursor || desc && key < cursor || !desc && key > cursor;
-	    if (cursorCheck && key.indexOf(query) === 0) {
+	  console.log('cursor', cursor, 'query', query);
+	  node.get({ '.': { '<': cursor, '-': true }, '%': 20 * 1000 }).map().on(function (value, key) {
+	    console.log('searchText', value, key);
+	    if (key.indexOf(query) === 0) {
 	      if (typeof limit === 'number' && _Object$keys(seen).length >= limit) {
 	        return;
 	      }
@@ -92234,7 +92271,8 @@ Gun.on('create', function(root){
 	*      rating: true,
 	*      verification: true,
 	*      unverification: true
-	*    }
+	*    },
+	*    debug: false
 	*  }
 	*}
 	* @returns {Index} Identifi index object
@@ -92308,16 +92346,6 @@ Gun.on('create', function(root){
 	  Index.prototype.debug = function debug() {
 	    if (this.options.debug) {
 	      console.log.apply(console, arguments);
-	    }
-	  };
-
-	  Index.prototype.time = async function time(f, msg) {
-	    if (this.options.debug) {
-	      var start = new Date();
-	      await f();
-	      console.log(new Date() - start, 'ms', msg);
-	    } else {
-	      await f();
 	    }
 	  };
 
@@ -92908,33 +92936,27 @@ Gun.on('create', function(root){
 	  };
 
 	  Index.prototype._updateIdentityProfilesByMsg = async function _updateIdentityProfilesByMsg(msg, authorIdentities, recipientIdentities) {
-	    var _this5 = this;
-
+	    var start = void 0;
 	    var msgIndexKey = Index.getMsgIndexKey(msg);
 	    msgIndexKey = msgIndexKey.substr(msgIndexKey.indexOf(':') + 1);
 	    var ids = _Object$values(_Object$assign({}, authorIdentities, recipientIdentities));
-
-	    var _loop2 = async function _loop2(i) {
+	    for (var i = 0; i < ids.length; i++) {
 	      // add new identifiers to identity
 	      var data = await ids[i].gun.then(); // TODO: data is sometimes undefined and new identity is not added! might be related to https://github.com/amark/gun/issues/719
-	      var relocated = data ? _this5.gun.get('identities').set(data) : ids[i].gun; // this may screw up real time updates? and create unnecessary `identities` entries
+	      var relocated = data ? this.gun.get('identities').set(data) : ids[i].gun; // this may screw up real time updates? and create unnecessary `identities` entries
 	      if (recipientIdentities.hasOwnProperty(ids[i].gun['_'].link)) {
-	        _this5.time(async function () {
-	          await _this5._updateMsgRecipientIdentity(msg, msgIndexKey, ids[i].gun);
-	        }, '_updateMsgRecipientIdentity');
+	        start = new Date();
+	        await this._updateMsgRecipientIdentity(msg, msgIndexKey, ids[i].gun);
+	        this.debug(new Date() - start, 'ms _updateMsgRecipientIdentity');
 	      }
 	      if (authorIdentities.hasOwnProperty(ids[i].gun['_'].link)) {
-	        _this5.time(async function () {
-	          await _this5._updateMsgAuthorIdentity(msg, msgIndexKey, ids[i].gun);
-	        }, '_updateMsgAuthorIdentity');
+	        start = new Date();
+	        await this._updateMsgAuthorIdentity(msg, msgIndexKey, ids[i].gun);
+	        this.debug(new Date() - start, 'ms _updateMsgAuthorIdentity');
 	      }
-	      _this5.time(async function () {
-	        await _this5._addIdentityToIndexes(relocated);
-	      }, '_addIdentityToIndexes');
-	    };
-
-	    for (var i = 0; i < ids.length; i++) {
-	      await _loop2(i);
+	      start = new Date();
+	      await this._addIdentityToIndexes(relocated);
+	      this.debug(new Date() - start, 'ms _addIdentityToIndexes');
 	    }
 	  };
 
@@ -92943,7 +92965,7 @@ Gun.on('create', function(root){
 	  };
 
 	  Index.prototype.addTrustedIndex = async function addTrustedIndex(gunUri) {
-	    var _this6 = this;
+	    var _this5 = this;
 
 	    var maxMsgsToCrawl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.options.indexSync.importOnAdd.maxMsgCount;
 	    var maxMsgDistance = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : this.options.indexSync.importOnAdd.maxMsgDistance;
@@ -92959,7 +92981,7 @@ Gun.on('create', function(root){
 	    var msgs = [];
 	    if (this.options.indexSync.importOnAdd.enabled) {
 	      await util$1.timeoutPromise(new _Promise(function (resolve) {
-	        _this6.gun.user(gunUri).get('iris').get('messagesByDistance').map(function (val, key) {
+	        _this5.gun.user(gunUri).get('iris').get('messagesByDistance').map(function (val, key) {
 	          var d = _Number$parseInt(key.split(':')[0]);
 	          if (!isNaN(d) && d <= maxMsgDistance) {
 	            Message.fromSig(val).then(function (msg) {
@@ -93097,7 +93119,7 @@ Gun.on('create', function(root){
 
 
 	  Index.prototype.addMessages = async function addMessages(msgs) {
-	    var _this7 = this;
+	    var _this6 = this;
 
 	    var msgsByAuthor = {};
 	    if (Array.isArray(msgs)) {
@@ -93135,7 +93157,7 @@ Gun.on('create', function(root){
 	        msgCountAfterwards = void 0;
 	    var index = this.gun.get('identitiesBySearchKey');
 
-	    var _loop3 = async function _loop3() {
+	    var _loop2 = async function _loop2() {
 	      var knownIdentities = [];
 	      var stop = false;
 	      searchText(index, function (result) {
@@ -93165,9 +93187,9 @@ Gun.on('create', function(root){
 	      while (author && knownIdentity) {
 	        if (author.indexOf(knownIdentity.key) === 0) {
 	          try {
-	            await util$1.timeoutPromise(_this7.addMessage(msgsByAuthor[author], { checkIfExists: true }), 10000);
+	            await util$1.timeoutPromise(_this6.addMessage(msgsByAuthor[author], { checkIfExists: true }), 10000);
 	          } catch (e) {
-	            _this7.debug('adding failed:', e, _JSON$stringify(msgsByAuthor[author], null, 2));
+	            _this6.debug('adding failed:', e, _JSON$stringify(msgsByAuthor[author], null, 2));
 	          }
 	          msgAuthors.splice(i, 1);
 	          author = i < msgAuthors.length ? msgAuthors[i] : undefined;
@@ -93182,7 +93204,7 @@ Gun.on('create', function(root){
 	    };
 
 	    do {
-	      await _loop3();
+	      await _loop2();
 	    } while (msgCountAfterwards !== initialMsgCount);
 	    return true;
 	  };
@@ -93266,9 +93288,15 @@ Gun.on('create', function(root){
 	  */
 
 
-	  Index.prototype.search = async function search(value, type, callback, limit) {
-	    var _this8 = this;
+	  Index.prototype.search = async function search() {
+	    var value = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
+	    var type = arguments[1];
+	    var callback = arguments[2];
 
+	    var _this7 = this;
+
+	    var limit = arguments[3];
+	    var cursor = arguments[4];
 	    // TODO: param 'exact', type param
 	    var seen = {};
 	    function searchTermCheck(key) {
@@ -93286,7 +93314,12 @@ Gun.on('create', function(root){
 	      }
 	      return true;
 	    }
-	    this.gun.get('identitiesBySearchKey').get({ '.': { '*': value, '%': 2000 } }).once().map().once(function (id, key) {
+	    console.log('search()', value, type, limit, cursor);
+	    var node = this.gun.get('identitiesBySearchKey');
+	    node.get({ '.': { '*': value, '>': cursor }, '%': 2000 }).once().map(function () {
+	      return this;
+	    }).on(function (id, key) {
+	      console.log('search(' + value + ', ' + type + ', callback, ' + limit + ', ' + cursor + ') returned id ' + id + ' key ' + key);
 	      if (_Object$keys(seen).length >= limit) {
 	        // TODO: turn off .map cb
 	        return;
@@ -93297,7 +93330,7 @@ Gun.on('create', function(root){
 	      var soul = Gun.node.soul(id);
 	      if (soul && !seen.hasOwnProperty(soul)) {
 	        seen[soul] = true;
-	        var identity = new Identity(_this8.gun.get('identitiesBySearchKey').get(key));
+	        var identity = new Identity(node.get(key));
 	        identity.cursor = key;
 	        callback(identity);
 	      }
@@ -93305,7 +93338,7 @@ Gun.on('create', function(root){
 	    if (this.options.indexSync.query.enabled) {
 	      this.gun.get('trustedIndexes').map().once(function (val, key) {
 	        if (val) {
-	          _this8.gun.user(key).get('iris').get('identitiesBySearchKey').get({ '.': { '*': value, '%': 2000 } }).once().map().once(function (id, k) {
+	          _this7.gun.user(key).get('iris').get('identitiesBySearchKey').get({ '.': { '*': value, '%': 2000 } }).once().map().once(function (id, k) {
 	            if (_Object$keys(seen).length >= limit) {
 	              // TODO: turn off .map cb
 	              return;
@@ -93316,7 +93349,7 @@ Gun.on('create', function(root){
 	            var soul = Gun.node.soul(id);
 	            if (soul && !seen.hasOwnProperty(soul)) {
 	              seen[soul] = true;
-	              callback(new Identity(_this8.gun.user(key).get('iris').get('identitiesBySearchKey').get(k)));
+	              callback(new Identity(_this7.gun.user(key).get('iris').get('identitiesBySearchKey').get(k)));
 	            }
 	          });
 	        }
@@ -93330,7 +93363,7 @@ Gun.on('create', function(root){
 
 
 	  Index.prototype.getMessageByHash = function getMessageByHash(hash) {
-	    var _this9 = this;
+	    var _this8 = this;
 
 	    var isIpfsUri = hash.indexOf('Qm') === 0;
 	    return new _Promise(async function (resolve) {
@@ -93339,19 +93372,19 @@ Gun.on('create', function(root){
 	        var m = await Message.fromSig(obj);
 	        var h = void 0;
 	        var republished = false;
-	        if (isIpfsUri && _this9.options.ipfs) {
-	          h = await m.saveToIpfs(_this9.options.ipfs);
+	        if (isIpfsUri && _this8.options.ipfs) {
+	          h = await m.saveToIpfs(_this8.options.ipfs);
 	          republished = true;
 	        } else {
 	          h = m.getHash();
 	        }
-	        if (h === hash || isIpfsUri && !_this9.options.ipfs) {
+	        if (h === hash || isIpfsUri && !_this8.options.ipfs) {
 	          // does not check hash validity if it's an ipfs uri and we don't have ipfs
-	          if (!isIpfsUri && _this9.options.ipfs && _this9.writable && !republished) {
-	            m.saveToIpfs(_this9.options.ipfs).then(function (ipfsUri) {
+	          if (!isIpfsUri && _this8.options.ipfs && _this8.writable && !republished) {
+	            m.saveToIpfs(_this8.options.ipfs).then(function (ipfsUri) {
 	              obj.ipfsUri = ipfsUri;
-	              _this9.gun.get('messagesByHash').get(hash).put(obj);
-	              _this9.gun.get('messagesByHash').get(ipfsUri).put(obj);
+	              _this8.gun.get('messagesByHash').get(hash).put(obj);
+	              _this8.gun.get('messagesByHash').get(ipfsUri).put(obj);
 	            });
 	          }
 	          resolve(m);
@@ -93359,22 +93392,22 @@ Gun.on('create', function(root){
 	          console.error('queried index for message ' + hash + ' but received ' + h);
 	        }
 	      };
-	      if (isIpfsUri && _this9.options.ipfs) {
-	        _this9.options.ipfs.cat(hash).then(function (file) {
-	          var s = _this9.options.ipfs.types.Buffer.from(file).toString('utf8');
-	          _this9.debug('got msg ' + hash + ' from ipfs');
+	      if (isIpfsUri && _this8.options.ipfs) {
+	        _this8.options.ipfs.cat(hash).then(function (file) {
+	          var s = _this8.options.ipfs.types.Buffer.from(file).toString('utf8');
+	          _this8.debug('got msg ' + hash + ' from ipfs');
 	          resolveIfHashMatches(s);
 	        });
 	      }
-	      _this9.gun.get('messagesByHash').get(hash).on(function (d) {
-	        _this9.debug('got msg ' + hash + ' from own gun index');
+	      _this8.gun.get('messagesByHash').get(hash).on(function (d) {
+	        _this8.debug('got msg ' + hash + ' from own gun index');
 	        resolveIfHashMatches(d);
 	      });
-	      if (_this9.options.indexSync.query.enabled) {
-	        _this9.gun.get('trustedIndexes').map().once(function (val, key) {
+	      if (_this8.options.indexSync.query.enabled) {
+	        _this8.gun.get('trustedIndexes').map().once(function (val, key) {
 	          if (val) {
-	            _this9.gun.user(key).get('iris').get('messagesByHash').get(hash).on(function (d) {
-	              _this9.debug('got msg ' + hash + ' from friend\'s gun index ' + val);
+	            _this8.gun.user(key).get('iris').get('messagesByHash').get(hash).on(function (d) {
+	              _this8.debug('got msg ' + hash + ' from friend\'s gun index ' + val);
 	              resolveIfHashMatches(d);
 	            });
 	          }
@@ -93391,7 +93424,7 @@ Gun.on('create', function(root){
 	  Index.prototype.getMessagesByTimestamp = function getMessagesByTimestamp(callback, limit) {
 	    var cursor = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
 
-	    var _this10 = this;
+	    var _this9 = this;
 
 	    var desc = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
 	    var filter = arguments[4];
@@ -93407,8 +93440,8 @@ Gun.on('create', function(root){
 	    if (this.options.indexSync.query.enabled) {
 	      this.gun.get('trustedIndexes').map().once(function (val, key) {
 	        if (val) {
-	          var n = _this10.gun.user(key).get('iris').get('messagesByTimestamp');
-	          _this10._getMsgs(n, cb, limit, cursor, desc, filter);
+	          var n = _this9.gun.user(key).get('iris').get('messagesByTimestamp');
+	          _this9._getMsgs(n, cb, limit, cursor, desc, filter);
 	        }
 	      });
 	    }
@@ -93422,7 +93455,7 @@ Gun.on('create', function(root){
 	  Index.prototype.getMessagesByDistance = function getMessagesByDistance(callback, limit) {
 	    var cursor = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
 
-	    var _this11 = this;
+	    var _this10 = this;
 
 	    var desc = arguments[3];
 	    var filter = arguments[4];
@@ -93440,8 +93473,8 @@ Gun.on('create', function(root){
 	    if (this.options.indexSync.query.enabled) {
 	      this.gun.get('trustedIndexes').map().once(function (val, key) {
 	        if (val) {
-	          var n = _this11.gun.user(key).get('iris').get('messagesByDistance');
-	          _this11._getMsgs(n, cb, limit, cursor, desc, filter);
+	          var n = _this10.gun.user(key).get('iris').get('messagesByDistance');
+	          _this10._getMsgs(n, cb, limit, cursor, desc, filter);
 	        }
 	      });
 	    }
