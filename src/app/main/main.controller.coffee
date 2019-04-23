@@ -19,8 +19,10 @@ angular.module('irisAngular').controller 'MainController', [
   localStorageService, clipboard, $uibModal, $window, $stateParams,
   $transitions, $q, focus, NotificationService) ->
     opt =
-      peers: ['https://gun-us.herokuapp.com/gun', 'https://gun-eu.herokuapp.com/gun']
+      peers: []
       localStorage: false
+    unless $window.location.hostname == 'localhost' and $window.location.port == '3000'
+      opt.peers = ['https://gun-us.herokuapp.com/gun', 'https://gun-eu.herokuapp.com/gun']
     if $window.location.protocol != "https:"
       opt.peers.push('http://localhost:8765/gun')
     opt.store = RindexedDB(opt)
