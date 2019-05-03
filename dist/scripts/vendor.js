@@ -78990,7 +78990,7 @@ angular
 					}
 					(msg._ = function(){}).via = peer;
 					if((tmp = msg['><'])){
-						(msg._).to = Type.obj.map(tmp.split(','), function(k,i,m){m(k,true)});
+						(msg._).to = Type.obj.map(tmp.split(','), tomap);
 					}
 					if(msg.dam){
 						if(tmp = mesh.hear[msg.dam]){
@@ -79013,6 +79013,7 @@ angular
 					return;
 				}
 			}
+			var tomap = function(k,i,m){m(k,true)};
 
 			;(function(){
 				mesh.say = function(msg, peer, o){
@@ -79134,11 +79135,12 @@ angular
 					tmp = tmp.id = tmp.id || Type.text.random(9);
 					mesh.say({dam: '?'}, opt.peers[tmp] = peer);
 				}
-				if(!tmp.hied){ ctx.on(tmp.hied = 'hi', peer); }
-				// tmp = peer.queue; peer.queue = [];
-				// Type.obj.map(tmp, function(msg){
-				// 	mesh.say(msg, peer);
-				// });
+				if(!tmp.hied){ ctx.on(tmp.hied = 'hi', peer) }
+				// @rogowski I need this here by default for now to fix go1dfish's bug
+				tmp = peer.queue; peer.queue = [];
+				Type.obj.map(tmp, function(msg){
+					mesh.say(msg, peer);
+				});
 			}
 			mesh.bye = function(peer){
 				Type.obj.del(opt.peers, peer.id); // assume if peer.url then reconnect
@@ -79147,12 +79149,12 @@ angular
 			mesh.hear['!'] = function(msg, peer){ opt.log('Error:', msg.err) }
 			mesh.hear['?'] = function(msg, peer){
 				if(!msg.pid){
-// 					return mesh.say({dam: '?', pid: opt.pid, '@': msg['#']}, peer);
 					mesh.say({dam: '?', pid: opt.pid, '@': msg['#']}, peer);
-					var tmp = peer.queue; peer.queue = [];
-					Type.obj.map(tmp, function(msg){
-						mesh.say(msg, peer);
-					});
+					// @rogowski I want to re-enable this AXE logic with some fix/merge later.
+					// var tmp = peer.queue; peer.queue = [];
+					// Type.obj.map(tmp, function(msg){
+					//	mesh.say(msg, peer);
+					// });
 					return;
 				}
 				peer.id = peer.id || msg.pid;
@@ -80948,17 +80950,22 @@ Gun.chain.then = function(cb) {
 						// if a node is requested and some of it is cached... the other parts might not be.
 					//}
 				}
+				o.span = (u !== o.start) || (u !== o.end);
 				var g = function Get(){};
 				g.lex = function(file){ var tmp;
 					file = (u === file)? u : decodeURIComponent(file);
 					tmp = o.next || key || (o.reverse? o.end || '\uffff' : o.start || '');
 					if(!file || (o.reverse? file < tmp : file > tmp)){
-						if(o.next){ g.file = file }
+						if(o.next || o.reverse){ g.file = file }
 						if(tmp = Q[g.file]){
 							tmp.push({key: key, ack: cb, file: g.file, opt: o});
 							return true;
 						}
 						Q[g.file] = [{key: key, ack: cb, file: g.file, opt: o}];
+						if(!g.file){
+							g.it(null, u, {});
+							return true; 
+						}
 						r.parse(g.file, g.it);
 						return true;
 					}
@@ -80979,8 +80986,10 @@ Gun.chain.then = function(cb) {
 					if(!o.some){ o.some = (u !== data) }
 					if(u !== data){ as.ack(g.err, data, o) }
 					else if(!as.file){ !o.some && as.ack(g.err, u, o); return }
-					if(/*!last || */last === tmp){ !o.some && as.ack(g.err, u, o); return }
-					if(last && last > tmp && 0 != last.indexOf(tmp)){ !o.some && as.ack(g.err, u, o); return }
+					if(!o.span){
+						if(/*!last || */last === tmp){ !o.some && as.ack(g.err, u, o); return }
+						if(last && last > tmp && 0 != last.indexOf(tmp)){ !o.some && as.ack(g.err, u, o); return }
+					}
 					if(o.some && o.parsed >= o.limit){ return }
 					o.next = as.file;
 					r.read(tmp, as.ack, o);
@@ -81034,7 +81043,6 @@ Gun.chain.then = function(cb) {
 							return map(q, p.ack);
 						}
 					}
-
 					var start; LOG && (start = (+new Date)); // keep this commented out in production!
 					var tmp = p.split(data), pre = [], i, k, v;
 					if(!tmp || 0 !== tmp[1]){
@@ -81329,7 +81337,10 @@ Gun.on('create', function(root){
     }}catch(e){}
     
     var store = function Store(){};
-    if(Store[opt.file]){ return Store[opt.file] }
+    if(Store[opt.file]){
+      console.log("Warning: reusing same IndexedDB store and options as 1st.");
+      return Store[opt.file];
+    }
     Store[opt.file] = store;
 
     store.start = function(){
@@ -92223,9 +92234,9 @@ Gun.on('create', function(root){
 	  var desc = arguments[5];
 
 	  var seen = {};
-	  console.log('cursor', cursor, 'query', query);
-	  var q = desc ? { '<': cursor } : { '>': cursor };
-	  node.get({ '.': q, '%': 20 * 1000 }).map().on(function (value, key) {
+	  console.log('cursor', cursor, 'query', query, 'desc', desc);
+	  var q = desc ? { '<': cursor, '-': desc } : { '>': cursor, '-': desc };
+	  node.get({ '.': q, '%': 20 * 1000 }).once().map().on(function (value, key) {
 	    console.log('searchText', value, key);
 	    if (key.indexOf(query) === 0) {
 	      if (typeof limit === 'number' && _Object$keys(seen).length >= limit) {
@@ -93318,9 +93329,7 @@ Gun.on('create', function(root){
 	    }
 	    console.log('search()', value, type, limit, cursor);
 	    var node = this.gun.get('identitiesBySearchKey');
-	    node.get({ '.': { '*': value, '>': cursor }, '%': 2000 }).once().map(function () {
-	      return this;
-	    }).on(function (id, key) {
+	    node.get({ '.': { '*': value, '>': cursor }, '%': 2000 }).once().map().on(function (id, key) {
 	      console.log('search(' + value + ', ' + type + ', callback, ' + limit + ', ' + cursor + ') returned id ' + id + ' key ' + key);
 	      if (_Object$keys(seen).length >= limit) {
 	        // TODO: turn off .map cb

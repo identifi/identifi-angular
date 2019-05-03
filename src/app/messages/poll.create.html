@@ -1,0 +1,17 @@
+<div class="row">
+  <div class="col-xs-12">
+    <ul>
+      <li ng-repeat="o in newMessage.pollOptions" class="mar-bot5">
+        <div class="form-inline">
+        <input class="form-control" style="width: 200px;display: inline-block;" placeholder="option {{$index + 1}}" ng-model="o.text">
+        <button class="btn btn-default" ng-if="$index > 1" ng-click="newMessage.pollOptions.splice($index, 1)">
+          <i class="fa fa-times"></i>
+        </button>
+        </div>
+      </li>
+      <li>
+        <a ng-click="newMessage.pollOptions.push({text: ''})">Add option</a>
+      </li>
+    </ul>
+  </div>
+</div>

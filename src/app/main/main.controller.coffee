@@ -21,8 +21,7 @@ angular.module('irisAngular').controller 'MainController', [
     opt =
       peers: []
       localStorage: false
-    unless $window.location.hostname == 'localhost' and $window.location.port == '3000'
-      opt.peers = ['https://gun-us.herokuapp.com/gun', 'https://gun-eu.herokuapp.com/gun']
+    opt.peers = ['https://gun-us.herokuapp.com/gun', 'https://gun-eu.herokuapp.com/gun']
     if $window.location.protocol != "https:"
       opt.peers.push('http://localhost:8765/gun')
     opt.store = RindexedDB(opt)
@@ -272,10 +271,15 @@ angular.module('irisAngular').controller 'MainController', [
         value: ''
     $scope.resetMsg()
 
+    $scope.vote = (msg, vote) ->
+      console.log 'vote added'
+      $scope.createMessage(null, {replyTo: msg.getHash(), vote})
+
     # Create new Message
     $scope.createMessage = (event, msg, options = {}) ->
       $scope.addingMessage = true
       event.stopPropagation() if event
+      delete msg.pollOptions if msg.pollOptions == false
 
       fileUploads = []
       if options.files # upload to ipfs

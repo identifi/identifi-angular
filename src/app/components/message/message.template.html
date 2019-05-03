@@ -50,6 +50,16 @@
     hm-more-text="Show more"
     hm-less-text="Show less"></p>
 
+    <form ng-if="msg.signedData.pollOptions" ng-submit="vote(msg, msg.choice)" ng-init="choice = 'asdf'">
+      <div class="radio" ng-repeat="o in msg.signedData.pollOptions">
+        <label>
+          <input ng-disabled="!authentication.user" type="radio" ng-model="msg.choice" ng-value="o.text">
+          {{o.text}}
+        </label>
+      </div>
+      <button ng-disabled="!authentication.user || !msg.choice" class="btn btn-primary mar-right5">Vote</button> <small>{{msg.votes || 0}} votes</small>
+    </form>
+
     <message ng-if="msg.sharedMsg && msgUtils" msg="msg.sharedMsg"></message>
 
     <span ng-class="{disabled: !authentication.user}" class="pull-right" ng-if="msgUtils && msg.signedData.type == 'post'">
