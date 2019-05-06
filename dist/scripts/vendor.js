@@ -77054,10 +77054,10 @@ angular
 			if(t.slice(0, (tmp||'').length) === tmp){ return true }
 			if(u !== o['*']){ return false }
 			if(u !== o['>'] && u !== o['<']){
-				return (t > o['>'] && t < o['<'])? true : false;
+				return (t >= o['>'] && t <= o['<'])? true : false;
 			}
-			if(u !== o['>'] && t > o['>']){ return true }
-			if(u !== o['<'] && t < o['<']){ return true }
+			if(u !== o['>'] && t >= o['>']){ return true }
+			if(u !== o['<'] && t <= o['<']){ return true }
 			return false;
 		}
 		Type.list = {is: function(l){ return (l instanceof Array) }}
@@ -77963,7 +77963,7 @@ angular
 						if(tmp){ return }
 						msg.$ = back.$;
 					} else
-					if(obj_has(back.put, get)){
+					if(obj_has(back.put, get)){ // TODO: support #LEX !
 						put = (back.$.get(get)._);
 						if(!(tmp = put.ack)){ put.ack = -1 }
 						back.on('in', {

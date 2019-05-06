@@ -27,8 +27,23 @@ angular.module 'irisAngular'
         for hash, replyRaw of replies
           window.irisLib.Message.fromSig(replyRaw).then (r) ->
             unless msg.replies[r.getHash()] and msg.replies[r.getHash()].author
+              if msg.signedData.pollOptions and r.signedData.type == 'vote'
+                unless msg.voteMsgs and msg.voteMsgs.hasOwnProperty(r.getSignerKeyID())
+                  msg.voteCount = if msg.voteCount then msg.voteCount + 1 else 1
+                  if !msg.myVote and r.getSignerKeyID() == scope.authentication.user.idValue
+                    msg.myVote = r.signedData.vote
+                  msg.voteMsgs = msg.voteMsgs or {}
+                  msg.voteMsgs[r.getSignerKeyID()] = r.getHash()
+                  unless msg.voteResults
+                    msg.voteResults = {}
+                    msg.voteResults[o.text] = 0 for o in msg.signedData.pollOptions
+                  if msg.voteResults.hasOwnProperty(r.signedData.vote)
+                    msg.voteResults[r.signedData.vote] = msg.voteResults[r.signedData.vote] + 1
+                  else
+                    msg.voteResults[r.signedData.vote] = 1
               msg.replies[r.getHash()] = r
               msg.repliesArr = Object.values(msg.replies)
+              console.log 1111, r, msg if r.signedData.type == 'vote'
       updateShares = (shares) ->
         for hash, shareRaw of shares
           window.irisLib.Message.fromSig(shareRaw).then (r) ->

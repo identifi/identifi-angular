@@ -273,7 +273,7 @@ angular.module('irisAngular').controller 'MainController', [
 
     $scope.vote = (msg, vote) ->
       console.log 'vote added'
-      $scope.createMessage(null, {replyTo: msg.getHash(), vote})
+      $scope.createMessage(null, {type: 'vote', replyTo: msg.getHash(), vote})
 
     # Create new Message
     $scope.createMessage = (event, msg, options = {}) ->
