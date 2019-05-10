@@ -367,7 +367,7 @@ angular.module('irisAngular').controller 'MainController', [
     $scope.msgs.seen = {}
     $scope.filteredMsgs = []
     $scope.loadMsgs = (cursor) ->
-      limit = 10
+      limit = undefined # 10
       if cursor == undefined and $scope.msgs.last
         cursor = $scope.msgs.last
       console.log 'cursor', cursor
