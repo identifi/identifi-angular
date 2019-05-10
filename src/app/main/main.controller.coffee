@@ -368,8 +368,8 @@ angular.module('irisAngular').controller 'MainController', [
     $scope.filteredMsgs = []
     $scope.loadMsgs = (cursor) ->
       limit = 10
-      if cursor == undefined and $scope.msgs.list.length
-        cursor = $scope.msgs.list[$scope.msgs.list.length - 1].cursor
+      if cursor == undefined and $scope.msgs.last
+        cursor = $scope.msgs.last
       console.log 'cursor', cursor
       found = 0
       $scope.loadingMsgs = true
@@ -392,6 +392,7 @@ angular.module('irisAngular').controller 'MainController', [
         found += 1
         $scope.loadingMsgs = false if found >= limit
         return if $scope.msgs.seen[msg.getHash()]
+        $scope.msgs.last = msg.signedData.timestamp if !$scope.msgs.last or msg.signedData.timestamp < $scope.msgs.last
         $scope.msgs.seen[msg.getHash()] = true
         $scope.processMessages [msg]
         $scope.$apply ->
