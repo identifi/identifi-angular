@@ -654,7 +654,10 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.gun.opt({peers: [url]}); # TODO: validate url
 
     $scope.removeGunPeer = (url) ->
-      console.log 'removeGunPeer' # TODO: how to do this?
+      peer = $scope.gun._.opt.peers[url] # get the peer you want
+      peer.url = peer.id = null # this prevents reconnecting to URL
+      peer.wire.close() # if websocket interface
+      delete $scope.gun._.opt.peers[url] # remove from peer list
 
     $scope.addIpfsPeer = (url) ->
       $scope.ipfs.swarm.connect(url).then ->
