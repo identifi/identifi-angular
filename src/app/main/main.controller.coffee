@@ -366,8 +366,8 @@ angular.module('irisAngular').controller 'MainController', [
     $scope.msgs.list = []
     $scope.msgs.seen = {}
     $scope.filteredMsgs = []
-    $scope.loadMsgs = (cursor) ->
-      limit = undefined # 10
+    $scope.showMoreMsgs = (cursor) ->
+      limit = 20 # 10
       if cursor == undefined and $scope.msgs.last
         cursor = $scope.msgs.last
       console.log 'cursor', cursor
@@ -397,11 +397,14 @@ angular.module('irisAngular').controller 'MainController', [
         $scope.processMessages [msg]
         $scope.$apply ->
           $scope.msgs.list.push msg
-      $scope.irisIndex.getMessagesByTimestamp(resultFound, limit, cursor)
+
+      $scope.filters.limit += limit
+      if $scope.filters.limit > $scope.filteredMsgs.length
+        $scope.irisIndex.getMessagesByTimestamp(resultFound, undefined, cursor)
 
     $scope.$watch 'irisIndex', ->
       return unless $scope.irisIndex
-      $scope.loadMsgs()
+      $scope.showMoreMsgs()
       $scope.search()
 
     $scope.uploadFile = (blob) ->

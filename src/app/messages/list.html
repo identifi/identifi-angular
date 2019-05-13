@@ -22,7 +22,7 @@
 
         <div ng-if="authentication.user" ng-include="'app/messages/create.partial.html'"></div>
         <div class="visible-xs visible-sm" ng-include="'app/messages/filters.partial.html'"></div>
-        <div infinite-scroll="loadMsgs();" infinite-scroll-distance="1" infinite-scroll-disabled="!msgs || !msgs.list || msgs.list.length < filters.limit || !irisIndex || loadingMsgs">
+        <div infinite-scroll="showMoreMsgs();" infinite-scroll-distance="1" infinite-scroll-disabled="!msgs || !msgs.list || !irisIndex || loadingMsgs">
           <message auth="authentication" ng-repeat="msg in msgs.list | filter:msgFilter | orderBy:'signedData.timestamp' : true | limitTo:filters.limit as filteredMsgs track by msg.hash" msg="msg" ng-click="openMessage($event, msg, 'lg');$event.preventDefault()"></message>
         </div>
         <div class="alert alert-info text-center" ng-if="!filteredMsgs.length">
