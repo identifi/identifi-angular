@@ -661,10 +661,16 @@ angular.module('irisAngular').controller 'MainController', [
       delete $scope.gun._.opt.peers[url] # remove from peer list
 
     $scope.addIpfsPeer = (url) ->
+      $scope.ipfs.bootstrap.add url
       $scope.ipfs.swarm.connect(url).then ->
         $scope.updateIpfsPeers()
 
+    $scope.addDefaultIpfsPeers = ->
+      $scope.ipfs.bootstrap.add('', {default: true}).then -> # TODO: errors
+        $scope.updateIpfsPeers()
+
     $scope.removeIpfsPeer = (url) ->
+      $scope.ipfs.bootstrap.rm url
       $scope.ipfs.swarm.disconnect(url).then ->
         $scope.updateIpfsPeers()
 ]

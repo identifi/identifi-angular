@@ -77043,22 +77043,28 @@ angular
 			while(l > 0){ s += c.charAt(Math.floor(Math.random() * c.length)); l-- }
 			return s;
 		}
-		Type.text.match = function(t, o){ var tmp, u;
-			if('string' !== typeof t){ return false }
-			if('string' == typeof o){ o = {'=': o} }
-			o = o || {};
-			tmp = (o['='] || o['*'] || o['>'] || o['<']);
-			if(t === tmp){ return true }
-			if(u !== o['=']){ return false }
-			tmp = (o['*'] || o['>'] || o['<']);
-			if(t.slice(0, (tmp||'').length) === tmp){ return true }
-			if(u !== o['*']){ return false }
-			if(u !== o['>'] && u !== o['<']){
-				return (t >= o['>'] && t <= o['<'])? true : false;
+		Type.text.match = function(t, o){ var r = false;
+			t = t || '';
+			o = Type.text.is(o)? {'=': o} : o || {}; // {'~', '=', '*', '<', '>', '+', '-', '?', '!'} // ignore case, exactly equal, anything after, lexically larger, lexically lesser, added in, subtacted from, questionable fuzzy match, and ends with.
+			if(Type.obj.has(o,'~')){ t = t.toLowerCase(); o['='] = (o['='] || o['~']).toLowerCase() }
+			if(Type.obj.has(o,'=')){ return t === o['='] }
+			if(Type.obj.has(o,'*')){ if(t.slice(0, o['*'].length) === o['*']){ r = true; t = t.slice(o['*'].length) } else { return false }}
+			if(Type.obj.has(o,'!')){ if(t.slice(-o['!'].length) === o['!']){ r = true } else { return false }}
+			if(Type.obj.has(o,'+')){
+				if(Type.list.map(Type.list.is(o['+'])? o['+'] : [o['+']], function(m){
+					if(t.indexOf(m) >= 0){ r = true } else { return true }
+				})){ return false }
 			}
-			if(u !== o['>'] && t >= o['>']){ return true }
-			if(u !== o['<'] && t <= o['<']){ return true }
-			return false;
+			if(Type.obj.has(o,'-')){
+				if(Type.list.map(Type.list.is(o['-'])? o['-'] : [o['-']], function(m){
+					if(t.indexOf(m) < 0){ r = true } else { return true }
+				})){ return false }
+			}
+			if(Type.obj.has(o,'>')){ if(t > o['>']){ r = true } else { return false }}
+			if(Type.obj.has(o,'<')){ if(t < o['<']){ r = true } else { return false }}
+			function fuzzy(t,f){ var n = -1, i = 0, c; for(;c = f[i++];){ if(!~(n = t.indexOf(c, n+1))){ return false }} return true } // via http://stackoverflow.com/questions/9206013/javascript-fuzzy-search
+			if(Type.obj.has(o,'?')){ if(fuzzy(t, o['?'])){ r = true } else { return false }} // change name!
+			return r;
 		}
 		Type.list = {is: function(l){ return (l instanceof Array) }}
 		Type.list.slit = Array.prototype.slice;
@@ -77963,7 +77969,7 @@ angular
 						if(tmp){ return }
 						msg.$ = back.$;
 					} else
-					if(obj_has(back.put, get)){ // TODO: support #LEX !
+					if(obj_has(back.put, get)){
 						put = (back.$.get(get)._);
 						if(!(tmp = put.ack)){ put.ack = -1 }
 						back.on('in', {
@@ -78764,7 +78770,7 @@ angular
 		function each(v,k){
 			if(n_ === k){ return }
 			var msg = this.msg, gun = msg.$, at = gun._, cat = this.at, tmp = at.lex;
-			if(tmp && !Gun.text.match(k, tmp['.'] || tmp['#'] || tmp)){ return } // review?
+			if(tmp && !Gun.text.match(k, tmp['.'] || tmp['#'] || tmp)){ return } // TODO: Ugly hack!
 			((tmp = gun.get(k)._).echo || (tmp.echo = {}))[cat.id] = tmp.echo[cat.id] || cat;
 		}
 		var obj_map = Gun.obj.map, noop = function(){}, event = {stun: noop, off: noop}, n_ = Gun.node._, u;
@@ -78940,7 +78946,6 @@ angular
 	})(USE, './adapters/localStorage');
 
 	;USE(function(module){
-		var Gun = USE('../index');
 		var Type = USE('../type');
 
 		function Mesh(ctx){
@@ -78962,7 +78967,7 @@ angular
 					return;
 				}
 				// add hook for AXE?
-				if (Gun.AXE) { Gun.AXE.say(msg, mesh.say, this); return; }
+				//if (Gun.AXE && opt && opt.super) { Gun.AXE.say(msg, mesh.say, this); return; } // rogowski
 				mesh.say(msg);
 			}
 
@@ -78976,8 +78981,9 @@ angular
 				if(!raw){ return }
 				var dup = ctx.dup, id, hash, msg, tmp = raw[0];
 				if(opt.pack <= raw.length){ return mesh.say({dam: '!', err: "Message too big!"}, peer) }
+				try{msg = JSON.parse(raw);
+				}catch(e){opt.log('DAM JSON parse error', e)}
 				if('{' === tmp){
-					try{msg = JSON.parse(raw);}catch(e){opt.log('DAM JSON parse error', e)}
 					if(!msg){ return }
 					if(dup.check(id = msg['#'])){ return }
 					dup.track(id, true).it = msg; // GUN core also dedups, so `true` is needed.
@@ -78990,7 +78996,7 @@ angular
 					}
 					(msg._ = function(){}).via = peer;
 					if((tmp = msg['><'])){
-						(msg._).to = Type.obj.map(tmp.split(','), tomap);
+						(msg._).to = Type.obj.map(tmp.split(','), function(k,i,m){m(k,true)});
 					}
 					if(msg.dam){
 						if(tmp = mesh.hear[msg.dam]){
@@ -79003,7 +79009,6 @@ angular
 					return;
 				} else
 				if('[' === tmp){
-					try{msg = JSON.parse(raw);}catch(e){opt.log('DAM JSON parse error', e)}
 					if(!msg){ return }
 					var i = 0, m;
 					while(m = msg[i++]){
@@ -79013,7 +79018,6 @@ angular
 					return;
 				}
 			}
-			var tomap = function(k,i,m){m(k,true)};
 
 			;(function(){
 				mesh.say = function(msg, peer, o){
@@ -79064,11 +79068,11 @@ angular
 				function send(raw, peer){
 					var wire = peer.wire;
 					try{
-						if(peer.say){
-							peer.say(raw);
-						} else
 						if(wire.send){
 							wire.send(raw);
+						} else
+						if(peer.say){
+							peer.say(raw);
 						}
 					}catch(e){
 						(peer.queue = peer.queue || []).push(raw);
@@ -79136,7 +79140,6 @@ angular
 					mesh.say({dam: '?'}, opt.peers[tmp] = peer);
 				}
 				if(!tmp.hied){ ctx.on(tmp.hied = 'hi', peer) }
-				// @rogowski I need this here by default for now to fix go1dfish's bug
 				tmp = peer.queue; peer.queue = [];
 				Type.obj.map(tmp, function(msg){
 					mesh.say(msg, peer);
@@ -79146,20 +79149,14 @@ angular
 				Type.obj.del(opt.peers, peer.id); // assume if peer.url then reconnect
 				ctx.on('bye', peer);
 			}
+
 			mesh.hear['!'] = function(msg, peer){ opt.log('Error:', msg.err) }
 			mesh.hear['?'] = function(msg, peer){
-				if(!msg.pid){
-					mesh.say({dam: '?', pid: opt.pid, '@': msg['#']}, peer);
-					// @rogowski I want to re-enable this AXE logic with some fix/merge later.
-					// var tmp = peer.queue; peer.queue = [];
-					// Type.obj.map(tmp, function(msg){
-					//	mesh.say(msg, peer);
-					// });
-					return;
-				}
+				if(!msg.pid){ return mesh.say({dam: '?', pid: opt.pid, '@': msg['#']}, peer) }
 				peer.id = peer.id || msg.pid;
 				mesh.hi(peer);
 			}
+
 			return mesh;
 		}
 
@@ -80625,7 +80622,6 @@ Gun.chain.then = function(cb) {
 				delete (radix.$||{})[_];
 			}
 			t = t || radix.$ || (radix.$ = {});
-			if(!key && Object.keys(t).length){ return t }
 			var i = 0, l = key.length-1, k = key[i], at, tmp;
 			while(!(at = t[k]) && i < l){
 				k += key[++i];
@@ -80673,22 +80669,16 @@ Gun.chain.then = function(cb) {
 		if(!t){ return }
 		var keys = (t[_]||no).sort || (t[_] = function $(){ $.sort = Object.keys(t).sort(); return $ }()).sort;
 		//var keys = Object.keys(t).sort();
-		opt = (true === opt)? {branch: true} : (opt || {});
-		if(opt.reverse){ keys = keys.slice().reverse() }
-		var start = opt.start, end = opt.end;
 		var i = 0, l = keys.length;
-		for(;i < l; i++){ var key = keys[i], tree = t[key], tmp, p, pt;
+		for(;i < l; i++){ var key = keys[i], tree = t[key], tmp, p;
 			if(!tree || '' === key || _ === key){ continue }
 			p = pre.slice(); p.push(key);
-			pt = p.join('');
-			if(u !== start && pt < (start||'').slice(0,pt.length)){ continue }
-			if(u !== end && (end || '\uffff') < pt){ continue }
 			if(u !== (tmp = tree[''])){
-				tmp = cb(tmp, pt, key, pre);
+				tmp = cb(tmp, p.join(''), key, pre);
 				if(u !== tmp){ return tmp }
 			} else
-			if(opt.branch){
-				tmp = cb(u, pt, key, pre);
+			if(opt){
+				tmp = cb(u, pre.join(''), key, pre);
 				if(u !== tmp){ return tmp }
 			}
 			pre = p;
@@ -80756,18 +80746,18 @@ Gun.chain.then = function(cb) {
 		var r = function(key, val, cb){
 			key = ''+key;
 			if(val instanceof Function){
-				var o = cb || {};
+				var o = cb;
 				cb = val;
 				val = r.batch(key);
 				if(u !== val){
-					cb(u, r.range(val, o), o);
+					cb(u, val, o);
 					if(atomic(val)){ return }
 					// if a node is requested and some of it is cached... the other parts might not be.
 				}
 				if(r.thrash.at){
 					val = r.thrash.at(key);
 					if(u !== val){
-						cb(u, r.range(val, o), o);
+						cb(u, val, o);
 						if(atomic(val)){ cb(u, val, o); return }
 						// if a node is requested and some of it is cached... the other parts might not be.
 					}
@@ -80927,17 +80917,6 @@ Gun.chain.then = function(cb) {
 			f.write();
 		}
 
-		r.range = function(tree, o){
-			if(!tree || !o){ return }
-			if(u === o.start && u === o.end){ return tree }
-			if(atomic(tree)){ return tree }
-			var sub = Radix();
-			Radix.map(tree, function(v,k){
-				sub(k,v);
-			}, o)
-			return sub('');
-		}
-
 		;(function(){
 			var Q = {};
 			r.read = function(key, cb, o){
@@ -80950,22 +80929,16 @@ Gun.chain.then = function(cb) {
 						// if a node is requested and some of it is cached... the other parts might not be.
 					//}
 				}
-				o.span = (u !== o.start) || (u !== o.end);
-				var g = function Get(){};
-				g.lex = function(file){ var tmp;
+				var g = function Get(){}, tmp;
+				g.lex = function(file){
 					file = (u === file)? u : decodeURIComponent(file);
-					tmp = o.next || key || (o.reverse? o.end || '\uffff' : o.start || '');
-					if(!file || (o.reverse? file < tmp : file > tmp)){
-						if(o.next || o.reverse){ g.file = file }
+					if(!file || file > (o.next || key)){
+						if(o.next){ g.file = file }
 						if(tmp = Q[g.file]){
 							tmp.push({key: key, ack: cb, file: g.file, opt: o});
 							return true;
 						}
 						Q[g.file] = [{key: key, ack: cb, file: g.file, opt: o}];
-						if(!g.file){
-							g.it(null, u, {});
-							return true; 
-						}
 						r.parse(g.file, g.it);
 						return true;
 					}
@@ -80980,21 +80953,18 @@ Gun.chain.then = function(cb) {
 				}
 				g.ack = function(as){
 					if(!as.ack){ return }
-					var tmp = as.key, o = as.opt, info = g.info, rad = g.disk || noop, data = r.range(rad(tmp), o), last = rad.last;
+					var tmp = as.key, o = as.opt, info = g.info, rad = g.disk || noop, data = rad(tmp), last = rad.last;
 					o.parsed = (o.parsed || 0) + (info.parsed||0);
 					o.chunks = (o.chunks || 0) + 1;
 					if(!o.some){ o.some = (u !== data) }
 					if(u !== data){ as.ack(g.err, data, o) }
 					else if(!as.file){ !o.some && as.ack(g.err, u, o); return }
-					if(!o.span){
-						if(/*!last || */last === tmp){ !o.some && as.ack(g.err, u, o); return }
-						if(last && last > tmp && 0 != last.indexOf(tmp)){ !o.some && as.ack(g.err, u, o); return }
-					}
+					if(/*!last || */last === tmp){ !o.some && as.ack(g.err, u, o); return }
+					if(last && last > tmp && 0 != last.indexOf(tmp)){ !o.some && as.ack(g.err, u, o); return }
 					if(o.some && o.parsed >= o.limit){ return }
 					o.next = as.file;
 					r.read(tmp, as.ack, o);
 				}
-				if(o.reverse){ g.lex.reverse = true }
 				r.list(g.lex);
 			}
 		}());
@@ -81043,6 +81013,7 @@ Gun.chain.then = function(cb) {
 							return map(q, p.ack);
 						}
 					}
+
 					var start; LOG && (start = (+new Date)); // keep this commented out in production!
 					var tmp = p.split(data), pre = [], i, k, v;
 					if(!tmp || 0 !== tmp[1]){
@@ -81095,10 +81066,9 @@ Gun.chain.then = function(cb) {
 			var dir, q, f = String.fromCharCode(28), ef = ename(f);
 			r.list = function(cb){
 				if(dir){
-					var tmp = {reverse: (cb.reverse)? 1 : 0};
 					Radix.map(dir, function(val, key){
 						return cb(key);
-					}, tmp) || cb();
+					}) || cb();
 					return;
 				}
 				if(q){ return q.push(cb) } q = [cb];
@@ -81143,7 +81113,9 @@ Gun.chain.then = function(cb) {
 				r.list.dir = dir = rad;
 				tmp = q; q = null;
 				Gun.list.map(tmp, function(cb){
-					r.list(cb);
+					Radix.map(dir, function(val, key){
+						return cb(key);
+					}) || cb();
 				});
 			}
 		}());
@@ -81227,7 +81199,6 @@ Gun.chain.then = function(cb) {
 var Gun = (typeof window !== "undefined")? window.Gun : require('../gun');
  
 Gun.on('create', function(root){
-    if(Gun.TESTING){ root.opt.file = 'radatatest' }
     this.to.next(root);
     var opt = root.opt, u;
     if(false === opt.radisk){ return }
@@ -81262,36 +81233,28 @@ Gun.on('create', function(root){
  
     root.on('get', function(msg){
         this.to.next(msg);
-        var id = msg['#'], get = msg.get, soul = msg.get['#'], has = msg.get['.']||'', opt = {}, graph, lex, key, tmp, force;
-        if('string' == typeof soul){
+        var id = msg['#'], get = msg.get, soul = msg.get['#'], has = msg.get['.']||'', opt = {}, graph, lex, key, tmp;
+        if(typeof soul == 'string'){
             key = soul;
         } else 
         if(soul){
-            if(u !== (tmp = soul['*'])){ opt.limit = force = 1 }
-            if(u !== soul['>']){ opt.start = soul['>'] }
-            if(u !== soul['<']){ opt.end = soul['<'] }
-            key = force? (''+tmp) : tmp || soul['='];
-            force = null;
+            if(tmp = soul['*']){ opt.limit = 1 }
+            key = tmp || soul['='];
         }
         if(key && !opt.limit){ // a soul.has must be on a soul, and not during soul*
-            if('string' == typeof has){
+            if(typeof has == 'string'){
                 key = key+esc+(opt.atom = has);
             } else 
             if(has){
-                if(u !== has['>']){ opt.start = has['>']; opt.limit = 1 }
-                if(u !== has['<']){ opt.end = has['<']; opt.limit = 1 }
-                if(u !== (tmp = has['*'])){ opt.limit = force = 1 }
-                if(key){ key = key+esc + (force? (''+(tmp||'')) : tmp || (opt.atom = has['='] || '')) }
+                if(tmp = has['*']){ opt.limit = 1 }
+                if(key){ key = key+esc + (tmp || (opt.atom = has['='])) }
             }
         }
         if((tmp = get['%']) || opt.limit){
             opt.limit = (tmp <= (opt.pack || (1000 * 100)))? tmp : 1;
         }
-        if(has['-'] || (soul||{})['-']){ opt.reverse = true }
-        //console.log("RAD get:", key, opt);
         //var start = (+new Date); // console.log("GET!", id, JSON.stringify(key));
         rad(key||'', function(err, data, o){
-            //console.log("RAD gat:", err, data, o);
             if(data){
                 if(typeof data !== 'string'){
                     if(opt.atom){
@@ -81320,10 +81283,17 @@ Gun.on('create', function(root){
     });
 });
 ;(function(){
+  var Gun = (typeof window !== "undefined")? window.Gun : require('../gun');
+
+  Gun.on('create', function(root){
+    this.to.next(root);
+    root.opt.store = root.opt.store || Store(root.opt);
+  });
 
   function Store(opt){
     opt = opt || {};
     opt.file = String(opt.file || 'radata');
+    if(Gun.TESTING){ opt.file = 'radatatest' }
     opt.chunk = opt.chunk || (1024 * 1024); // 1MB
     var db = null, u;
 
@@ -81337,12 +81307,6 @@ Gun.on('create', function(root){
     }}catch(e){}
     
     var store = function Store(){};
-    if(Store[opt.file]){
-      console.log("Warning: reusing same IndexedDB store and options as 1st.");
-      return Store[opt.file];
-    }
-    Store[opt.file] = store;
-
     store.start = function(){
       var o = indexedDB.open(opt.file, 1);
       o.onupgradeneeded = function(eve){ (eve.target.result).createObjectStore(opt.file) }
@@ -81373,20 +81337,11 @@ Gun.on('create', function(root){
     return store;
   }
 
-  if(typeof window !== "undefined"){
-    (Store.window = window).RindexedDB = Store;
+  if(Gun.window){
+    Gun.window.RindexedDB = Store;
   } else {
-    try{ module.exports = Store }catch(e){}
+    module.exports = Store;
   }
-
-  try{
-    var Gun = Store.window.Gun || require('../gun');
-    Gun.on('create', function(root){
-      this.to.next(root);
-      root.opt.store = root.opt.store || Store(root.opt);
-    });
-  }catch(e){}
-
 }());
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('gun')) :
@@ -86850,7 +86805,7 @@ Gun.on('create', function(root){
 	var debugEnviron;
 	function debuglog(set) {
 	  if (isUndefined(debugEnviron))
-	    debugEnviron = process$3.env.NODE_DEBUG || '';
+	    debugEnviron = '';
 	  set = set.toUpperCase();
 	  if (!debugs[set]) {
 	    if (new RegExp('\\b' + set + '\\b', 'i').test(debugEnviron)) {
@@ -92066,19 +92021,6 @@ Gun.on('create', function(root){
 	  return Identity;
 	}();
 
-	// 20.1.2.6 Number.MAX_SAFE_INTEGER
-
-
-	_export(_export.S, 'Number', { MAX_SAFE_INTEGER: 0x1fffffffffffff });
-
-	var maxSafeInteger = 0x1fffffffffffff;
-
-	var maxSafeInteger$1 = createCommonjsModule(function (module) {
-	module.exports = { "default": maxSafeInteger, __esModule: true };
-	});
-
-	var _Number$MAX_SAFE_INTEGER = unwrapExports(maxSafeInteger$1);
-
 	var isEnum$1 = _objectPie.f;
 	var _objectToArray = function (isEntries) {
 	  return function (it) {
@@ -92229,15 +92171,19 @@ Gun.on('create', function(root){
 	var _Object$assign = unwrapExports(assign$1);
 
 	// temp method for GUN search
-	async function searchText(node, callback, query, limit) {
-	  var cursor = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '';
-	  var desc = arguments[5];
-
+	async function searchText(node, callback, query, limit, cursor, desc) {
 	  var seen = {};
-	  console.log('cursor', cursor, 'query', query, 'desc', desc);
-	  var q = desc ? { '<': cursor, '-': desc } : { '>': cursor, '-': desc };
+	  //console.log(`cursor`, cursor, `query`, query, `desc`, desc);
+	  var q = { '-': desc };
+	  if (cursor) {
+	    if (desc) {
+	      q['<'] = cursor;
+	    } else {
+	      q['>'] = cursor;
+	    }
+	  }
 	  node.get({ '.': q, '%': 20 * 1000 }).once().map().on(function (value, key) {
-	    console.log('searchText', value, key, desc);
+	    //console.log(`searchText`, value, key, desc);
 	    if (key.indexOf(query) === 0) {
 	      if (typeof limit === 'number' && _Object$keys(seen).length >= limit) {
 	        return;
@@ -92357,7 +92303,8 @@ Gun.on('create', function(root){
 	  }
 
 	  Index.prototype.debug = function debug() {
-	    if (this.options.debug) {
+	    var d = util$1.isNode && process$3.env.DEBUG ? process$3.env.DEBUG === 'true' : this.options.debug;
+	    if (d) {
 	      console.log.apply(console, arguments);
 	    }
 	  };
@@ -92381,15 +92328,14 @@ Gun.on('create', function(root){
 	    user.auth(keypair);
 	    this.writable = true;
 	    options.viewpoint = new Attribute('keyID', Key.getId(keypair));
-	    // const identifi = user.get(`identifi`);
 	    var gunRoot = user.get('iris');
-	    // gunRoot.put(identifi); // temp migration identifi -> iris, but fails due to gun error
 	    var i = new Index(gunRoot, options);
 	    i.gun.get('viewpoint').put(options.viewpoint);
 	    var uri = options.viewpoint.uri();
 	    var g = i.gun.get('identitiesBySearchKey').get(uri);
+	    g.put({});
 	    var attrs = {};
-	    attrs[options.viewpoint.uri()] = options.viewpoint;
+	    attrs[uri] = options.viewpoint;
 	    if (options.self) {
 	      var keys = _Object$keys(options.self);
 	      for (var _i = 0; _i < keys.length; _i++) {
@@ -92713,18 +92659,15 @@ Gun.on('create', function(root){
 	  */
 
 
-	  Index.prototype.getSentMsgs = async function getSentMsgs(identity, callback, limit) {
+	  Index.prototype.getSentMsgs = async function getSentMsgs(identity, callback, limit, cursor, filter) {
 	    var _this3 = this;
 
-	    var cursor = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
-	    var filter = arguments[4];
-
-	    this._getMsgs(identity.gun.get('sent'), callback, limit, cursor, filter);
+	    this._getMsgs(identity.gun.get('sent'), callback, limit, cursor, true, filter);
 	    if (this.options.indexSync.query.enabled) {
 	      this.gun.get('trustedIndexes').map().once(function (val, key) {
 	        if (val) {
 	          var n = _this3.gun.user(key).get('iris').get('messagesByAuthor').get(identity.linkTo.uri());
-	          _this3._getMsgs(n, callback, limit, cursor, filter);
+	          _this3._getMsgs(n, callback, limit, cursor, false, filter);
 	        }
 	      });
 	    }
@@ -92737,18 +92680,15 @@ Gun.on('create', function(root){
 	  */
 
 
-	  Index.prototype.getReceivedMsgs = async function getReceivedMsgs(identity, callback, limit) {
+	  Index.prototype.getReceivedMsgs = async function getReceivedMsgs(identity, callback, limit, cursor, filter) {
 	    var _this4 = this;
 
-	    var cursor = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
-	    var filter = arguments[4];
-
-	    this._getMsgs(identity.gun.get('received'), callback, limit, cursor, filter);
+	    this._getMsgs(identity.gun.get('received'), callback, limit, cursor, true, filter);
 	    if (this.options.indexSync.query.enabled) {
 	      this.gun.get('trustedIndexes').map().once(function (val, key) {
 	        if (val) {
 	          var n = _this4.gun.user(key).get('iris').get('messagesByRecipient').get(identity.linkTo.uri());
-	          _this4._getMsgs(n, callback, limit, cursor, filter);
+	          _this4._getMsgs(n, callback, limit, cursor, false, filter);
 	        }
 	      });
 	    }
@@ -92955,8 +92895,6 @@ Gun.on('create', function(root){
 	    var ids = _Object$values(_Object$assign({}, authorIdentities, recipientIdentities));
 	    for (var i = 0; i < ids.length; i++) {
 	      // add new identifiers to identity
-	      var data = await ids[i].gun.then(); // TODO: data is sometimes undefined and new identity is not added! might be related to https://github.com/amark/gun/issues/719
-	      var relocated = data ? this.gun.get('identities').set(data) : ids[i].gun; // this may screw up real time updates? and create unnecessary `identities` entries
 	      if (recipientIdentities.hasOwnProperty(ids[i].gun['_'].link)) {
 	        start = new Date();
 	        await this._updateMsgRecipientIdentity(msg, msgIndexKey, ids[i].gun);
@@ -92968,7 +92906,7 @@ Gun.on('create', function(root){
 	        this.debug(new Date() - start, 'ms _updateMsgAuthorIdentity');
 	      }
 	      start = new Date();
-	      await this._addIdentityToIndexes(relocated);
+	      await this._addIdentityToIndexes(ids[i].gun);
 	      this.debug(new Date() - start, 'ms _addIdentityToIndexes');
 	    }
 	  };
@@ -93086,6 +93024,7 @@ Gun.on('create', function(root){
 	    if (!_Object$keys(recipientIdentities).length) {
 	      // recipient is previously unknown
 	      var attrs = {};
+	      var u = void 0;
 	      for (var _iterator5 = msg.getRecipientArray(), _isArray5 = Array.isArray(_iterator5), _i9 = 0, _iterator5 = _isArray5 ? _iterator5 : _getIterator(_iterator5);;) {
 	        var _ref5;
 
@@ -93101,12 +93040,16 @@ Gun.on('create', function(root){
 	        var _a2 = _ref5;
 
 	        attrs[_a2.uri()] = _a2;
+	        if (!u && _a2.isUniqueType()) {
+	          u = _a2;
+	        }
 	      }
 	      var linkTo = Identity.getLinkTo(attrs);
-	      var random = Math.floor(Math.random() * _Number$MAX_SAFE_INTEGER); // TODO: bubblegum fix
 	      var trustDistance = msg.isPositive() && typeof msg.distance === 'number' ? msg.distance + 1 : false;
 	      var _start = new Date();
-	      var id = Identity.create(this.gun.get('identities').get(random).put({}), { attrs: attrs, linkTo: linkTo, trustDistance: trustDistance });
+	      var node = this.gun.get('identitiesBySearchKey').get(u.uri());
+	      node.put({});
+	      var id = Identity.create(node, { attrs: attrs, linkTo: linkTo, trustDistance: trustDistance });
 	      this.debug(new Date() - _start, 'ms identity.create');
 	      // {a:1} because inserting {} causes a "no signature on data" error from gun
 
@@ -93327,10 +93270,10 @@ Gun.on('create', function(root){
 	      }
 	      return true;
 	    }
-	    console.log('search()', value, type, limit, cursor);
+	    this.debug('search()', value, type, limit, cursor);
 	    var node = this.gun.get('identitiesBySearchKey');
 	    node.get({ '.': { '*': value, '>': cursor }, '%': 2000 }).once().map().on(function (id, key) {
-	      console.log('search(' + value + ', ' + type + ', callback, ' + limit + ', ' + cursor + ') returned id ' + id + ' key ' + key);
+	      _this7.debug('search(' + value + ', ' + type + ', callback, ' + limit + ', ' + cursor + ') returned id ' + id + ' key ' + key);
 	      if (_Object$keys(seen).length >= limit) {
 	        // TODO: turn off .map cb
 	        return;
@@ -93432,9 +93375,7 @@ Gun.on('create', function(root){
 	  */
 
 
-	  Index.prototype.getMessagesByTimestamp = function getMessagesByTimestamp(callback, limit) {
-	    var cursor = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
-
+	  Index.prototype.getMessagesByTimestamp = function getMessagesByTimestamp(callback, limit, cursor) {
 	    var _this9 = this;
 
 	    var desc = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
@@ -93447,6 +93388,7 @@ Gun.on('create', function(root){
 	        callback(msg);
 	      }
 	    };
+
 	    this._getMsgs(this.gun.get('messagesByTimestamp'), cb, limit, cursor, desc, filter);
 	    if (this.options.indexSync.query.enabled) {
 	      this.gun.get('trustedIndexes').map().once(function (val, key) {
@@ -93463,13 +93405,8 @@ Gun.on('create', function(root){
 	  */
 
 
-	  Index.prototype.getMessagesByDistance = function getMessagesByDistance(callback, limit) {
-	    var cursor = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
-
+	  Index.prototype.getMessagesByDistance = function getMessagesByDistance(callback, limit, cursor, desc, filter) {
 	    var _this10 = this;
-
-	    var desc = arguments[3];
-	    var filter = arguments[4];
 
 	    var seen = {};
 	    var cb = function cb(msg) {
