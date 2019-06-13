@@ -18,6 +18,7 @@ describe('iris', function() {
 
     browser.wait(until.presenceOf(info), 10000, 'Element taking too long to appear in the DOM').then(() => {
       expect(info.isPresent()).toBe(true);
+      expect(element(by.className('nav-identicon')).isPresent()).toBe(true);
     });
     /*
     var todoList = element.all(by.repeater('todo in todoList.todos'));
@@ -49,9 +50,19 @@ describe('iris', function() {
 
   it('should have the same state after refresh', function() {
     browser.get('');
-    browser.wait(until.presenceOf(element(by.tagName('message'))), 15000, 'Message taking too long to appear in the DOM').then(() => {
+    browser.wait(until.presenceOf(element(by.tagName('message'))), 20000, 'Message taking too long to appear in the DOM').then(() => {
       var messages = element.all(by.tagName('message'));
       expect(messages.count()).toBe(1);
     });
+  });
+
+  it('should log out', function() {
+    element(by.className('glyphicon-cog')).click();
+    element(by.buttonText('Log out')).click();
+    var logout = element(by.id('logout'));
+    browser.wait(until.presenceOf(logout), 5000, 'Logout button was not present').then(() => {
+      logout.click();
+    });
+    browser.wait(until.invisibilityOf(element(by.className('nav-identicon'))), 6000, 'User identicon should disappear after login').then(() => {});
   });
 });
