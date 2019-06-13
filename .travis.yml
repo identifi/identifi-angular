@@ -4,7 +4,8 @@ node_js:
 addons:
   chrome: stable
 script:
-  - yarn && yarn test
+  - yarn
+  - yarn test
 cache:
   yarn: true
   directories:
