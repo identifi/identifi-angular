@@ -81,6 +81,6 @@
     "node": ">=0.10.0"
   },
   "dependencies": {
-    "protractor": "^6.0.0"
+    "protractor": "^5.4.2"
   }
 }
