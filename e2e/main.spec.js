@@ -30,4 +30,28 @@ describe('iris', function() {
     expect(completedAmount.count()).toEqual(2);
     */
   });
+
+  it('should post a message', function() {
+    element(by.id('comment')).sendKeys('Test Post');
+    element(by.buttonText('Publish')).click();
+
+    var messages = element.all(by.tagName('message'));
+
+    browser.wait(until.presenceOf(element(by.tagName('message'))), 5000, 'Message taking too long to appear in the DOM').then(() => {
+      expect(messages.count()).toBe(1);
+    });
+  });
+
+  it('should like a message', function() {
+    element(by.className('glyphicon-heart-empty')).click();
+    expect(element(by.binding('msg.likes')).getText()).toBe("1");
+  });
+
+  it('should have the same state after refresh', function() {
+    browser.get('');
+    browser.wait(until.presenceOf(element(by.tagName('message'))), 15000, 'Message taking too long to appear in the DOM').then(() => {
+      var messages = element.all(by.tagName('message'));
+      expect(messages.count()).toBe(1);
+    });
+  });
 });
