@@ -136,12 +136,13 @@ angular.module('irisAngular').controller 'MainController', [
     $scope.loadDefaultIndex = ->
       $scope.irisIndex = null
       $scope.viewpoint = {type: 'keyID', value: $scope.defaultIndexKeyID}
-      setIndex new $window.irisLib.Index($scope.gun.user($scope.defaultIndexKeyID).get('iris'), {ipfs: $scope.ipfs})
+      i = new $window.irisLib.Index({gun: $scope.gun, pubKey: $scope.defaultIndexKeyID, ipfs: $scope.ipfs})
+      setIndex(i)
 
     $scope.loginWithKey = (privateKeySerialized, self) ->
       $scope.irisIndex = null
       $scope.loggingIn = true
-      $scope.privateKey = $window.irisLib.Key.fromJwk(privateKeySerialized)
+      $scope.privateKey = $window.irisLib.Key.fromString(privateKeySerialized)
       localStorageService.set('irisKey', privateKeySerialized)
       $scope.authentication.user =
         idType: 'keyID'
@@ -153,7 +154,8 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.ids.list = []
       $scope.msgs.list = []
       $scope.msgs.seen = {}
-      $window.irisLib.Index.create($scope.gun, $scope.privateKey, {self, ipfs: $scope.ipfs, debug: true}).then (i) ->
+      i = new $window.irisLib.Index({gun: $scope.gun, keypair: $scope.privateKey, self, ipfs: $scope.ipfs, debug: true})
+      i.ready.then () ->
         setIndex(i)
         $scope.loggingIn = false
         $scope.authentication.identity = $scope.irisIndex.get('keyID', keyID)
@@ -429,7 +431,7 @@ angular.module('irisAngular').controller 'MainController', [
       $window.irisLib.Key.generate()
       .then (key) ->
         $scope.privateKey = key
-        $scope.privateKeySerialized = $window.irisLib.Key.toJwk($scope.privateKey)
+        $scope.privateKeySerialized = $window.irisLib.Key.toString($scope.privateKey)
         self.keyID = $window.irisLib.Key.getId($scope.privateKey)
         $scope.loginWithKey($scope.privateKeySerialized, self)
       .then (msg) ->
@@ -442,7 +444,7 @@ angular.module('irisAngular').controller 'MainController', [
       $window.irisLib.Key.generate().then (key) ->
         $scope.$apply ->
           $scope.privateKey = key
-          $scope.privateKeySerialized = $window.irisLib.Key.toJwk($scope.privateKey)
+          $scope.privateKeySerialized = $window.irisLib.Key.toString($scope.privateKey)
 
     $scope.download = (filename, data, type, charset = 'utf-8', href) ->
       hiddenElement = document.createElement('a')

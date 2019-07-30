@@ -215,11 +215,11 @@ angular.module('irisAngular').controller 'IdentitiesController', [
       return unless $scope.identity and $scope.irisIndex
       $scope.sent = []
       cursor = if $scope.sent.length then $scope.sent[$scope.sent.length - 1].cursor else ''
-      resultFound = (msg) ->
+      callback = (msg) ->
         $scope.processMessages [msg], { authorIsSelf: true }
         $scope.sent.push msg
 
-      $scope.irisIndex.getSentMsgs($scope.identity, resultFound)
+      $scope.identity.sent({callback})
 
     $scope.getReceivedMsgs = ->
       return unless $scope.identity and $scope.irisIndex
@@ -227,7 +227,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
         list: []
         seen: {}
       cursor = if $scope.received.list.length then $scope.received.list[$scope.received.list.length - 1].cursor else ''
-      resultFound = (msg) ->
+      callback = (msg) ->
         return if $scope.received.seen[msg.getHash()]
         $scope.processMessages [msg], { recipientIsSelf: true }
         $scope.$apply ->
@@ -246,7 +246,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
             $scope.hasThumbsDown = true
           $scope.received.list.push msg
           $scope.received.seen[msg.getHash()] = true
-      $scope.irisIndex.getReceivedMsgs($scope.identity, resultFound, undefined, cursor)
+      $scope.identity.received({callback, cursor})
 
     $scope.setFilters = (filters) ->
       angular.extend $scope.filters, filters
