@@ -81,7 +81,7 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.searchKey = searchKey
       $scope.previousSearchKey = searchKey
       limit = limit or 10
-      cursor = false
+      cursor = ''
       if $scope.ids.list.length
         cursor = $scope.ids.list[$scope.ids.list.length - 1].cursor
       seen = {}
@@ -96,8 +96,7 @@ angular.module('irisAngular').controller 'MainController', [
             return if seen[s]
             seen[s] = true
             $scope.ids.list.push i
-            $scope.$apply ->
-              i.linkTo = linkTo
+            i.linkTo = linkTo
         $scope.setIdentityNames(i, true)
 
       $scope.irisIndex.search(searchKey, undefined, resultFound, limit, cursor)
