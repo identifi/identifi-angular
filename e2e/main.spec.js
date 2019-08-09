@@ -68,6 +68,23 @@ describe('iris', function() {
     });
   });
 
+  it('should have the user in contacts list', function() {
+    element(by.className('fa fa-book')).click();
+    var rows = element.all(by.className('search-result-row'));
+    expect(rows.count()).toBe(2);
+  });
+
+  it('should add a contact', function() {
+    element(by.linkText('Add contact')).click();
+    element(by.id('idName')).sendKeys('Bob Saget');
+    element(by.buttonText('Add public contact')).click();
+    browser.wait(until.presenceOf(element(by.className('stats-box'))), 5000, 'New contact profile page stats box was not present');
+    element(by.className('fa fa-book')).click();
+    browser.wait(until.presenceOf(element(by.linkText('Bob Saget'))), 5000, 'New contact was not listed');
+    var rows = element.all(by.className('search-result-row'));
+    expect(rows.count()).toBe(3);
+  });
+
   it('should log out', function() {
     element(by.className('glyphicon-cog')).click();
     element(by.buttonText('Log out')).click();
