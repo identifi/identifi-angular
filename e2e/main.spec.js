@@ -56,7 +56,7 @@ describe('iris', function() {
   it('own messages should be visible under "received" tab', function() {
     browser.wait(until.presenceOf(element(by.tagName('message'))), 20000, 'Message taking too long to appear in the DOM').then(() => {
       var messages = element.all(by.tagName('message'));
-      expect(messages.count()).toBe(4);
+      expect(messages.count()).toBeGreaterThan(1);
     });
   });
 

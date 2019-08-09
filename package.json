@@ -9,7 +9,7 @@
     "postinstall": "bower install && bash build.sh && electron-builder install-app-deps && webdriver-manager update",
     "build": "bash build.sh",
     "serve": "gulp serve",
-    "test": "protractor",
+    "test": "http-server dist -s & protractor",
     "electron": "DEV=true electron .",
     "pack": "electron-builder --dir",
     "dist": "electron-builder"
@@ -61,6 +61,7 @@
     "gulp-useref": "~3.1.2",
     "gulp-util": "~3.0.6",
     "handlebars": "~4.0.3",
+    "http-server": "^0.11.1",
     "karma": "~2.0.2",
     "karma-angular-filesort": "~1.0.0",
     "karma-coverage": "~1.1.1",
@@ -72,15 +73,13 @@
     "main-bower-files": "~2.13.1",
     "uglify-save-license": "~0.4.1",
     "wiredep": "~4.0.0",
-    "wrench": "~1.5.8"
+    "wrench": "~1.5.8",
+    "protractor": "^5.4.2"
   },
   "optionalDependencies": {
-    "gun": "mmalmi/gun#feature-multicast"
+    "gun": "mmalmi/gun"
   },
   "engines": {
     "node": ">=0.10.0"
-  },
-  "dependencies": {
-    "protractor": "^5.4.2"
   }
 }

@@ -5,7 +5,8 @@ addons:
   chrome: stable
 script:
   - yarn
-  - yarn serve & yarn test
+  - yarn build
+  - yarn test
 cache:
   yarn: true
   directories:
