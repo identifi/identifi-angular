@@ -3,10 +3,9 @@ node_js:
   - "10"
 addons:
   chrome: stable
-  firefox: latest
 script:
   - yarn
-  - yarn test
+  - yarn serve & yarn test
 cache:
   yarn: true
   directories:
