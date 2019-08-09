@@ -93518,7 +93518,7 @@ Gun.on('create', function(root){
 	  return Index;
 	}();
 
-	var version$1 = "0.0.102";
+	var version$1 = "0.0.104";
 
 	/*eslint no-useless-escape: "off", camelcase: "off" */
 

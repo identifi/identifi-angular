@@ -11,10 +11,13 @@ exports.config = {
 
   // Capabilities to be passed to the webdriver instance.
   capabilities: {
-    browserName: 'chrome',
+    browserName: 'firefox',
     chromeOptions: {
        args: [ "--headless", "--disable-gpu", "--window-size=800,600" ]
-     }
+     },
+    'moz:firefoxOptions': {
+      args: ["-headless"]
+    }
   },
 
   baseUrl: 'file://' + __dirname + '/dist/index.html',
