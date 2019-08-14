@@ -26,7 +26,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
     $scope.received =
       list: []
       seen: {}
-    $scope.attributes = {}
+    $scope.attributes = []
     thumbsUpObj = {}
     thumbsDownObj = {}
     $scope.thumbsUp = []
