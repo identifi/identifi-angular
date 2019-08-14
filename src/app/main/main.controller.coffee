@@ -105,32 +105,37 @@ angular.module('irisAngular').controller 'MainController', [
           resolve($scope.ids.list)
         , 1000
 
-    setIndex = (results) ->
-      $scope.ids.list = []
-      $scope.msgs.list = []
-      $scope.msgs.seen = {}
-      $scope.irisIndex = results
-      $scope.trustedIndexes = []
-      $scope.irisIndex.gun.get('trustedIndexes').open (r) ->
-        for k, v of r
-          $scope.trustedIndexes.push
-            index: k
-            attribute: new $window.irisLib.Attribute('keyID', k)
-            identity: $scope.irisIndex.get('keyID', k)
-      setTimeout () ->
-        $scope.$broadcast('rzSliderForceRender')
-      , 1000
-      setTimeout () ->
-        $scope.$broadcast('rzSliderForceRender')
-      , 3000 # :---D
-      setTimeout () ->
-        $scope.$broadcast('rzSliderForceRender')
-      , 5000 # :---D
-      console.log 'Got index', $scope.irisIndex
-      $scope.viewpoint.identity = $scope.irisIndex.get($scope.viewpoint.type, $scope.viewpoint.value)
-      $scope.viewpoint.identity.gun.get('attrs').open (attrs) ->
-        $scope.viewpoint.attrs = attrs
-        $scope.viewpoint.mostVerifiedAttributes = $window.irisLib.Identity.getMostVerifiedAttributes(attrs)
+    setIndex = (i) ->
+      i.ready.then ->
+        $scope.ids.list = []
+        $scope.msgs.list = []
+        $scope.msgs.seen = {}
+        $scope.irisIndex = i
+        setTimeout -> # for some reason, dist version fails to show messages and identities without this
+          $scope.search()
+          $scope.showMoreMsgs()
+        , 1000
+        $scope.trustedIndexes = []
+        $scope.irisIndex.gun.get('trustedIndexes').open (r) ->
+          for k, v of r
+            $scope.trustedIndexes.push
+              index: k
+              attribute: new $window.irisLib.Attribute('keyID', k)
+              identity: $scope.irisIndex.get('keyID', k)
+        setTimeout () ->
+          $scope.$broadcast('rzSliderForceRender')
+        , 1000
+        setTimeout () ->
+          $scope.$broadcast('rzSliderForceRender')
+        , 3000 # :---D
+        setTimeout () ->
+          $scope.$broadcast('rzSliderForceRender')
+        , 5000 # :---D
+        console.log 'Got index', $scope.irisIndex
+        $scope.viewpoint.identity = $scope.irisIndex.get($scope.viewpoint.type, $scope.viewpoint.value)
+        $scope.viewpoint.identity.gun.get('attrs').open (attrs) ->
+          $scope.viewpoint.attrs = attrs
+          $scope.viewpoint.mostVerifiedAttributes = $window.irisLib.Identity.getMostVerifiedAttributes(attrs)
 
     $scope.loadDefaultIndex = ->
       $scope.irisIndex = null
@@ -403,11 +408,6 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.filters.limit += limit
       if $scope.filters.limit > $scope.filteredMsgs.length
         $scope.irisIndex.getMessagesByTimestamp(resultFound, undefined, cursor)
-
-    $scope.$watch 'irisIndex', ->
-      return unless $scope.irisIndex
-      $scope.showMoreMsgs()
-      $scope.search()
 
     $scope.uploadFile = (blob) ->
       return new Promise (resolve, reject) ->
