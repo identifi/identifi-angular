@@ -159,8 +159,8 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.msgs.list = []
       $scope.msgs.seen = {}
       i = new $window.irisLib.Index({gun: $scope.gun, keypair: $scope.privateKey, self, ipfs: $scope.ipfs, debug: true})
-      i.ready.then () ->
-        setIndex(i)
+      setIndex(i)
+      i.ready.then ->
         $scope.loggingIn = false
         $scope.authentication.identity = $scope.irisIndex.get('keyID', keyID)
         $scope.authentication.identity.gun.get('attrs').open (val, key, msg, eve) ->
@@ -183,9 +183,6 @@ angular.module('irisAngular').controller 'MainController', [
             console.log 'great, you got your first upvote!'
             # TODO: notification
           $scope.authentication.identity.data = data
-      .catch (e) ->
-        console.error(e)
-        $scope.loggingIn = false
 
     privateKey = localStorageService.get('irisKey') or localStorageService.get('identifiKey')
     if privateKey
