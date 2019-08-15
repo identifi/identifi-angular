@@ -140,7 +140,6 @@ angular.module('irisAngular').controller 'MainController', [
 
     $scope.chatMessages = []
     $scope.gun.get('chat').map (msg,b,c) ->
-      console.log 'got msg', msg,b,c
       if typeof msg == 'object' and msg.time
         $scope.chatMessages.push msg
 
