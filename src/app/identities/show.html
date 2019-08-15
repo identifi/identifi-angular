@@ -8,6 +8,9 @@
           <button class="btn btn-default mar-left15" ng-click="openSharePageModal()">
             <span class="glyphicon glyphicon-qrcode mar-right5"></span> Share
           </button>
+          <button ng-if="authentication.user && !isCurrentUser && idType === 'keyID'" class="mar-left15 btn btn-default" ng-click="openMessageModal()">
+            <span class="glyphicon glyphicon-envelope mar-right5"></span> Message
+          </button>
         </h4>
         <h4 ng-hide="idType === 'keyID' || idType === 'uuid'">
           <span ng-bind="idValue" class="idValue"></span>
