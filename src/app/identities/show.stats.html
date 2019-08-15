@@ -52,6 +52,9 @@
           <button class="mar-left15 visible-xs-inline-block visible-sm-inline-block btn btn-default" ng-click="openSharePageModal()">
           <span class="glyphicon glyphicon-share mar-right5"></span> Share
           </button>
+          <button ng-if="authentication.user && !isCurrentUser && idType === 'keyID'" class="mar-left15 visible-xs-inline-block visible-sm-inline-block btn btn-default" ng-click="openMessageModal()">
+          <span class="glyphicon glyphicon-envelope mar-right5"></span> Message
+          </button>
           <span ng-if="identity.data.trustDistance === 0" class="label label-default pull-right">viewpoint</span>
           <span ng-if="identity.data.trustDistance > 0" ng-bind="identity.data.trustDistance | ordinal" class="label label-default pull-right"></span>
           <span ng-if="identity.data.trustDistance === false" class="label label-default pull-right">unconnected</span>

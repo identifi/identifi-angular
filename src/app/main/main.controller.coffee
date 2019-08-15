@@ -133,9 +133,24 @@ angular.module('irisAngular').controller 'MainController', [
         , 5000 # :---D
         console.log 'Got index', $scope.irisIndex
         $scope.viewpoint.identity = $scope.irisIndex.get($scope.viewpoint.type, $scope.viewpoint.value)
+        $scope.setIdentityNames($scope.viewpoint.identity)
         $scope.viewpoint.identity.gun.get('attrs').open (attrs) ->
           $scope.viewpoint.attrs = attrs
           $scope.viewpoint.mostVerifiedAttributes = $window.irisLib.Identity.getMostVerifiedAttributes(attrs)
+
+    $scope.chatMessages = []
+    $scope.gun.get('chat').map (msg,b,c) ->
+      console.log 'got msg', msg,b,c
+      if typeof msg == 'object' and msg.time
+        $scope.chatMessages.push msg
+
+    $scope.sendChatMessage = (msg) ->
+      t = new Date().getTime()
+      m =
+        author: $scope.viewpoint.identity.primaryName
+        text: msg
+        time: t
+      $scope.gun.get('chat').set(m)
 
     $scope.loadDefaultIndex = ->
       $scope.irisIndex = null
@@ -189,6 +204,9 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.loginWithKey(privateKey)
     else
       $scope.loadDefaultIndex()
+
+    $scope.openMessageModal = () ->
+      $scope.openModal 'messageModal', { templateUrl: 'app/identities/message.modal.html', size: 'md' }
 
     $scope.openReadQRModal = () ->
       $scope.openModal 'readQRModal', { templateUrl: 'app/identities/readqr.modal.html', size: 'md' }
