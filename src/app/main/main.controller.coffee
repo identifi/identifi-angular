@@ -138,19 +138,6 @@ angular.module('irisAngular').controller 'MainController', [
           $scope.viewpoint.attrs = attrs
           $scope.viewpoint.mostVerifiedAttributes = $window.irisLib.Identity.getMostVerifiedAttributes(attrs)
 
-    $scope.chatMessages = []
-    $scope.gun.get('chat').map (msg,b,c) ->
-      if typeof msg == 'object' and msg.time
-        $scope.chatMessages.push msg
-
-    $scope.sendChatMessage = (msg) ->
-      t = new Date().getTime()
-      m =
-        author: $scope.viewpoint.identity.primaryName
-        text: msg
-        time: t
-      $scope.gun.get('chat').set(m)
-
     $scope.loadDefaultIndex = ->
       $scope.irisIndex = null
       $scope.viewpoint = {type: 'keyID', value: $scope.defaultIndexKeyID}

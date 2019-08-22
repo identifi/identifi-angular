@@ -81352,7 +81352,7 @@ Gun.on('create', function(root){
 	Gun = Gun && Gun.hasOwnProperty('default') ? Gun['default'] : Gun;
 
 	function unwrapExports (x) {
-		return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x.default : x;
+		return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
 	}
 
 	function createCommonjsModule(fn, module) {
@@ -81360,7 +81360,7 @@ Gun.on('create', function(root){
 	}
 
 	var _core = createCommonjsModule(function (module) {
-	var core = module.exports = { version: '2.6.4' };
+	var core = module.exports = { version: '2.6.9' };
 	if (typeof __e == 'number') __e = core; // eslint-disable-line no-undef
 	});
 	var _core_1 = _core.version;
@@ -82169,6 +82169,8 @@ Gun.on('create', function(root){
 
 
 
+
+
 	var gOPD$1 = _objectGopd.f;
 	var dP$1 = _objectDp.f;
 	var gOPN$1 = _objectGopnExt.f;
@@ -82183,7 +82185,7 @@ Gun.on('create', function(root){
 	var AllSymbols = _shared('symbols');
 	var OPSymbols = _shared('op-symbols');
 	var ObjectProto$1 = Object[PROTOTYPE$2];
-	var USE_NATIVE = typeof $Symbol == 'function';
+	var USE_NATIVE = typeof $Symbol == 'function' && !!_objectGops.f;
 	var QObject = _global.QObject;
 	// Don't use setters in Qt Script, https://github.com/zloirock/core-js/issues/173
 	var setter = !QObject || !QObject[PROTOTYPE$2] || !QObject[PROTOTYPE$2].findChild;
@@ -82342,6 +82344,16 @@ Gun.on('create', function(root){
 	  getOwnPropertyNames: $getOwnPropertyNames,
 	  // 19.1.2.8 Object.getOwnPropertySymbols(O)
 	  getOwnPropertySymbols: $getOwnPropertySymbols
+	});
+
+	// Chrome 38 and 39 `Object.getOwnPropertySymbols` fails on primitives
+	// https://bugs.chromium.org/p/v8/issues/detail?id=3443
+	var FAILS_ON_PRIMITIVES = _fails(function () { _objectGops.f(1); });
+
+	_export(_export.S + _export.F * FAILS_ON_PRIMITIVES, 'Object', {
+	  getOwnPropertySymbols: function getOwnPropertySymbols(it) {
+	    return _objectGops.f(_toObject(it));
+	  }
 	});
 
 	// 24.3.2 JSON.stringify(value [, replacer [, space]])
@@ -83955,24 +83967,28 @@ Gun.on('create', function(root){
 	if (typeof Object.create === 'function') {
 	  // implementation from standard node.js 'util' module
 	  module.exports = function inherits(ctor, superCtor) {
-	    ctor.super_ = superCtor;
-	    ctor.prototype = Object.create(superCtor.prototype, {
-	      constructor: {
-	        value: ctor,
-	        enumerable: false,
-	        writable: true,
-	        configurable: true
-	      }
-	    });
+	    if (superCtor) {
+	      ctor.super_ = superCtor;
+	      ctor.prototype = Object.create(superCtor.prototype, {
+	        constructor: {
+	          value: ctor,
+	          enumerable: false,
+	          writable: true,
+	          configurable: true
+	        }
+	      });
+	    }
 	  };
 	} else {
 	  // old school shim for old browsers
 	  module.exports = function inherits(ctor, superCtor) {
-	    ctor.super_ = superCtor;
-	    var TempCtor = function () {};
-	    TempCtor.prototype = superCtor.prototype;
-	    ctor.prototype = new TempCtor();
-	    ctor.prototype.constructor = ctor;
+	    if (superCtor) {
+	      ctor.super_ = superCtor;
+	      var TempCtor = function () {};
+	      TempCtor.prototype = superCtor.prototype;
+	      ctor.prototype = new TempCtor();
+	      ctor.prototype.constructor = ctor;
+	    }
 	  };
 	}
 	});
@@ -85980,6 +85996,8 @@ Gun.on('create', function(root){
 	function SafeBuffer (arg, encodingOrOffset, length) {
 	  return Buffer(arg, encodingOrOffset, length)
 	}
+
+	SafeBuffer.prototype = Object.create(Buffer.prototype);
 
 	// Copy static methods from Buffer
 	copyProps(Buffer, SafeBuffer);
@@ -91098,13 +91116,14 @@ Gun.on('create', function(root){
 	  */
 	  Key.getDefault = async function getDefault() {
 	    var datadir = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '.';
+	    var keyfile = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'identifi.key';
 
 	    if (myKey) {
 	      return myKey;
 	    }
 	    if (util$1.isNode) {
 	      var fs = require('fs');
-	      var privKeyFile = datadir + '/private.key';
+	      var privKeyFile = datadir + '/' + keyfile;
 	      if (fs.existsSync(privKeyFile)) {
 	        var f = fs.readFileSync(privKeyFile, 'utf8');
 	        myKey = Key.fromString(f);
@@ -91115,7 +91134,7 @@ Gun.on('create', function(root){
 	        fs.chmodSync(privKeyFile, 400);
 	      }
 	      if (!myKey) {
-	        throw new Error('loading default key failed - check ' + datadir + '/private.key');
+	        throw new Error('loading default key failed - check ' + datadir + '/' + keyfile);
 	      }
 	    } else {
 	      var str = window.localStorage.getItem('iris.myKey');
@@ -92120,9 +92139,13 @@ Gun.on('create', function(root){
 	    var i = 0;
 	    var result = [];
 	    var key;
-	    while (length > i) if (isEnum$1.call(O, key = keys[i++])) {
-	      result.push(isEntries ? [key, O[key]] : O[key]);
-	    } return result;
+	    while (length > i) {
+	      key = keys[i++];
+	      if (!_descriptors || isEnum$1.call(O, key)) {
+	        result.push(isEntries ? [key, O[key]] : O[key]);
+	      }
+	    }
+	    return result;
 	  };
 	};
 
@@ -92219,6 +92242,7 @@ Gun.on('create', function(root){
 
 
 
+
 	var $assign = Object.assign;
 
 	// should work with symbols and should have deterministic property order (V8 bug)
@@ -92243,7 +92267,10 @@ Gun.on('create', function(root){
 	    var length = keys.length;
 	    var j = 0;
 	    var key;
-	    while (length > j) if (isEnum.call(S, key = keys[j++])) T[key] = S[key];
+	    while (length > j) {
+	      key = keys[j++];
+	      if (!_descriptors || isEnum.call(S, key)) T[key] = S[key];
+	    }
 	  } return T;
 	} : $assign;
 
@@ -93154,6 +93181,9 @@ Gun.on('create', function(root){
 	  Index.prototype.addMessages = async function addMessages(msgs) {
 	    var _this8 = this;
 
+	    if (!this.writable) {
+	      throw new Error('Cannot write to a read-only index (initialized with options.pubKey)');
+	    }
 	    var msgsByAuthor = {};
 	    if (Array.isArray(msgs)) {
 	      this.debug('sorting ' + msgs.length + ' messages onto a search tree...');
@@ -93252,6 +93282,9 @@ Gun.on('create', function(root){
 	  Index.prototype.addMessage = async function addMessage(msg) {
 	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
+	    if (!this.writable) {
+	      throw new Error('Cannot write to a read-only index (initialized with options.pubKey)');
+	    }
 	    var start = void 0;
 	    if (msg.constructor.name !== 'Message') {
 	      throw new Error('addMessage failed: param must be a Message, received ' + msg.constructor.name);
@@ -93517,7 +93550,131 @@ Gun.on('create', function(root){
 	  return Index;
 	}();
 
-	var version$1 = "0.0.104";
+	/**
+	* Private communication channel between two or more participants.
+	*
+	* Messages are encrypted, but currently anyone can see which public keys
+	* are communicating with each other. This will change in later versions.
+	*
+	* @param {Object} options {key, gun, onMessage}
+	*/
+
+	var Chat = function () {
+	  function Chat(options) {
+	    _classCallCheck(this, Chat);
+
+	    this.key = options.key;
+	    this.gun = options.gun;
+	    this.user = this.gun.user();
+	    this.user.auth(this.key);
+	    this.user.put({ epub: this.key.epub });
+	    this.participants = [];
+	    this.addPub(this.key.pub);
+	    this.onMessage = options.onMessage;
+	  }
+
+	  Chat.prototype.addChat = function addChat(data, pub) {
+	    console.log('data received');
+	    console.log(data);
+	    this.gun.user(pub).get('epub').once(this.step.bind(this, data));
+	  };
+
+	  Chat.prototype.step = function step(data, epub) {
+	    console.log('this.step');
+	    console.log(epub, data);
+	    Gun.SEA.secret(epub, this.user._.sea, this.step2.bind(this, data));
+	  };
+
+	  Chat.prototype.step2 = function step2(data, key) {
+	    console.log('decrypt');
+	    Gun.SEA.decrypt(data, key, this.decrypted.bind(this));
+	  };
+
+	  Chat.prototype.decrypted = function decrypted(data) {
+	    console.log('this.decrypted', data, this.onMessage);
+	    if (this.onMessage) {
+	      this.onMessage(data);
+	    } else {
+	      console.log('no onMessage handler');
+	    }
+	  };
+
+	  /**
+	  * Add a public key to the chat
+	  */
+
+
+	  Chat.prototype.addPub = function addPub(pub) {
+	    var _this = this;
+
+	    this.participants.push(pub);
+	    this.gun.user(pub).get('iris').get('chat').get(this.key.pub).on(function (data) {
+	      _this.addChat(data, pub);
+	    });
+	  };
+
+	  /**
+	  * Send a message to the chat
+	  * @param msg string or {time, author, text} object
+	  */
+
+
+	  Chat.prototype.send = function send(msg) {
+	    var temp = void 0;
+	    if (typeof msg === 'string') {
+	      temp = {};
+	      temp.date = new Date().getTime();
+	      temp.author = 'anonymous';
+	      temp.text = msg;
+	    } else {
+	      temp = msg;
+	    }
+	    //this.gun.user().get('message').set(temp);
+	    var i = 0;
+	    var l = this.participants.length;
+	    for (i; i < l; i++) {
+	      this.gun.user(this.participants[i]).once(this.setup.bind(this, this.participants[i], temp));
+	    }
+	  };
+
+	  //add another this.step for key retrieval to avoid calling this.gun.user().pair()
+
+
+	  Chat.prototype.setup = function setup(pub, message, userObj) {
+	    if (!userObj) {
+	      console.log('userObj undefined');
+	      return;
+	    }
+	    console.log(pub, message, userObj);
+	    console.log('setup');
+	    this.gun.user(pub).once(this.secret.bind(this, userObj, message, pub));
+	  };
+
+	  Chat.prototype.secret = function secret(userObj, message, pub, person) {
+	    if (!person) {
+	      console.log('person undefined');
+	      return;
+	    }
+	    console.log(userObj, message, person);
+	    console.log('secret');
+	    Gun.SEA.secret(person.epub, this.user._.sea, this.encrypt.bind(this, message, pub));
+	  };
+
+	  Chat.prototype.encrypt = function encrypt(message, pub, key) {
+	    console.log('encrypt', key);
+	    var stringified = _JSON$stringify(message);
+	    Gun.SEA.encrypt(stringified, key, this.sendEncrypt.bind(this, pub));
+	  };
+
+	  Chat.prototype.sendEncrypt = function sendEncrypt(pub, encr) {
+	    console.log(encr, pub);
+	    this.gun.user().get('iris').get('chat').get(pub).put(encr);
+	  };
+
+	  return Chat;
+	}();
+
+	var version$1 = "0.0.107";
 
 	/*eslint no-useless-escape: "off", camelcase: "off" */
 
@@ -93528,6 +93685,7 @@ Gun.on('create', function(root){
 	  Attribute: Attribute,
 	  Index: Index,
 	  Key: Key,
+	  Chat: Chat,
 	  util: util$1
 	};
 

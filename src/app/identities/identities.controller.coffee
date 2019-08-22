@@ -292,6 +292,24 @@ angular.module('irisAngular').controller 'IdentitiesController', [
       $scope.getReceivedMsgs()
       $scope.identity.gun.get('scores').open (scores) ->
         $scope.scores = scores
+      if $scope.idType == 'keyID'
+        # TODO: only init when opening chat fönster
+        $scope.chatMessages = []
+        onMessage = (msg) ->
+          $scope.$apply ->
+            $scope.chatMessages.push(msg) if msg
+        $scope.chat = new $window.irisLib.Chat
+          onMessage: onMessage
+          key: $scope.privateKey
+          gun: $scope.gun
+        $scope.chat.addPub($scope.idValue)
+        $scope.sendChatMessage = (msg) ->
+          t = new Date().getTime()
+          m =
+            author: $scope.viewpoint.identity.primaryName
+            text: msg
+            time: t
+          $scope.chat.send(m)
 
     load = ->
       if $scope.irisIndex
