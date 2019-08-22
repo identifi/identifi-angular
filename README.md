@@ -3,7 +3,7 @@
 [![Travis](https://img.shields.io/travis/irislib/iris-angular/master.svg?style=flat-square)](https://travis-ci.org/irislib/iris-angular)
 [![David](https://img.shields.io/david/irislib/iris-angular.svg?style=flat-square)](https://david-dm.org/irislib/iris-angular)
 
-> Angular app that connects to the Identifi API.
+> Decentralized social networking application built on AngularJS & [Iris-lib](https://github.com/irislib/iris-lib)
 
 Available at:
 * https://iris.to
