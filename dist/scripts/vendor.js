@@ -92516,7 +92516,7 @@ Gun.on('create', function(root){
 	    }
 	    if (isOnline) {
 	      var update = function update() {
-	        _this3.gun.user().get('lastActive').put(Math.round(new Date().getTime() / 1000));
+	        _this3.gun.user().get('lastActive').put(Math.round(Gun.state() / 1000));
 	      };
 	      update();
 	      this.setOnlineInterval = setInterval(update, 3000);
@@ -92537,7 +92537,7 @@ Gun.on('create', function(root){
 	    var timeout = void 0;
 	    this.gun.user(pubKey).get('lastActive').on(function (lastActive) {
 	      clearTimeout(timeout);
-	      var now = Math.round(new Date().getTime() / 1000);
+	      var now = Math.round(Gun.state() / 1000);
 	      var isOnline = lastActive > now - 6 && lastActive < now + 30;
 	      callback(isOnline);
 	      if (isOnline) {
@@ -93747,7 +93747,7 @@ Gun.on('create', function(root){
 	  return Chat;
 	}();
 
-	var version$1 = "0.0.111";
+	var version$1 = "0.0.112";
 
 	/*eslint no-useless-escape: "off", camelcase: "off" */
 
