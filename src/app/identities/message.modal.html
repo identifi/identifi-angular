@@ -24,6 +24,7 @@
           </span>
         </span>
         <span ng-bind="identity.primaryName"></span>
+        <small class="positive mar-left15" ng-show="isOnline">online</small>
 
       </div>
       <form class="form-inline mar-bot5" ng-submit="sendChatMessage(m);m = ''">

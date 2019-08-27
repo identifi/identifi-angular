@@ -11,6 +11,7 @@
           <button ng-if="authentication.user && !isCurrentUser && idType === 'keyID'" class="mar-left15 btn btn-default" ng-click="openMessageModal()">
             <span class="glyphicon glyphicon-envelope mar-right5"></span> Message
           </button>
+          <small class="positive mar-left15" ng-show="isOnline">online</small>
         </h4>
         <h4 ng-hide="idType === 'keyID' || idType === 'uuid'">
           <span ng-bind="idValue" class="idValue"></span>
@@ -19,7 +20,7 @@
           <a ng-href="{{idValue}}" ng-show="idType === 'url'" ng-bind="idType" class="idType"></a>
           </small>
           <button class="btn btn-default mar-left15" ng-click="openSharePageModal()">
-          <span class="glyphicon glyphicon-qrcode mar-right5"></span> Share
+            <span class="glyphicon glyphicon-qrcode mar-right5"></span> Share
           </button>
         </h4>
       </div>

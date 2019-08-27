@@ -302,7 +302,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
           onMessage: onMessage
           key: $scope.privateKey
           gun: $scope.gun
-        $scope.chat.addPub($scope.idValue)
+          participants: $scope.idValue
         $scope.sendChatMessage = (msg) ->
           t = new Date().getTime()
           m =
@@ -310,6 +310,8 @@ angular.module('irisAngular').controller 'IdentitiesController', [
             text: msg
             time: t
           $scope.chat.send(m)
+        $scope.irisIndex.getOnline $scope.idValue, (isOnline) ->
+          $scope.isOnline = isOnline
 
     load = ->
       if $scope.irisIndex

@@ -106,6 +106,7 @@ angular.module('irisAngular').controller 'MainController', [
         , 1000
 
     setIndex = (i) ->
+      i.setOnline(true)
       i.ready.then ->
         $scope.ids.list = []
         $scope.msgs.list = []
@@ -460,6 +461,7 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.openModal('logoutModal', {templateUrl: 'app/main/logout.modal.html'})
 
     $scope.logout = ->
+      $scope.irisIndex.setOnline(false)
       $scope.filters.maxDistance = 0
       $scope.privateKeySerialized = ''
       $scope.authentication = {}
