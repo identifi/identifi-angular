@@ -45,7 +45,8 @@
         "lib/radix.js",
         "lib/radisk.js",
         "lib/store.js",
-        "lib/rindexed.js"
+        "lib/rindexed.js",
+        "nts.js"
       ]
     },
     "components-font-awesome": {
