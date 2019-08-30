@@ -50,10 +50,13 @@
           (<span class="text-muted" ng-bind="identity.nickname"></span>)
           </span>
           <button class="mar-left15 visible-xs-inline-block visible-sm-inline-block btn btn-default" ng-click="openSharePageModal()">
-            <span class="glyphicon glyphicon-share mar-right5"></span> Share
+            <span class="glyphicon glyphicon-share"></span>
           </button>
-          <button ng-if="authentication.user && !isCurrentUser && idType === 'keyID'" class="mar-left15 visible-xs-inline-block visible-sm-inline-block btn btn-default" ng-click="openMessageModal()">
-            <span class="glyphicon glyphicon-envelope mar-right5"></span> Message
+          <button ng-if="authentication.user && !isCurrentUser && idType === 'keyID'" class="mar-left15 visible-xs-inline-block visible-sm-inline-block btn btn-default" ng-click="openChatModal()">
+            <span class="fa fa-comment"></span>
+          </button>
+          <button ng-if="authentication.user && !isCurrentUser && idType === 'keyID'" class="visible-xs-inline-block visible-sm-inline-block mar-left15 btn btn-default" ng-click="openVideoChatModal()">
+            <span class="glyphicon glyphicon-facetime-video"></span>
           </button>
           <small class="positive mar-left15 visible-xs-inline-block visible-sm-inline-block" ng-show="isOnline">online</small>
           <span ng-if="identity.data.trustDistance === 0" class="label label-default pull-right">viewpoint</span>
