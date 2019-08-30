@@ -46,6 +46,7 @@
         "lib/radisk.js",
         "lib/store.js",
         "lib/rindexed.js",
+        "lib/unset.js",
         "nts.js"
       ]
     },

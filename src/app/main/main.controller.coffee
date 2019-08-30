@@ -106,7 +106,7 @@ angular.module('irisAngular').controller 'MainController', [
         , 1000
 
     setIndex = (i) ->
-      i.setOnline(true)
+      i.setOnline(true) if i.writable
       i.ready.then ->
         $scope.ids.list = []
         $scope.msgs.list = []
@@ -192,8 +192,11 @@ angular.module('irisAngular').controller 'MainController', [
     else
       $scope.loadDefaultIndex()
 
-    $scope.openMessageModal = () ->
-      $scope.openModal 'messageModal', { templateUrl: 'app/identities/message.modal.html', size: 'md' }
+    $scope.openChatModal = () ->
+      $scope.openModal 'chatModal', { templateUrl: 'app/identities/chat.modal.html', size: 'md' }
+
+    $scope.openVideoChatModal = () ->
+      $scope.openModal 'videoChatModal', { templateUrl: 'app/identities/video.modal.html', size: 'md' }
 
     $scope.openReadQRModal = () ->
       $scope.openModal 'readQRModal', { templateUrl: 'app/identities/readqr.modal.html', size: 'md' }
@@ -560,7 +563,7 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.message.signerKeyID = $scope.message.getSignerKeyID()
       $scope.message.verifiedBy = $scope.irisIndex.get('keyID', $scope.message.signerKeyID)
       $scope.message.verifiedByAttr = new $window.irisLib.Attribute('keyID', $scope.message.signerKeyID)
-      $scope.openModal('messageModal', {templateUrl: 'app/messages/show.modal.html'})
+      $scope.openModal('chatModal', {templateUrl: 'app/messages/show.modal.html'})
 
     unless $scope.filters
       $scope.filters = Object.assign {}, config.defaultFilters
