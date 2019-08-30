@@ -38,3 +38,5 @@ Run development server with browsersync:
 ```
 yarn run serve
 ```
+
+If you want to test connecting with another user in an incognito window, disable browser sync at http://localhost:3001.
