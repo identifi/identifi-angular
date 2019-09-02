@@ -6,6 +6,7 @@
   "main": "electron.js",
   "files": "dist",
   "scripts": {
+    "start": "gulp serve",
     "postinstall": "bower install && bash build.sh && electron-builder install-app-deps && webdriver-manager update",
     "build": "bash build.sh",
     "serve": "gulp serve",
