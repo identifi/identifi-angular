@@ -5,284 +5,191 @@ angular.module 'irisAngular'
       pubkey: '='
       gun: '='
     link: (scope, element, attrs) ->
-      # from streamer.js
-      mimeCodec = 'video/webm; codecs="opus,vp8"'
-      console.log 'supported mimeCodec?', MediaSource.isTypeSupported(mimeCodec)
-      DB_RECORD = 'streams'
-      RECORD_TIME = 750
-      castButton = undefined
-      liveButton = undefined
-      screenCastVideo = undefined
-      currentTorrentId = undefined
-      cameraStream = undefined
-      screenStream = undefined
-      mixer = undefined
-      lastCastId = undefined
-      listening = false
-      mediaRecorder = undefined
-      remoteVideo = undefined
-      sourceBuffer = undefined
-      mediaSource = undefined
+      # Constants
+      DEBUG = false
+      MIMETYPE = 'video/webm; codecs="opus,vp8"'
+      RECORD_TIME = 500
+      PREFIX_RECORDER = 'data:video/webm; codecs="opus,vp8";base64,'
+      DB_RECORD = 'gunmeeting'
+      LOCAL = false
+      RECORD_PREFIX = 'GkXf'
+      SPEECH_DETECTION_ENABLED = false
+      # Dom elements name constants
+      REMOTE_VIDEO = 'video'
+      #ID
+      streamId = Date.now()
+      # GUN ACK
+      video = document.createElement('video')
+      video.setAttribute('autoplay', true)
+      video.setAttribute('style', 'max-width: 100%;')
+      video.setAttribute('playsinline', true)
+      video.setAttribute('muted', true)
+      video.setAttribute('controls', true)
+      element.append(video)
+      takePhotoButton = document.createElement('button')
+      takePhotoButton.innerHTML = 'take photo'
+      element.append(takePhotoButton)
+      toggleFullScreenButton = document.createElement('button')
+      toggleFullScreenButton.innerHTML = 'toggle fullscreen'
+      element.append(toggleFullScreenButton)
+      switchCameraButton = document.createElement('button')
+      switchCameraButton.innerHTML = 'switch camera'
+      element.append(switchCameraButton)
+      muteButton = document.createElement('button')
+      muteButton.innerHTML = 'mute'
+      element.append(muteButton)
+      amountOfCameras = 0
+      currentFacingMode = 'environment'
+      muted = true
+      gunDB = undefined
 
-      initStream = ->
-        liveButton = document.createElement('button')
-        liveButton.innerHTML = 'start'
-        element.append(liveButton)
-        liveButton.onclick = startCasting
-        screenCastVideo = document.createElement('video')
-        screenCastVideo.setAttribute('style', 'max-width:100%;background:darkgray;')
-        screenCastVideo.setAttribute('autoplay', 'true')
-        element.append(screenCastVideo)
+      ACK = (ack) ->
+        if ack.ok != 1 and ack.err != 'Error: No ACK received yet.'
+          console.log ack
+          # localStorage.clear()
+        else
+          console.log ack
+          # localStorage.clear()
         return
 
-      startCasting = ->
-        startCameraShare()
-        startScreenShare()
-        return
-
-      startScreenShare = ->
-        screenCastConstraints = video:
-          width:
-            max: 640
-            ideal: 640
-          height:
-            max: 400
-            ideal: 400
-          aspectRatio: ideal: 1.7777777778
-        navigator.mediaDevices.getDisplayMedia(screenCastConstraints).then ((stream) ->
-          screenStream = stream
-          startRecording()
-          setLiveButton 'casting'
-          return
-        ), (error) ->
-          showError error
-          setLiveButton 'error'
-          return
-        return
-
-      setLiveButton = (state) ->
-        switch state
-          when 'casting'
-            liveButton.innerHTML = 'GO OFFLINE'
-            liveButton.onclick = stopStream
-          else
-            liveButton.innerHTML = 'GO LIVE'
-            liveButton.onclick = startCasting
-            break
-        return
-
-      startCameraShare = ->
-        cameraCastConstraints =
-          video:
-            width:
-              max: 160
-              ideal: 160
-            height:
-              max: 100
-              ideal: 100
-            aspectRatio: ideal: 1.7777777778
-          audio:
-            sampleRate: 22000
-            sampleSize: 8
-            channelCount: 2
-            latency: 1000
-        navigator.mediaDevices.getUserMedia(cameraCastConstraints).then ((stream) ->
-          cameraStream = stream
-          startRecording()
-          return
-        ), (error) ->
-          showError error
-          return
-        return
-
-      stopStream = ->
-        setLiveButton ''
-        stopRecording()
-        screenCastVideo.srcObject = null
-        mediaRecorder = null
-        screenStream = null
-        cameraStream = null
-        return
-
-      showError = (error) ->
-        console.log 'Unable to capture', error
-        return
-
-      startRecording = ->
-        if screenStream and cameraStream and !mediaRecorder
-          resizeScreenStream()
-          resizeCameraStream()
-          mixer = new MultiStreamsMixer([
-            screenStream
-            cameraStream
-          ])
-          mixer.frameInterval = 1
-          mixer.startDrawingFrames()
-          screenCastVideo.srcObject = mixer.getMixedStream()
-          mediaRecorder = new MediaStreamRecorder(screenCastVideo.captureStream())
-          mediaRecorder.mimeType = mimeCodec
-          mediaRecorder.ondataavailable = onBlobAvailable
-          mediaRecorder.start RECORD_TIME
-          document.getElementsByTagName('canvas')[0].hidden = true
-        return
-
-      resizeScreenStream = ->
-        screenStream.fullcanvas = true
-        screenStream.width = window.innerWidth
-        screenStream.height = window.innerHeight
-        return
-
-      resizeCameraStream = ->
-        cameraStream.width = parseInt(20 / 100 * screenStream.width)
-        cameraStream.height = parseInt(20 / 100 * screenStream.height)
-        cameraStream.top = screenStream.height - (cameraStream.height)
-        cameraStream.left = screenStream.width - (cameraStream.width)
-        return
-
-      onBlobAvailable = (blob) ->
-        t0 = performance.now()
-        url = URL.createObjectURL(blob)
-        console.log 'fetch', url
-        fetch(url).then((response) ->
-          response.arrayBuffer()
-        ).then((arrayBuffer) ->
-          URL.revokeObjectURL url
-          # let base64String = btoa(String.fromCharCode(...new Uint8Array(data)));
-          base64String = btoa(new Uint8Array(arrayBuffer).reduce(((data, byte) ->
-            data + String.fromCharCode(byte)
-            return
-          ), ''))
-          writeToGun base64String.toString()
-          t1 = performance.now()
-          # console.log("FETCH   to doSomething took " + (t1 - t0) + " milliseconds.");
-          return
-        ).catch (err) ->
-          console.log 111, err
-          return
-        return
-
-      writeToGun = (base64data) ->
-        # var stream = scope.gun.get(myStreamId).put({name: base64data}, ack);
-        # stream.get(DB_RECORD).set(stream);
-        lastUpdate = (new Date).getTime()
-        user = scope.gun.user().get('stream').put({
-          name: base64data
-          timestamp: lastUpdate
-        }, ack)
-        # scope.gun.get(DB_RECORD).set user
+      removeFromGun = (id) ->
         # localStorage.clear()
-        # scope.gun.get('stream/' + myStreamId).put({ name: base64data }, ack);
-        return
-
-      removeFromGun = ->
-        # localStorage.clear()
-        user = scope.gun.user().get('stream')
-        # scope.gun.get(DB_RECORD).unset user
+        user = gunDB.get(streamId)
+        gunDB.get(DB_RECORD).unset user
         user.put null
         return
 
-      ack = (ack) ->
-        console.log 'ack from gun write'
-        if ack.ok != 1 and ack.err != 'Error: No ACK received yet.'
-          # localStorage.clear()
-          # console.log(ack);
+      # Debug console log helper
+
+      console.log = (text) ->
+        if DEBUG
+          console.log text
+        return
+
+      debug = (text) ->
+        if DEBUG
+          console.log text
+        return
+
+      initCameraUI = ->
+        # https://developer.mozilla.org/nl/docs/Web/HTML/Element/button
+        # https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/ARIA_Techniques/Using_the_button_role
+        takePhotoButton.addEventListener 'click', ->
+          takeSnapshot()
+          return
+        muteButton.addEventListener 'click', ->
+          muteUnmute()
+          return
+        # -- switch camera part
+        if amountOfCameras > 1
+          switchCameraButton.style.display = 'block'
+          switchCameraButton.addEventListener 'click', ->
+            if currentFacingMode == 'environment'
+              currentFacingMode = 'user'
+            else
+              currentFacingMode = 'environment'
+            initCameraStream()
+            return
+        return
+
+      # https://github.com/webrtc/samples/blob/gh-pages/src/content/devices/input-output/js/main.js
+
+      initCameraStream = ->
+        # stop any active streams in the window
+
+        handleSuccess = (stream) ->
+          window.stream = stream
+          # make stream available to browser console
+          video.srcObject = stream
+          if constraints.video.facingMode
+            if constraints.video.facingMode == 'environment'
+              switchCameraButton.setAttribute 'aria-pressed', true
+            else
+              switchCameraButton.setAttribute 'aria-pressed', false
+          navigator.mediaDevices.enumerateDevices()
+
+        handleError = (error) ->
+          console.log error
+          #https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia
+          if error == 'PermissionDeniedError'
+            alert 'Permission denied. Please refresh and give permission.'
+          return
+
+        if window.stream
+          window.stream.getTracks().forEach (track) ->
+            track.stop()
+            return
+        constraints =
+          audio: true
+          video:
+            width:
+              min: 200
+              ideal: 200
+              max: 640
+            height:
+              min: 200
+              ideal: 200
+              max: 640
+            facingMode: currentFacingMode
+        navigator.mediaDevices.getUserMedia(constraints).then(handleSuccess).catch handleError
+        return
+
+      takeSnapshot = ->
+        if !isRecording()
+          captureScreen window.stream
+          takePhotoButton.style.backgroundColor = 'red'
+          switchCameraButton.disabled = true
         else
-          # console.log(ack)
-          # localStorage.clear()
+          pauseRecording()
+          takePhotoButton.style.backgroundColor = ''
+          switchCameraButton.disabled = false
         return
 
-      stopRecording = ->
-        removeFromGun()
-        mediaRecorder.stop()
-        screenStream.getTracks().forEach (track) ->
-          track.stop()
-          return
-        cameraStream.getTracks().forEach (track) ->
-          track.stop()
-          return
-        return
-
-      # reader = new FileReader
-
-      # from viewer.js
-      # var scope.pubkey = "example";//window.location.hash.replace('#', '')
-      startLoading = ->
-        # URL.revokeObjectURL remoteVideo.src
-        console.log 'reading from', scope.pubkey, 'stream'
-        scope.gun.user(scope.pubkey).get('stream').on (data) ->
-          # console.log(data.name.substring(0, 4));
-          #Optimiation still needed?
-          # if (data.name.startsWith("GkXf")) {
-          # sourceBuffer.abort();
-          # console.log("OFFSET" + sourceBuffer.timestampOffset);
-          # console.log("BUFFERED" + sourceBuffer.buffered.length);
-          # if (sourceBuffer.timestampOffset > RECORD_TIME) {
-          #     sourceBuffer.remove(0, (sourceBuffer.timestampOffset - RECORD_TIME));
-          #     localStorage.clear();
-          # }
-          console.log 'read from gun', data
-          if !remoteVideo.paused or remoteVideo.played.length == 0
-            t0 = performance.now()
-            addToSourceBuffer data.name
-            t1 = performance.now()
-            # console.log("Call to doSomething took " + (t1 - t0) + " milliseconds.");
-            # localStorage.clear()
-          # }
-          return
-        return
-
-      addToSourceBuffer = (b64Data) ->
-        byteCharacters = atob(b64Data)
-        byteArray = str2ab(byteCharacters)
-        console.log 'mediaSource', mediaSource
-        console.log 'adding to source buffer', sourceBuffer
-        if !sourceBuffer.updating
-          sourceBuffer.appendBuffer byteArray
-        return
-
-      str2ab = (str) ->
-        buf = new ArrayBuffer(str.length)
-        bufView = new Uint8Array(buf)
+      muteUnmute = ->
+        if muted
+          muteButton.setAttribute 'aria-pressed', false
+          muted = false
+        else
+          muteButton.setAttribute 'aria-pressed', true
+          muted = true
+        videos = document.getElementsByTagName('video')
+        keys = Object.keys(videos)
         i = 0
-        strLen = str.length
-        while i < strLen
-          bufView[i] = str.charCodeAt(i)
+        while i < keys.length
+          if videos[i].id != 'video'
+            videos[i].muted = muted
           i++
-        buf
-
-      sourceOpen = () ->
-        ms = this
-        sourceBuffer = ms.addSourceBuffer(mimeCodec)
-        sourceBuffer.onupdate = (a,b,c,d) -> console.warn 'onupdate',a,b,c,d
-        sourceBuffer.onerror = (a,b,c,d) -> console.warn 'onerror',a,b,c,d
-        sourceBuffer.onupdateend = (a,b,c,d) -> console.warn 'onupdateend',a,b,c,d
-        sourceBuffer.onupdatestart = (a,b,c,d) -> console.warn 'onupdatestart',a,b,c,d
-        sourceBuffer.onabort = (a,b,c,d) -> console.error 'onabort',a,b,c,d
-        sourceBuffer.mode = 'sequence'
-        console.log 'sourceBuffer:', sourceBuffer
-        startLoading()
         return
 
-      # ---
-      # generated by js2coffee 2.2.0
-
-      # ---
-      # generated by js2coffee 2.2.0
+      # do some WebRTC checks before creating the interface
+      DetectRTC.load ->
+        # do some checks
+        if DetectRTC.isWebRTCSupported == false
+          alert 'Please use Chrome, Firefox, iOS 11, Android 5 or higher, Safari 11 or higher'
+        else
+          if DetectRTC.hasWebcam == false
+            alert 'Please install an external webcam device.'
+          else
+            amountOfCameras = DetectRTC.videoInputDevices.length
+            initCameraUI()
+            initCameraStream()
+        console.log 'RTC Debug info: ' + '\n OS:                   ' + DetectRTC.osName + ' ' + DetectRTC.osVersion + '\n browser:              ' + DetectRTC.browser.fullVersion + ' ' + DetectRTC.browser.name + '\n is Mobile Device:     ' + DetectRTC.isMobileDevice + '\n has webcam:           ' + DetectRTC.hasWebcam + '\n has permission:       ' + DetectRTC.isWebsiteHasWebcamPermission + '\n getUserMedia Support: ' + DetectRTC.isGetUserMediaSupported + '\n isWebRTC Supported:   ' + DetectRTC.isWebRTCSupported + '\n WebAudio Supported:   ' + DetectRTC.isAudioContextSupported + '\n is Mobile Device:     ' + DetectRTC.isMobileDevice
+        return
+      return
 
       go = ->
         return unless scope.gun and scope.pubkey
-        initStream()
 
-        remoteVideo = document.createElement('video')
-        remoteVideo.setAttribute('style', 'max-width:100%;background:gray;')
-        remoteVideo.setAttribute('autoplay', 'true')
-        element.append(remoteVideo)
-        mediaSource = new MediaSource
-        url = URL.createObjectURL(mediaSource)
-        remoteVideo.src = url
-        mediaSource.addEventListener 'sourceopen', sourceOpen
-        mediaSource.addEventListener 'sourceclose', (a,b,c,d) ->
-          console.log 'sourceclose',a,b,c,d
-        # localStorage.clear()
-        # startLoading()
+        streamId = 'iris'
+        console.log streamId
+        # GUN
+        # var peers = ['https://livecodegun.herokuapp.com/gun'];
+        peers = [ 'https://gunmeetingserver.herokuapp.com/gun' ]
+        opt =
+          peers: peers
+          localStorage: false
+          radisk: false
+        gunDB = Gun(opt)
+        removeFromGun streamId
+
       scope.$watch 'gun', go

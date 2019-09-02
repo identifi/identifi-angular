@@ -106,7 +106,7 @@ angular.module('irisAngular').controller 'MainController', [
         , 1000
 
     setIndex = (i) ->
-      i.setOnline(true)
+      i.setOnline(true) if i.writable
       i.ready.then ->
         $scope.ids.list = []
         $scope.msgs.list = []
