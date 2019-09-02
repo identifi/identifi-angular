@@ -22,6 +22,8 @@ git clone https://github.com/irislib/iris-angular.git
 cd iris-angular
 ```
 
+Or run it on Glitch.com: https://glitch.com/~irislib-iris-angular
+
 ### Install dependencies & build
 ```
 yarn
