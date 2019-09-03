@@ -62,6 +62,6 @@ self.addEventListener('fetch', function(event) {
         }
 
         return fetchAndUpdate(event.request);
-      });
+      })
     );
 });
