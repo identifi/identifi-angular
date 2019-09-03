@@ -410,6 +410,14 @@ angular.module 'irisAngular'
 
       # https://github.com/webrtc/samples/blob/gh-pages/src/content/devices/input-output/js/main.js
 
+      closeCameraStream = ->
+        if window.stream
+          window.stream.getTracks().forEach (track) ->
+            track.stop()
+
+      element.on '$destroy', ->
+        closeCameraStream()
+
       initCameraStream = ->
         # stop any active streams in the window
 
@@ -431,10 +439,8 @@ angular.module 'irisAngular'
             alert 'Permission denied. Please refresh and give permission.'
           return
 
-        if window.stream
-          window.stream.getTracks().forEach (track) ->
-            track.stop()
-            return
+        closeCameraStream()
+
         constraints =
           audio: true
           video:
@@ -494,14 +500,7 @@ angular.module 'irisAngular'
         return unless scope.gun and scope.pubkey
         openRemoteVideo()
         streamId = scope.gun.user()._.sea.pub + '/stream'
-        # GUN
-        # var peers = ['https://livecodegun.herokuapp.com/gun']
-        peers = [ 'https://gunmeetingserver.herokuapp.com/gun', 'http://localhost:8765/gun' ]
-        opt =
-          peers: peers
-          localStorage: false
-          radisk: false
-        gunDB = Gun(opt)
+        gunDB = scope.gun.back(-1)
         removeFromGun streamId
 
         # do some WebRTC checks before creating the interface
