@@ -22,6 +22,9 @@ angular.module 'irisAngular'
       w = undefined
       code = -1
 
+      LOG = (args...) ->
+        console.log args... if DEBUG
+
       Streamer = (videoId, streamVideo) ->
         @id = videoId
         @streamVideo = streamVideo
@@ -40,11 +43,11 @@ angular.module 'irisAngular'
           streamer.sourceBuffer = streamer.mediaSource.addSourceBuffer(MIMETYPE)
           streamer.sourceBuffer.mode = 'sequence'
           # Get video segments and append them to sourceBuffer.
-          console.log 'Source is open and ready to append to sourcebuffer'
+          LOG 'Source is open and ready to append to sourcebuffer'
           if !LOCAL
             gunDB.get(streamer.id).on (data) ->
               if !check(streamer, data)
-                # streamer.streamVideo.style.visibility = "hidden";
+                # streamer.streamVideo.style.visibility = "hidden"
                 streamer.streamVideo.parentElement.remove()
               else
                 streamer.streamVideo.style.visibility = 'visible'
@@ -53,8 +56,8 @@ angular.module 'irisAngular'
                     streamer.streamVideo.muted = false
                   else
                     streamer.streamVideo.muted = true
-              console.log 'Tracks Video ::' + streamer.streamVideo.HAVE_METADATA
-              # console.log("Tracks Buffer::" + streamer.sourceBuffer.videoTracks.length)
+              LOG 'Tracks Video ::' + streamer.streamVideo.HAVE_METADATA
+              # LOG("Tracks Buffer::" + streamer.sourceBuffer.videoTracks.length)
               # if (streamer.streamVideo.videoTracks.length > 0 && streamer.streamVideo.videoTracks.selectedIndex != -1) {
               if streamer.streamVideo.readyState != 0
                 onString streamer, data.name
@@ -67,17 +70,17 @@ angular.module 'irisAngular'
         return
 
       check = (streamer, data) ->
-        console.log JSON.stringify(streamer)
-        console.log JSON.stringify(data.timestamp)
+        LOG JSON.stringify(streamer)
+        LOG JSON.stringify(data.timestamp)
         currentTime = (new Date).getTime()
         difference = (currentTime - (data.timestamp)) / 1000
-        console.log 'TIME::' + difference
+        LOG 'TIME::' + difference
         if difference > 120
-          console.log 'remove::' + streamer.id
+          LOG 'remove::' + streamer.id
           removeFromGun streamer.id
           false
         else
-          console.log 'keep::' + streamer.id
+          LOG 'keep::' + streamer.id
           true
 
       onString = (streamer, rawData) ->
@@ -90,30 +93,30 @@ angular.module 'irisAngular'
 
       addToBuffer = (streamer, byteArray) ->
         # if (document.hidden) {
-        #     console.log("Not Focused tab not adding to buffer");
+        #     LOG("Not Focused tab not adding to buffer")
         # }
         if !streamer.sourceBuffer.updating
           # if (streamer.sourceBuffer.buffered.length > 1) {
           #     streamer.sourceBuffer.remove(0, streamer.sourceBuffer.buffered.end(streamer.sourceBuffer.buffered.length - 1))
           # }
-          console.log 'READY STATE::' + streamer.streamVideo.readyState
-          # var hasEnough = streamer.streamVideo.readyState == 3 && treamer.streamVideo.readyState == 4;
+          LOG 'READY STATE::' + streamer.streamVideo.readyState
+          # var hasEnough = streamer.streamVideo.readyState == 3 && treamer.streamVideo.readyState == 4
           # if (streamer.sourceBuffer.timestampOffset != 0 && hasEnough) {
           #     try {
-          #         console.log("Reset offset::" + streamer.sourceBuffer.timestampOffset);
+          #         LOG("Reset offset::" + streamer.sourceBuffer.timestampOffset)
           #         streamer.sourceBuffer.timestampOffset = 0
-          #         console.log("Did reset::" + streamer.sourceBuffer.timestampOffset);
+          #         LOG("Did reset::" + streamer.sourceBuffer.timestampOffset)
           #     } catch (err) {
-          #         code = 11;
-          #         console.log(err);
+          #         code = 11
+          #         LOG(err)
           #     }
           # } else {
-          #     code = -1;
-          console.log 'Adding::' + JSON.stringify(streamer)
+          #     code = -1
+          LOG 'Adding::' + JSON.stringify(streamer)
           streamer.sourceBuffer.appendBuffer byteArray
           # }
         else
-          console.log 'BUFFER STILL BUSY'
+          LOG 'BUFFER STILL BUSY'
         return
 
       str2ab = (str) ->
@@ -143,7 +146,7 @@ angular.module 'irisAngular'
         return
 
       captureScreen = (stream) ->
-        console.log 'Capture'
+        LOG 'Capture'
         if !mediaRecorder or mediaRecorder.state == 'inactive'
           recordStream stream
           if SPEECH_DETECTION_ENABLED
@@ -162,8 +165,8 @@ angular.module 'irisAngular'
         mediaRecorder.ondataavailable = onDataAvailable
         mediaRecorder.start RECORD_TIME
         startWorker()
-        console.log 'Media recorder initiated'
-        # setInterval(myTimer, RECORD_TIME);
+        LOG 'Media recorder initiated'
+        # setInterval(myTimer, RECORD_TIME)
         return
 
       myTimer = ->
@@ -182,7 +185,7 @@ angular.module 'irisAngular'
             return
 
         else
-          console.log 'Sorry! No Web Worker support.'
+          LOG 'Sorry! No Web Worker support.'
         return
 
       stopWorker = ->
@@ -191,13 +194,13 @@ angular.module 'irisAngular'
         return
 
       onDataAvailable = (blobEvent) ->
-        # console.log("Received data " + formatBytes(blobEvent.data.size));
-        # addToAllRecordedChunks(blobEvent.data);
+        # LOG("Received data " + formatBytes(blobEvent.data.size))
+        # addToAllRecordedChunks(blobEvent.data)
         if blobEvent.data and blobEvent.data.size
-          # useBlob(blobEvent.data);
+          # useBlob(blobEvent.data)
           useString blobEvent.data
         else
-          console.log 'SKIP NO DATA?'
+          LOG 'SKIP NO DATA?'
         return
 
       useBlob = (blob) ->
@@ -208,40 +211,40 @@ angular.module 'irisAngular'
         response = new Response(blob).arrayBuffer().then((arrayBuffer) ->
           blob = null
           if LOCAL
-            # onString(base64String);
+            # onString(base64String)
           else
             if w != undefined
               w.postMessage arrayBuffer
-            # parseSelf(arrayBuffer);
+            # parseSelf(arrayBuffer)
             # var data = new Uint8Array(arrayBuffer)
-            # window.cl.write(data);
-            # data = null;
-            # arrayBuffer = null;
+            # window.cl.write(data)
+            # data = null
+            # arrayBuffer = null
           return
         )
         response = null
         return
 
       # function useString(blob) {
-      #     var url = URL.createObjectURL(blob);
+      #     var url = URL.createObjectURL(blob)
       #     fetch(url).then(function (response) {
-      #         URL.revokeObjectURL(url);
-      #         return response.arrayBuffer();
+      #         URL.revokeObjectURL(url)
+      #         return response.arrayBuffer()
       #     }).then(function (arrayBuffer) {
       #         // var base64String = btoa(
       #         //     new Uint8Array(arrayBuffer)
       #         //         .reduce((onData, byte) => onData + String.fromCharCode(byte), '')
-      #         // );
-      #         // console.log(buf2hex(arrayBuffer));
-      #         // console.log(Utf8ArrayToStr(new Uint8Array(arrayBuffer)));
+      #         // )
+      #         // LOG(buf2hex(arrayBuffer))
+      #         // LOG(Utf8ArrayToStr(new Uint8Array(arrayBuffer)))
       #         if (LOCAL) {
-      #             // onString(base64String);
+      #             // onString(base64String)
       #         } else {
-      #             window.cl.write(new Uint8Array(arrayBuffer));
-      #             // writeToGun(base64String);
+      #             window.cl.write(new Uint8Array(arrayBuffer))
+      #             // writeToGun(base64String)
       #         }
-      #         base64String = null;
-      #     });
+      #         base64String = null
+      #     })
       # }
 
       Utf8ArrayToStr = (array) ->
@@ -278,19 +281,19 @@ angular.module 'irisAngular'
         ).join ''
 
       writeToGun = (base64data) ->
-        `var n`
-        console.log 'Write to GUN::' + base64data.substring(0, 100)
+        n = n || undefined
+        LOG 'Write to GUN::' + base64data.substring(0, 100)
         lastUpdate = (new Date).getTime()
         user = undefined
         if initialData == undefined and base64data.startsWith(RECORD_PREFIX)
-          console.log 'INITIAL'
+          LOG 'INITIAL'
           n = base64data.indexOf('wIEB')
-          console.log 'RAW::' + n + '::' + base64data.substring(0, 252)
+          LOG 'RAW::' + n + '::' + base64data.substring(0, 252)
           initialData = base64data.substring(0, 252)
         else
           n = base64data.indexOf('H0O2dQH')
-          console.log 'RAW::' + n + '::' + base64data
-        console.log('streamId', streamId);
+          LOG 'RAW::' + n + '::' + base64data
+        LOG('streamId', streamId)
         user = gunDB.get(streamId).put({
           initial: initialData
           name: base64data
@@ -304,7 +307,7 @@ angular.module 'irisAngular'
       addToAllRecordedChunks = (chunk) ->
         recordedChunks.push chunk
         superBuffer = new Blob(recordedChunks)
-        console.log 'Total data size ' + formatBytes(superBuffer.size)
+        LOG 'Total data size ' + formatBytes(superBuffer.size)
         return
 
       formatBytes = (bytes) ->
@@ -323,11 +326,11 @@ angular.module 'irisAngular'
         speechEvents.on 'speaking', ->
           if SPEECH_DETECTION_ENABLED
             speechDetected = true
-            console.log 'speaking'
+            LOG 'speaking'
           return
         speechEvents.on 'stopped_speaking', ->
           if SPEECH_DETECTION_ENABLED
-            console.log 'stopped_speaking'
+            LOG 'stopped_speaking'
             speechDetected = false
           return
         return
@@ -365,10 +368,10 @@ angular.module 'irisAngular'
 
       ACK = (ack) ->
         if ack.ok != 1 and ack.err != 'Error: No ACK received yet.'
-          console.log 'ack', ack
+          LOG 'ack', ack
           # localStorage.clear()
         else
-          console.log 'ack', ack
+          LOG 'ack', ack
           # localStorage.clear()
         return
 
@@ -381,7 +384,7 @@ angular.module 'irisAngular'
 
       debug = (text) ->
         if DEBUG
-          console.log text
+          LOG text
         return
 
       initCameraUI = ->
@@ -422,7 +425,7 @@ angular.module 'irisAngular'
           navigator.mediaDevices.enumerateDevices()
 
         handleError = (error) ->
-          console.log error
+          LOG error
           #https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia
           if error == 'PermissionDeniedError'
             alert 'Permission denied. Please refresh and give permission.'
@@ -475,12 +478,12 @@ angular.module 'irisAngular'
         return
 
       openRemoteVideo = ->
-        vid = document.createElement("video");
-        vid.autoplay = true;
-        vid.controls = true;
-        vid.muted = true;
-        vid.playsinline = true;
-        vid.style.visibility = "hidden";
+        vid = document.createElement("video")
+        vid.autoplay = true
+        vid.controls = true
+        vid.muted = true
+        vid.playsinline = true
+        vid.style.visibility = "hidden"
         vid.preload = "none"
         element.append(vid)
         id = scope.pubkey + '/stream'
@@ -492,7 +495,7 @@ angular.module 'irisAngular'
         openRemoteVideo()
         streamId = scope.gun.user()._.sea.pub + '/stream'
         # GUN
-        # var peers = ['https://livecodegun.herokuapp.com/gun'];
+        # var peers = ['https://livecodegun.herokuapp.com/gun']
         peers = [ 'https://gunmeetingserver.herokuapp.com/gun', 'http://localhost:8765/gun' ]
         opt =
           peers: peers
@@ -513,7 +516,7 @@ angular.module 'irisAngular'
               amountOfCameras = DetectRTC.videoInputDevices.length
               initCameraUI()
               initCameraStream()
-          console.log 'RTC Debug info: ' + '\n OS:                   ' + DetectRTC.osName + ' ' + DetectRTC.osVersion + '\n browser:              ' + DetectRTC.browser.fullVersion + ' ' + DetectRTC.browser.name + '\n is Mobile Device:     ' + DetectRTC.isMobileDevice + '\n has webcam:           ' + DetectRTC.hasWebcam + '\n has permission:       ' + DetectRTC.isWebsiteHasWebcamPermission + '\n getUserMedia Support: ' + DetectRTC.isGetUserMediaSupported + '\n isWebRTC Supported:   ' + DetectRTC.isWebRTCSupported + '\n WebAudio Supported:   ' + DetectRTC.isAudioContextSupported + '\n is Mobile Device:     ' + DetectRTC.isMobileDevice
+          LOG 'RTC Debug info: ' + '\n OS:                   ' + DetectRTC.osName + ' ' + DetectRTC.osVersion + '\n browser:              ' + DetectRTC.browser.fullVersion + ' ' + DetectRTC.browser.name + '\n is Mobile Device:     ' + DetectRTC.isMobileDevice + '\n has webcam:           ' + DetectRTC.hasWebcam + '\n has permission:       ' + DetectRTC.isWebsiteHasWebcamPermission + '\n getUserMedia Support: ' + DetectRTC.isGetUserMediaSupported + '\n isWebRTC Supported:   ' + DetectRTC.isWebRTCSupported + '\n WebAudio Supported:   ' + DetectRTC.isAudioContextSupported + '\n is Mobile Device:     ' + DetectRTC.isMobileDevice
           return
         return
 
