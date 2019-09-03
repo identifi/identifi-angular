@@ -12,7 +12,7 @@ function parseSelf(arrayBuffer) {
     var hex = buf2hex(arrayBuffer);
     var initSeg;
 
-    // LOG("ALL::\n" + hex);
+    // console.log("ALL::\n" + hex);
 
     var ebmlIndex = hex.indexOf("1a45dfa3");
     var clusterIndex = hex.indexOf("1f43b675");
@@ -25,42 +25,42 @@ function parseSelf(arrayBuffer) {
 
     if (ebmlIndex == -1 && clusterIndex == -1 && trackIndex == -1 && cuesIndex == -1 && segmentIndex == -1 && infoIndex == -1 && seekIndex == -1) {
         allClusterHex += hex;
-        // LOG("OTHER START::\n" + hex.substr(0,1000));
-        // LOG("OTHER END  ::\n" + hex.substr(hex.length-1000,hex.length));
+        // console.log("OTHER START::\n" + hex.substr(0,1000));
+        // console.log("OTHER END  ::\n" + hex.substr(hex.length-1000,hex.length));
     }
 
 
     if (ebmlIndex != -1) {
-        // LOG("INIT::\n" + hex.substring(ebmlIndex, clusterIndex));
+        // console.log("INIT::\n" + hex.substring(ebmlIndex, clusterIndex));
         initSeg = hex.substring(ebmlIndex, clusterIndex);
         var initArray = new Uint8Array(hex2buf(initSeg));
         var base64String = btoa(
             new Uint8Array(initArray)
                 .reduce((onData, byte) => onData + String.fromCharCode(byte), '')
         );
-        // LOG("INIT::\n" + initSeg);
-        // LOG("INIT\n");
-        LOG("OTHER START::\n" + initSeg.substr(0, 1000));
-        LOG("OTHER END  ::\n" + initSeg.substr(initSeg.length - 1000, initSeg.length));
+        // console.log("INIT::\n" + initSeg);
+        // console.log("INIT\n");
+        console.log("OTHER START::\n" + initSeg.substr(0, 1000));
+        console.log("OTHER END  ::\n" + initSeg.substr(initSeg.length - 1000, initSeg.length));
         writeToGun(base64String);
     }
 
     if (clusterIndex != -1) {
-        LOG("Cluster index::" + clusterIndex);
+        console.log("Cluster index::" + clusterIndex);
         if (allClusterHex.length != 0) {
             // if (initSeg != undefined) {
             //     allClusterHex += initSeg;
             // }
             allClusterHex += hex.substring(0, clusterIndex);
-            // LOG("SEND::\n" + allClusterHex.substr(0,100));
-            // LOG("SEND::\n" + allClusterHex.substr(allClusterHex.length-100,allClusterHex.length));
+            // console.log("SEND::\n" + allClusterHex.substr(0,100));
+            // console.log("SEND::\n" + allClusterHex.substr(allClusterHex.length-100,allClusterHex.length));
             var clusters = new Uint8Array(hex2buf(allClusterHex));
-            // LOG("OTHER START::\n" + allClusterHex.substr(0, 1000));
-            // LOG("OTHER END  ::\n" + allClusterHex.substr(allClusterHex.length - 1000, allClusterHex.length));            
+            // console.log("OTHER START::\n" + allClusterHex.substr(0, 1000));
+            // console.log("OTHER END  ::\n" + allClusterHex.substr(allClusterHex.length - 1000, allClusterHex.length));
             var base64String = btoa(clusters.reduce((onData, byte) => onData + String.fromCharCode(byte), ''))
-            LOG("OTHER START::\n" + allClusterHex.substr(0, 1000));
-            LOG("OTHER END  ::\n" + allClusterHex.substr(allClusterHex.length - 1000, allClusterHex.length));
-            LOG("OTHER LENGT::\n" + allClusterHex.length)
+            console.log("OTHER START::\n" + allClusterHex.substr(0, 1000));
+            console.log("OTHER END  ::\n" + allClusterHex.substr(allClusterHex.length - 1000, allClusterHex.length));
+            console.log("OTHER LENGT::\n" + allClusterHex.length)
             allClusterHex = "";
             writeToGun(base64String);
         }
@@ -73,36 +73,36 @@ function parseSelf(arrayBuffer) {
         var timeCodeIndex = cluster.indexOf("e7");
         var simpleBlockIndex = cluster.indexOf("a3");
         var BlockDurationIndex = cluster.indexOf("9b");
-        // LOG("timeCodeIndex\n" + cluster.substring(timeCodeIndex, timeCodeIndex + 6));
-        // LOG("BlockDurationIndex\n" + cluster.substring(BlockDurationIndex, BlockDurationIndex + 8));
-        // LOG("simpleBlockIndex\n" + cluster.substring(simpleBlockIndex, simpleBlockIndex + 6));
+        // console.log("timeCodeIndex\n" + cluster.substring(timeCodeIndex, timeCodeIndex + 6));
+        // console.log("BlockDurationIndex\n" + cluster.substring(BlockDurationIndex, BlockDurationIndex + 8));
+        // console.log("simpleBlockIndex\n" + cluster.substring(simpleBlockIndex, simpleBlockIndex + 6));
 
         // var base64String = btoa(new Uint8Array(hex2buf(cluster)).reduce((onData, byte) => onData + String.fromCharCode(byte), ''))
         // writeToGun(base64String);
-        // LOG('CLUSTER::\n' + cluster);
-        // LOG('CLUSTER::\n');
+        // console.log('CLUSTER::\n' + cluster);
+        // console.log('CLUSTER::\n');
     }
 
     if (trackIndex != -1) {
-        // LOG("TRACK\n");
+        // console.log("TRACK\n");
     }
 
     if (cuesIndex != -1) {
-        // LOG("CUES\n");
+        // console.log("CUES\n");
     }
 
     if (segmentIndex != -1) {
-        // LOG("SEGMENT\n");
+        // console.log("SEGMENT\n");
     }
 
     if (infoIndex != -1) {
-        // LOG("INFO\n");
+        // console.log("INFO\n");
         var durationIndex = cluster.indexOf("4489");
-        // LOG("durationIndex\n" + cluster.substring(durationIndex, durationIndex + 8));
+        // console.log("durationIndex\n" + cluster.substring(durationIndex, durationIndex + 8));
     }
 
     if (seekIndex != -1) {
-        // LOG("SEEK\n");
+        // console.log("SEEK\n");
     }
 
 
