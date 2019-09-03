@@ -342,25 +342,40 @@ angular.module 'irisAngular'
       #ID
       streamId = Date.now()
       # GUN ACK
-      video = document.createElement('video')
-      video.setAttribute('autoplay', true)
-      video.setAttribute('style', 'max-width: 100%;')
-      video.setAttribute('playsinline', true)
-      video.setAttribute('muted', true)
-      video.setAttribute('controls', true)
-      element.append(video)
-      takePhotoButton = document.createElement('button')
-      takePhotoButton.innerHTML = 'take photo'
-      element.append(takePhotoButton)
-      toggleFullScreenButton = document.createElement('button')
-      toggleFullScreenButton.innerHTML = 'toggle fullscreen'
-      element.append(toggleFullScreenButton)
+      remoteVideo = document.createElement("video")
+      remoteVideo.autoplay = true
+      remoteVideo.controls = true
+      remoteVideo.muted = true
+      remoteVideo.playsinline = true
+      remoteVideo.style.visibility = "hidden"
+      remoteVideo.preload = "none"
+      myVideo = document.createElement('video')
+      myVideo.setAttribute('autoplay', true)
+      myVideo.setAttribute('style', 'max-width: 50%;')
+      myVideo.setAttribute('playsinline', true)
+      myVideo.setAttribute('muted', true)
+      myVideo.setAttribute('controls', true)
+      element.append(myVideo)
+      element.append(remoteVideo)
+      p = document.createElement 'p'
+      goLiveButton = document.createElement('button')
+      goLiveButton.innerHTML = 'go live'
+      goLiveButton.setAttribute 'class', 'btn btn-default'
+      p.append(goLiveButton)
+      #toggleFullScreenButton = document.createElement('button')
+      #toggleFullScreenButton.innerHTML = 'toggle fullscreen'
+      #toggleFullScreenButton.setAttribute 'class', 'btn btn-default'
+      #p.append(toggleFullScreenButton)
       switchCameraButton = document.createElement('button')
       switchCameraButton.innerHTML = 'switch camera'
-      element.append(switchCameraButton)
+      switchCameraButton.style = 'display:none;'
+      switchCameraButton.setAttribute 'class', 'btn btn-default'
+      p.append(switchCameraButton)
       muteButton = document.createElement('button')
       muteButton.innerHTML = 'mute'
-      element.append(muteButton)
+      muteButton.setAttribute 'class', 'btn btn-default'
+      p.append(muteButton)
+      element.append p
       amountOfCameras = 0
       currentFacingMode = 'environment'
       muted = true
@@ -390,7 +405,7 @@ angular.module 'irisAngular'
       initCameraUI = ->
         # https://developer.mozilla.org/nl/docs/Web/HTML/Element/button
         # https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/ARIA_Techniques/Using_the_button_role
-        takePhotoButton.addEventListener 'click', ->
+        goLiveButton.addEventListener 'click', ->
           takeSnapshot()
           return
         muteButton.addEventListener 'click', ->
@@ -398,7 +413,7 @@ angular.module 'irisAngular'
           return
         # -- switch camera part
         if amountOfCameras > 1
-          switchCameraButton.style.display = 'block'
+          switchCameraButton.style.display = 'inline-block'
           switchCameraButton.addEventListener 'click', ->
             if currentFacingMode == 'environment'
               currentFacingMode = 'user'
@@ -424,7 +439,7 @@ angular.module 'irisAngular'
         handleSuccess = (stream) ->
           window.stream = stream
           # make stream available to browser console
-          video.srcObject = stream
+          myVideo.srcObject = stream
           if constraints.video.facingMode
             if constraints.video.facingMode == 'environment'
               switchCameraButton.setAttribute 'aria-pressed', true
@@ -459,11 +474,11 @@ angular.module 'irisAngular'
       takeSnapshot = ->
         if !isRecording()
           captureScreen window.stream
-          takePhotoButton.style.backgroundColor = 'red'
+          goLiveButton.style.backgroundColor = 'red'
           switchCameraButton.disabled = true
         else
           pauseRecording()
-          takePhotoButton.style.backgroundColor = ''
+          goLiveButton.style.backgroundColor = ''
           switchCameraButton.disabled = false
         return
 
@@ -484,16 +499,8 @@ angular.module 'irisAngular'
         return
 
       openRemoteVideo = ->
-        vid = document.createElement("video")
-        vid.autoplay = true
-        vid.controls = true
-        vid.muted = true
-        vid.playsinline = true
-        vid.style.visibility = "hidden"
-        vid.preload = "none"
-        element.append(vid)
         id = scope.pubkey + '/stream'
-        streamer = new Streamer(id, vid)
+        streamer = new Streamer(id, remoteVideo)
         streamer.init()
 
       go = ->
