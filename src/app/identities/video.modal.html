@@ -31,7 +31,9 @@
         <div class="mar-top5">
           <videochat ng-if="idType === 'keyID'" watch-only="stream" gun="gun" pubkey="idValue"></videochat>
         </div>
-        <p ng-if="isCurrentUser || stream"><button ng-click="copyToClipboard(idUrl + '?stream')" class="btn btn-default mar-top10">Copy link to stream</button></p>
+        <p ng-if="isCurrentUser || stream"><button ng-click="copyToClipboard(idUrl + '?stream')" class="btn btn-default mar-top10">
+          Copy link to stream
+        </button></p>
 
       </div>
     </div>

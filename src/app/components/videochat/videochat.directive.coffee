@@ -361,7 +361,7 @@ angular.module 'irisAngular'
       element.append(remoteVideo)
       buttonRow = document.createElement 'p'
       goLiveButton = document.createElement('button')
-      goLiveButton.innerHTML = 'Go live'
+      goLiveButton.innerHTML = '<span class="glyphicon glyphicon-facetime-video mar-right5"></span> Go live'
       goLiveButton.setAttribute 'class', 'btn btn-default'
       buttonRow.append(goLiveButton)
       #toggleFullScreenButton = document.createElement('button')
@@ -374,7 +374,7 @@ angular.module 'irisAngular'
       switchCameraButton.setAttribute 'class', 'btn btn-default'
       buttonRow.append(switchCameraButton)
       muteButton = document.createElement('button')
-      muteButton.innerHTML = 'Mute'
+      muteButton.innerHTML = '<span class="glyphicon glyphicon-volume-off mar-right5"></span> Mute'
       muteButton.setAttribute 'class', 'btn btn-default'
       buttonRow.append(muteButton)
       element.append buttonRow
