@@ -360,7 +360,7 @@ angular.module 'irisAngular'
       element.append(remoteVideo)
       p = document.createElement 'p'
       goLiveButton = document.createElement('button')
-      goLiveButton.innerHTML = 'go live'
+      goLiveButton.innerHTML = 'Go live'
       goLiveButton.setAttribute 'class', 'btn btn-default'
       p.append(goLiveButton)
       #toggleFullScreenButton = document.createElement('button')
@@ -373,7 +373,7 @@ angular.module 'irisAngular'
       switchCameraButton.setAttribute 'class', 'btn btn-default'
       p.append(switchCameraButton)
       muteButton = document.createElement('button')
-      muteButton.innerHTML = 'mute'
+      muteButton.innerHTML = 'Mute'
       muteButton.setAttribute 'class', 'btn btn-default'
       p.append(muteButton)
       element.append p
@@ -506,8 +506,9 @@ angular.module 'irisAngular'
 
       go = ->
         return unless scope.gun and scope.pubkey
-        openRemoteVideo()
-        streamId = scope.gun.user()._.sea.pub + '/stream'
+        myPubKey = scope.gun.user()._.sea.pub
+        openRemoteVideo() unless myPubKey == scope.pubkey
+        streamId = myPubKey + '/stream'
         # gunDB = scope.gun.back(-1)
         # GUN
         peers = [ 'https://gunmeetingserver.herokuapp.com/gun' ]
@@ -533,6 +534,5 @@ angular.module 'irisAngular'
           LOG 'RTC Debug info: ' + '\n OS:                   ' + DetectRTC.osName + ' ' + DetectRTC.osVersion + '\n browser:              ' + DetectRTC.browser.fullVersion + ' ' + DetectRTC.browser.name + '\n is Mobile Device:     ' + DetectRTC.isMobileDevice + '\n has webcam:           ' + DetectRTC.hasWebcam + '\n has permission:       ' + DetectRTC.isWebsiteHasWebcamPermission + '\n getUserMedia Support: ' + DetectRTC.isGetUserMediaSupported + '\n isWebRTC Supported:   ' + DetectRTC.isWebRTCSupported + '\n WebAudio Supported:   ' + DetectRTC.isAudioContextSupported + '\n is Mobile Device:     ' + DetectRTC.isMobileDevice
           return
         return
-
 
       scope.$watch 'gun', go
