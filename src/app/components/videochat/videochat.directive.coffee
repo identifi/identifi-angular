@@ -4,6 +4,7 @@ angular.module 'irisAngular'
     scope:
       pubkey: '='
       gun: '='
+      watchOnly: '='
     link: (scope, element, attrs) ->
       MIMETYPE = 'video/webm; codecs="opus,vp8"'
       RECORD_TIME = 500
@@ -347,22 +348,22 @@ angular.module 'irisAngular'
       remoteVideo.controls = true
       remoteVideo.muted = true
       remoteVideo.playsinline = true
-      remoteVideo.style.visibility = "hidden"
-      remoteVideo.style["max-width"] = "50%"
+      remoteVideo.style.display = "none"
+      remoteVideo.style.width = "50%"
       remoteVideo.preload = "none"
       myVideo = document.createElement('video')
       myVideo.setAttribute('autoplay', true)
-      myVideo.setAttribute('style', 'max-width: 50%;')
+      myVideo.setAttribute('style', 'width: 100%;')
       myVideo.setAttribute('playsinline', true)
       myVideo.setAttribute('muted', true)
       myVideo.setAttribute('controls', true)
       element.append(myVideo)
       element.append(remoteVideo)
-      p = document.createElement 'p'
+      buttonRow = document.createElement 'p'
       goLiveButton = document.createElement('button')
       goLiveButton.innerHTML = 'Go live'
       goLiveButton.setAttribute 'class', 'btn btn-default'
-      p.append(goLiveButton)
+      buttonRow.append(goLiveButton)
       #toggleFullScreenButton = document.createElement('button')
       #toggleFullScreenButton.innerHTML = 'toggle fullscreen'
       #toggleFullScreenButton.setAttribute 'class', 'btn btn-default'
@@ -371,12 +372,12 @@ angular.module 'irisAngular'
       switchCameraButton.innerHTML = 'switch camera'
       switchCameraButton.style = 'display:none;'
       switchCameraButton.setAttribute 'class', 'btn btn-default'
-      p.append(switchCameraButton)
+      buttonRow.append(switchCameraButton)
       muteButton = document.createElement('button')
       muteButton.innerHTML = 'Mute'
       muteButton.setAttribute 'class', 'btn btn-default'
-      p.append(muteButton)
-      element.append p
+      buttonRow.append(muteButton)
+      element.append buttonRow
       amountOfCameras = 0
       currentFacingMode = 'environment'
       muted = true
@@ -506,8 +507,19 @@ angular.module 'irisAngular'
 
       go = ->
         return unless scope.gun and scope.pubkey
-        myPubKey = scope.gun.user()._.sea.pub
-        openRemoteVideo() unless myPubKey == scope.pubkey
+        u = scope.gun.user()
+        myPubKey = if u._.sea then u._.sea.pub else undefined
+        if myPubKey != scope.pubkey
+          if scope.watchOnly
+            buttonRow.style.display = 'none'
+            remoteVideo.style.width = '100%'
+            myVideo.style.display = 'none'
+          myVideo.style.width = '50%'
+          remoteVideo.style.display = 'inline-block'
+          openRemoteVideo()
+        else
+          myVideo.style.width = '100%'
+          remoteVideo.style.display = 'none'
         streamId = myPubKey + '/stream'
         # gunDB = scope.gun.back(-1)
         # GUN
@@ -519,20 +531,19 @@ angular.module 'irisAngular'
         gunDB = Gun(opt)
         removeFromGun streamId
 
-        # do some WebRTC checks before creating the interface
-        DetectRTC.load ->
-          # do some checks
-          if DetectRTC.isWebRTCSupported == false
-            alert 'Please use Chrome, Firefox, iOS 11, Android 5 or higher, Safari 11 or higher'
-          else
-            if DetectRTC.hasWebcam == false
-              alert 'Please install an external webcam device.'
+        unless scope.watchOnly
+          # do some WebRTC checks before creating the interface
+          DetectRTC.load ->
+            # do some checks
+            if DetectRTC.isWebRTCSupported == false
+              alert 'Please use Chrome, Firefox, iOS 11, Android 5 or higher, Safari 11 or higher'
             else
-              amountOfCameras = DetectRTC.videoInputDevices.length
-              initCameraUI()
-              initCameraStream()
-          LOG 'RTC Debug info: ' + '\n OS:                   ' + DetectRTC.osName + ' ' + DetectRTC.osVersion + '\n browser:              ' + DetectRTC.browser.fullVersion + ' ' + DetectRTC.browser.name + '\n is Mobile Device:     ' + DetectRTC.isMobileDevice + '\n has webcam:           ' + DetectRTC.hasWebcam + '\n has permission:       ' + DetectRTC.isWebsiteHasWebcamPermission + '\n getUserMedia Support: ' + DetectRTC.isGetUserMediaSupported + '\n isWebRTC Supported:   ' + DetectRTC.isWebRTCSupported + '\n WebAudio Supported:   ' + DetectRTC.isAudioContextSupported + '\n is Mobile Device:     ' + DetectRTC.isMobileDevice
-          return
-        return
+              if DetectRTC.hasWebcam == false
+                alert 'Please install an external webcam device.'
+              else
+                amountOfCameras = DetectRTC.videoInputDevices.length
+                initCameraUI()
+                initCameraStream()
+            LOG 'RTC Debug info: ' + '\n OS:                   ' + DetectRTC.osName + ' ' + DetectRTC.osVersion + '\n browser:              ' + DetectRTC.browser.fullVersion + ' ' + DetectRTC.browser.name + '\n is Mobile Device:     ' + DetectRTC.isMobileDevice + '\n has webcam:           ' + DetectRTC.hasWebcam + '\n has permission:       ' + DetectRTC.isWebsiteHasWebcamPermission + '\n getUserMedia Support: ' + DetectRTC.isGetUserMediaSupported + '\n isWebRTC Supported:   ' + DetectRTC.isWebRTCSupported + '\n WebAudio Supported:   ' + DetectRTC.isAudioContextSupported + '\n is Mobile Device:     ' + DetectRTC.isMobileDevice
 
       scope.$watch 'gun', go

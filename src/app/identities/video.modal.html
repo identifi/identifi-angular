@@ -2,8 +2,7 @@
   <div class="panel panel-default mar-top15">
     <div class="panel-heading">
       <div class="mar-bot15">
-        <div style="color:red;font-weight:bold">
-          <!-- communications are encrypted, but anyone can see who are communicating with each other -->
+        <div style="color:red;font-weight:bold" ng-if="!isCurrentUser && !stream">
           currently this is unencrypted livestreaming :D
         </div>
 
@@ -30,9 +29,9 @@
         <small class="positive mar-left15" ng-show="isOnline">online</small>
 
         <div class="mar-top5">
-          <videochat ng-if="idType === 'keyID'" gun="gun" pubkey="idValue"></videochat>
+          <videochat ng-if="idType === 'keyID'" watch-only="stream" gun="gun" pubkey="idValue"></videochat>
         </div>
-        <p ng-if="isCurrentUser"><button ng-click="copyToClipboard(idUrl)" class="btn btn-default mar-top10">Copy link to stream</button></p>
+        <p ng-if="isCurrentUser || stream"><button ng-click="copyToClipboard(idUrl + '?stream')" class="btn btn-default mar-top10">Copy link to stream</button></p>
 
       </div>
     </div>

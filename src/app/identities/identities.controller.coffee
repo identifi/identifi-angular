@@ -46,7 +46,9 @@ angular.module('irisAngular').controller 'IdentitiesController', [
         hideLimitLabels: true
         disableAnimation: true
 
-    $scope.share = true if $location.search().share
+    s = $location.search()
+    $scope.share = true if s.share
+    $scope.stream = true if s.stream
 
     if $scope.query.term.length and $state.is 'identities.list'
       $scope.query.term = ''
@@ -55,6 +57,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
     if $state.is 'identities.show'
       $scope.filters.maxDistance = 0
       $scope.filters.type = null
+      $scope.openVideoChatModal() if $scope.stream and not $scope.videoChatModal
 
     $scope.addEntry = (event, entry) ->
       if entry.email
