@@ -47,8 +47,8 @@ angular.module 'irisAngular'
           if !LOCAL
             gunDB.get(streamer.id).on (data) ->
               if !check(streamer, data)
-                # streamer.streamVideo.style.visibility = "hidden"
-                streamer.streamVideo.parentElement.remove()
+                streamer.streamVideo.style.visibility = "hidden"
+                # streamer.streamVideo.parentElement.remove()
               else
                 streamer.streamVideo.style.visibility = 'visible'
                 if SPEECH_DETECTION_ENABLED
@@ -348,6 +348,7 @@ angular.module 'irisAngular'
       remoteVideo.muted = true
       remoteVideo.playsinline = true
       remoteVideo.style.visibility = "hidden"
+      remoteVideo.style["max-width"] = "50%"
       remoteVideo.preload = "none"
       myVideo = document.createElement('video')
       myVideo.setAttribute('autoplay', true)
