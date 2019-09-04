@@ -507,7 +507,14 @@ angular.module 'irisAngular'
         return unless scope.gun and scope.pubkey
         openRemoteVideo()
         streamId = scope.gun.user()._.sea.pub + '/stream'
-        gunDB = scope.gun.back(-1)
+        # gunDB = scope.gun.back(-1)
+        # GUN
+        peers = [ 'https://gunmeetingserver.herokuapp.com/gun' ]
+        opt =
+          peers: peers
+          localStorage: false
+          radisk: false
+        gunDB = Gun(opt)
         removeFromGun streamId
 
         # do some WebRTC checks before creating the interface
