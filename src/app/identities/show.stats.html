@@ -52,7 +52,7 @@
           <button class="mar-left15 visible-xs-inline-block visible-sm-inline-block btn btn-default" ng-click="openSharePageModal()">
             <span class="glyphicon glyphicon-share"></span>
           </button>
-          <button ng-if="authentication.user && !isCurrentUser && idType === 'keyID'" class="mar-left15 visible-xs-inline-block visible-sm-inline-block btn btn-default" ng-click="openChatModal()">
+          <button ng-if="!isCurrentUser && idType === 'keyID'" class="mar-left15 visible-xs-inline-block visible-sm-inline-block btn btn-default" ui-sref="chats.show({value:idValue})">
             <span class="fa fa-comment"></span>
           </button>
           <button ng-if="authentication.user && idType === 'keyID'" class="visible-xs-inline-block visible-sm-inline-block mar-left15 btn btn-default" ng-click="openVideoChatModal()">
