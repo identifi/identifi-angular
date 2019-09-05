@@ -186,7 +186,7 @@ angular.module('irisAngular').controller 'MainController', [
               author = msg.getAuthor($scope.irisIndex)
               $scope.setIdentityNames(author).then (name) ->
                 NotificationService.create
-                  message: "#{name} sent you a message!"
+                  message: "#{name} public messaged you!"
                   onClick: () -> $state.go 'identities.show', { type: $scope.authentication.user.idType, value: $scope.authentication.user.idValue }
         $scope.authentication.identity.gun.on (data) ->
           if data.receivedPositive and $scope.authentication.identity.data and not $scope.authentication.identity.data.receivedPositive
