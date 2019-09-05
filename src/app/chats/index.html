@@ -1,0 +1,15 @@
+<div class="container no-padding-xs">
+  <section>
+    <div id="messages" class="row">
+      <div class="col-md-4">
+        <div ng-include="'app/chats/list.html'"></div>
+      </div>
+      <div class="col-md-8">
+        <div ng-if="!idValue">
+          Select a chat to start messaging
+        </div>
+        <div ng-if="idValue" ng-include="'app/chats/show.html'"></div>
+      </div>
+    </div>
+  </section>
+</div>

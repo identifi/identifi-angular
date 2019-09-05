@@ -117,6 +117,14 @@ angular.module('irisAngular').controller 'MainController', [
           $scope.showMoreMsgs()
         , 1000
         $scope.trustedIndexes = []
+        $scope.chats = []
+        $scope.irisIndex.gun.user().get('chat').map().once (node, key) ->
+          console.log 'found chat', node, key
+          identity = $scope.irisIndex.get('keyID', key)
+          $scope.setIdentityNames identity
+          $scope.chats.push
+            pubkey: key
+            identity: identity
         $scope.irisIndex.gun.get('trustedIndexes').open (r) ->
           for k, v of r
             $scope.trustedIndexes.push

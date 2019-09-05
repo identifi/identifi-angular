@@ -367,7 +367,7 @@ angular.module 'irisAngular'
       #toggleFullScreenButton.setAttribute 'class', 'btn btn-default'
       #p.append(toggleFullScreenButton)
       switchCameraButton = document.createElement('button')
-      switchCameraButton.innerHTML = 'switch camera'
+      switchCameraButton.innerHTML = 'Switch camera'
       switchCameraButton.style = 'display:none;'
       switchCameraButton.setAttribute 'class', 'btn btn-default'
       buttonRow.append(switchCameraButton)

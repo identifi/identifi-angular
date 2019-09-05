@@ -1,0 +1,39 @@
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <div class="mar-bot15">
+      <div style="color:red;font-weight:bold">currently messages are encrypted, but anyone can see who are communicating with each other</div>
+
+      <identicon identity="identity"
+        ipfs="ipfs"
+        width="35">
+      </identicon>
+
+      <span class="mar-right15">
+        <span ng-show="idType === 'keyID' || idType === 'uuid'">
+          <identicon identity="idAttr" width=35></identicon>
+        </span>
+        <span ng-hide="idType === 'keyID' || idType === 'uuid'">
+        <span ng-if="!(identity.data.mostVerifiedAttributes.name||identity.data.mostVerifiedAttributes.nickname)">
+        <span ng-bind="idValue" class="idValue"></span>
+        <small class="text-muted">
+        <span ng-hide="idType === 'url'" ng-bind="idType" class="idType"></span>
+        <a ng-href="{{idValue}}" ng-show="idType === 'url'" ng-bind="idType" class="idType"></a>
+        </small>
+        </span>
+        </span>
+      </span>
+      <span ng-bind="identity.primaryName"></span>
+      <small class="positive mar-left15" ng-show="isOnline">online</small>
+
+    </div>
+    <form class="form-inline mar-bot5" ng-submit="sendChatMessage(m);m = ''">
+      <input class="form-control" type="text" ng-model="m" style="display:inline-block; width:80%">
+      <button class="btn btn-default" type="submit" style="display:inline-block"><i class="glyphicon glyphicon-send"></i></button>
+    </form>
+    <div style="background:white;padding:5px" class="mar-bot5" ng-repeat="msg in chatMessages | orderBy:'-time'">
+      <b ng-bind="msg.author"></b> <small ng-bind="msg.time | date : 'yyyy-M-d HH:mm'"></small>
+<br>
+      <span ng-bind=msg.text></span>
+    </div>
+  </div>
+</div>

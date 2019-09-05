@@ -25,6 +25,24 @@ angular.module 'irisAngular'
         templateUrl: 'app/identities/show.html'
         controller: 'IdentitiesController'
         controllerAs: 'identities'
+      .state 'chats',
+        url: ''
+        template: "<ui-view/>"
+        abstract: true
+      .state 'chats.list',
+        url: '/chats'
+        templateUrl: 'app/chats/index.html'
+        controller: 'IdentitiesController'
+        controllerAs: 'messages'
+        title: 'Iris - Chats'
+      .state 'chats.show',
+        url: '/chats/:value'
+        templateUrl: 'app/chats/index.html'
+        controller: 'IdentitiesController'
+        controllerAs: 'messages'
+        title: 'Iris - Chats'
+        params:
+          type: 'keyID'
       .state 'messages',
         url: ''
         template: "<ui-view/>"
