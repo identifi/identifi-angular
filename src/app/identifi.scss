@@ -1753,6 +1753,10 @@ a {
   cursor: not-allowed;
 }
 
+.chat-row.active {
+  background-color: #efefef;
+}
+
 .cursor-default {
   cursor: default !important;
 }
