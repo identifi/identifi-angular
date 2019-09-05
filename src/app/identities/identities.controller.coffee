@@ -299,7 +299,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
 
     load = ->
       if $scope.irisIndex
-        if $state.is 'identities.show'
+        if $state.is('identities.show') or $state.is('chats.show')
           $scope.findOne()
 
         if $state.is 'identities.create'

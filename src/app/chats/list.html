@@ -1,6 +1,6 @@
 <div class="panel" ng-repeat="chat in chats" ui-sref="chats.show({value:chat.pubkey})" style="cursor:pointer">
   <div class="panel-body">
-    <identicon identity="chat.identity" width="35" ipfs="ipfs" show-distance="false">
-    <span ng-bind="chat.identity.primaryName"></span>
+    <identicon identity="chat.identity" width="35" ipfs="ipfs" show-distance="false"></identicon>
+    <span ng-bind="identity.primaryName" class="mar-left15"></span>
   </div>
 </div>

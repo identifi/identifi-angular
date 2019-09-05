@@ -3,26 +3,28 @@
     <div class="mar-bot15">
       <div style="color:red;font-weight:bold">currently messages are encrypted, but anyone can see who are communicating with each other</div>
 
-      <identicon identity="identity"
-        ipfs="ipfs"
-        width="35">
-      </identicon>
+      <div ui-sref="identities.show({type:'keyID', value:idValue})" style="cursor:pointer">
+        <identicon identity="identity"
+          ipfs="ipfs"
+          width="35">
+        </identicon>
 
-      <span class="mar-right15">
-        <span ng-show="idType === 'keyID' || idType === 'uuid'">
-          <identicon identity="idAttr" width=35></identicon>
+        <span class="mar-right15">
+          <span ng-show="idType === 'keyID' || idType === 'uuid'">
+            <identicon identity="idAttr" width=35></identicon>
+          </span>
+          <span ng-hide="idType === 'keyID' || idType === 'uuid'">
+          <span ng-if="!(identity.data.mostVerifiedAttributes.name||identity.data.mostVerifiedAttributes.nickname)">
+          <span ng-bind="idValue" class="idValue"></span>
+          <small class="text-muted">
+          <span ng-hide="idType === 'url'" ng-bind="idType" class="idType"></span>
+          <a ng-href="{{idValue}}" ng-show="idType === 'url'" ng-bind="idType" class="idType"></a>
+          </small>
+          </span>
+          </span>
         </span>
-        <span ng-hide="idType === 'keyID' || idType === 'uuid'">
-        <span ng-if="!(identity.data.mostVerifiedAttributes.name||identity.data.mostVerifiedAttributes.nickname)">
-        <span ng-bind="idValue" class="idValue"></span>
-        <small class="text-muted">
-        <span ng-hide="idType === 'url'" ng-bind="idType" class="idType"></span>
-        <a ng-href="{{idValue}}" ng-show="idType === 'url'" ng-bind="idType" class="idType"></a>
-        </small>
-        </span>
-        </span>
-      </span>
-      <span ng-bind="identity.primaryName"></span>
+        <span ng-bind="identity.primaryName"></span>
+      </div>
       <small class="positive mar-left15" ng-show="isOnline">online</small>
 
     </div>
