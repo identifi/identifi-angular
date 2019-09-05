@@ -62,7 +62,7 @@
 
           <ul class="nav navbar-nav navbar-right">
             <li><a ng-click="openReadQRModal()" href="" ng-show="authentication.user" class="visible-xs"><span class="glyphicon glyphicon-qrcode"></span></a></li>
-            <li  ui-sref-active="active" ng-cloak ng-show="authentication.user"><a ui-sref="chats.list">
+            <li ng-class="{active: ('chats'|includedByState)}" ng-cloak ng-show="authentication.user"><a ui-sref="chats.list">
               <span class="fa fa-comment"></span>
             </a></li>
             <li ui-sref-active="active"><a ui-sref="identities.list"><span class="fa fa-book"></span></a></li>
