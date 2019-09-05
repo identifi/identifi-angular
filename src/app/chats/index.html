@@ -1,14 +1,16 @@
 <div class="container no-padding-xs">
   <section>
     <div id="messages" class="row">
-      <div class="col-md-4">
-        <div ng-include="'app/chats/list.html'"></div>
-      </div>
-      <div class="col-md-8">
-        <div ng-if="!idValue">
-          Select a chat to start messaging
+      <div class="col-sm-4" ng-class="{'hidden-xs': ('chats.show'|isState)}">
+        <div class="panel chat-row" ng-repeat="chat in chats" ui-sref="chats.show({value:chat.pubkey})" ui-sref-active="active" style="cursor:pointer">
+          <div class="panel-body">
+            <identicon identity="chat.identity" width="35" ipfs="ipfs" show-distance="false"></identicon>
+            <span ng-bind="chat.identity.primaryName" class="mar-left15"></span>
+          </div>
         </div>
-        <div ng-if="idValue" ng-include="'app/chats/show.html'"></div>
+      </div>
+      <div class="col-sm-8" ng-class="{'hidden-xs': ('chats.list'|isState)}">
+        <ui-view/>
       </div>
     </div>
   </section>
