@@ -346,7 +346,6 @@ angular.module 'irisAngular'
       remoteVideo = document.createElement("video")
       remoteVideo.autoplay = true
       remoteVideo.controls = true
-      remoteVideo.muted = true
       remoteVideo.playsinline = true
       remoteVideo.style.display = "none"
       remoteVideo.style.width = "50%"
@@ -355,7 +354,6 @@ angular.module 'irisAngular'
       myVideo.setAttribute('autoplay', true)
       myVideo.setAttribute('style', 'width: 100%;')
       myVideo.setAttribute('playsinline', true)
-      myVideo.setAttribute('muted', true)
       myVideo.setAttribute('controls', true)
       element.append(myVideo)
       element.append(remoteVideo)
@@ -373,14 +371,9 @@ angular.module 'irisAngular'
       switchCameraButton.style = 'display:none;'
       switchCameraButton.setAttribute 'class', 'btn btn-default'
       buttonRow.append(switchCameraButton)
-      muteButton = document.createElement('button')
-      muteButton.innerHTML = '<span class="glyphicon glyphicon-volume-off mar-right5"></span> Mute'
-      muteButton.setAttribute 'class', 'btn btn-default'
-      buttonRow.append(muteButton)
       element.append buttonRow
       amountOfCameras = 0
       currentFacingMode = 'environment'
-      muted = true
       gunDB = undefined
 
       ACK = (ack) ->
@@ -409,9 +402,6 @@ angular.module 'irisAngular'
         # https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/ARIA_Techniques/Using_the_button_role
         goLiveButton.addEventListener 'click', ->
           takeSnapshot()
-          return
-        muteButton.addEventListener 'click', ->
-          muteUnmute()
           return
         # -- switch camera part
         if amountOfCameras > 1
@@ -442,6 +432,7 @@ angular.module 'irisAngular'
           window.stream = stream
           # make stream available to browser console
           myVideo.srcObject = stream
+          myVideo.muted = true
           if constraints.video.facingMode
             if constraints.video.facingMode == 'environment'
               switchCameraButton.setAttribute 'aria-pressed', true
@@ -482,22 +473,6 @@ angular.module 'irisAngular'
           pauseRecording()
           goLiveButton.style.backgroundColor = ''
           switchCameraButton.disabled = false
-        return
-
-      muteUnmute = ->
-        if muted
-          muteButton.setAttribute 'aria-pressed', false
-          muted = false
-        else
-          muteButton.setAttribute 'aria-pressed', true
-          muted = true
-        videos = document.getElementsByTagName('video')
-        keys = Object.keys(videos)
-        i = 0
-        while i < keys.length
-          if videos[i].id != 'video'
-            videos[i].muted = muted
-          i++
         return
 
       openRemoteVideo = ->
