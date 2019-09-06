@@ -32,6 +32,7 @@ angular.module('irisAngular').controller 'MainController', [
     # set authentication
     $scope.authentication = {} # Authentication
 
+    $scope.openTime = new Date().getTime()
     $scope.notificationService = NotificationService
 
     $scope.trustDistanceComparator = (a, b) ->
@@ -118,13 +119,26 @@ angular.module('irisAngular').controller 'MainController', [
         , 1000
         $scope.trustedIndexes = []
         $scope.chats = []
-        $scope.irisIndex.gun.user().get('chat').map().once (node, key) ->
-          console.log 'found chat', node, key
-          identity = $scope.irisIndex.get('keyID', key)
-          $scope.setIdentityNames identity
-          $scope.chats.push
-            pubkey: key
-            identity: identity
+        if i.writable
+          $scope.irisIndex.gun.user().get('chat').map().once (node, key) ->
+            console.log 'found chat', node, key, $scope.privateKey
+            identity = $scope.irisIndex.get('keyID', key)
+            $scope.setIdentityNames identity
+            onMessage = (msg, info) ->
+              return unless msg
+              if (!$state.is('chats.show', {value:key}) and !info.selfAuthored and msg.time > $scope.openTime)
+                NotificationService.create
+                  message: "#{msg.author}: #{msg.text}"
+                  onClick: () ->
+                    $state.go 'chats.show', { value: key }
+            $scope.chats.push
+              pubkey: key
+              identity: identity
+              chat: new $window.irisLib.Chat
+                onMessage: onMessage
+                key: $scope.privateKey
+                gun: $scope.gun
+                participants: key
         $scope.irisIndex.gun.get('trustedIndexes').open (r) ->
           for k, v of r
             $scope.trustedIndexes.push
