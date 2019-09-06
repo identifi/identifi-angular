@@ -124,21 +124,24 @@ angular.module('irisAngular').controller 'MainController', [
             console.log 'found chat', node, key, $scope.privateKey
             identity = $scope.irisIndex.get('keyID', key)
             $scope.setIdentityNames identity
-            onMessage = (msg, info) ->
-              return unless msg
-              if (!$state.is('chats.show', {value:key}) and !info.selfAuthored and msg.time > $scope.openTime)
-                NotificationService.create
-                  message: "#{msg.author}: #{msg.text}"
-                  onClick: () ->
-                    $state.go 'chats.show', { value: key }
-            $scope.chats.push
+            chat =
               pubkey: key
               identity: identity
+              latest: null
               chat: new $window.irisLib.Chat
-                onMessage: onMessage
+                onMessage: (msg, info) ->
+                  return unless msg
+                  chat.latest = msg if (chat.latest == null or msg.time > chat.latest.time)
+                  console.log 'chat.latest', chat.latest
+                  if (!$state.is('chats.show', {value:key}) and !info.selfAuthored and msg.time > $scope.openTime)
+                    NotificationService.create
+                      message: "#{msg.author}: #{msg.text}"
+                      onClick: () ->
+                        $state.go 'chats.show', { value: key }
                 key: $scope.privateKey
                 gun: $scope.gun
                 participants: key
+            $scope.chats.push(chat)
         $scope.irisIndex.gun.get('trustedIndexes').open (r) ->
           for k, v of r
             $scope.trustedIndexes.push
