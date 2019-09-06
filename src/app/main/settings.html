@@ -34,6 +34,14 @@
           </p>
         </div>
       </div>
+      <div class="panel panel-default" ng-if="!notificationsAllowed">
+        <div class="panel-heading">
+          Notifications
+        </div>
+        <div class="panel-body">
+          <button class="btn btn-primary" ng-click="subscribeToNotifications()">Get desktop notifications</button>
+        </div>
+      </div>
     </div>
     <p><b>Geeky stuff</b></p>
     <div class="panel panel-default">

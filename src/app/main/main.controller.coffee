@@ -694,7 +694,8 @@ angular.module('irisAngular').controller 'MainController', [
 
     $scope.subscribeToNotifications = ->
       Notification.requestPermission (status) ->
-        $scope.notificationsAllowed = status == 'granted'
+        $scope.$apply ->
+          $scope.notificationsAllowed = status == 'granted'
 
     $scope.bang = ->
       setTimeout ->
