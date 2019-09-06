@@ -711,12 +711,13 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.ipfs.swarm.disconnect(url).then ->
         $scope.updateIpfsPeers()
 
-    $scope.notificationsAllowed = Notification.permission == 'granted'
+    $scope.notificationsAllowed = window.Notification and Notification.permission == 'granted'
 
     $scope.subscribeToNotifications = ->
-      Notification.requestPermission (status) ->
-        $scope.$apply ->
-          $scope.notificationsAllowed = status == 'granted'
+      if window.Notification
+        Notification.requestPermission (status) ->
+          $scope.$apply ->
+            $scope.notificationsAllowed = status == 'granted'
 
     $scope.bang = ->
       setTimeout ->

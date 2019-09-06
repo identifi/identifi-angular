@@ -21,7 +21,7 @@ angular.module('irisAngular').service 'NotificationService', [
         this.unseenCount++ unless options.seen
         uiNotification options
         if document.hidden
-          if Notification.permission == 'granted'
+          if window.Notification and Notification.permission == 'granted'
             navigator.serviceWorker.getRegistration().then (reg) ->
               reg.showNotification options.message
       markAllSeen: (options) ->
