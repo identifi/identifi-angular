@@ -92477,7 +92477,7 @@ Gun.chain.unset = function(node){
 	      clearTimeout(timeout);
 	      var now = Math.round(Gun.state() / 1000);
 	      var isOnline = lastActive > now - 6 && lastActive < now + 30;
-	      callback(isOnline);
+	      callback({ isOnline: isOnline, lastActive: lastActive });
 	      if (isOnline) {
 	        timeout = setTimeout(function () {
 	          return callback(false);
@@ -93780,7 +93780,7 @@ Gun.chain.unset = function(node){
 	  return Index;
 	}();
 
-	var version$1 = "0.0.113";
+	var version$1 = "0.0.114";
 
 	/*eslint no-useless-escape: "off", camelcase: "off" */
 

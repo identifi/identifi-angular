@@ -26,8 +26,11 @@
           </span>
         </span>
         <span ng-bind="identity.primaryName"></span>
+        <small class="positive mar-left15" ng-show="isOnline">online</small>
+        <small class="mar-left15" ng-show="!isOnline && lastActive">
+          last active {{ lastActive * 1000 | date : 'yyyy-M-d HH:mm' }}
+        </small>
       </div>
-      <small class="positive mar-left15" ng-show="isOnline">online</small>
 
     </div>
 

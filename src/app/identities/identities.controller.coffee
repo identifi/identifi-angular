@@ -324,8 +324,9 @@ angular.module('irisAngular').controller 'IdentitiesController', [
               text: msg
               time: t
             $scope.chat.send(m)
-          $scope.irisIndex.getOnline $scope.idValue, (isOnline) ->
-            $scope.isOnline = isOnline
+          $scope.irisIndex.getOnline $scope.idValue, (res) ->
+            $scope.isOnline = res.isOnline
+            $scope.lastActive = res.lastActive unless res.isOnline
     $scope.$watch 'irisIndex', load
 
     $scope.qrScanSuccess = (data) ->
