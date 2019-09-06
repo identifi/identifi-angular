@@ -8,7 +8,7 @@
             <span ng-bind="chat.identity.primaryName" class="mar-left15"></span>
               <small class="pull-right" ng-bind="chat.latest.time | date: 'yyyy-MM-dd h:mm'"></small><br>
               <small class="pull-right">
-                {{chat.latest.author}}: {{chat.latest.text|limitTo:35}}{{chat.latest.text.length > 35 ? '...':''}}
+                {{chat.latest.text|limitTo:35}}{{chat.latest.text.length > 35 ? '...':''}}
               </small>
             </span>
           </div>
