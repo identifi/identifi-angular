@@ -128,11 +128,14 @@ angular.module('irisAngular').controller 'MainController', [
               pubkey: key
               identity: identity
               latest: null
+              unreadMsgs: 0
               chat: new $window.irisLib.Chat
                 onMessage: (msg, info) ->
                   return unless msg
                   chat.latest = msg if (chat.latest == null or msg.time > chat.latest.time)
                   console.log 'chat.latest', chat.latest
+                  if ((msg.time > $scope.openTime) and !$state.is('chats.show', {value:key}) and !info.selfAuthored)
+                    chat.unreadMsgs++
                   notify = ((!$state.is('chats.show', {value:key}) or document.hidden) and !info.selfAuthored and msg.time > $scope.openTime)
                   if notify
                     NotificationService.create

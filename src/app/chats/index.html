@@ -2,9 +2,11 @@
   <section>
     <div id="messages" class="row">
       <div class="col-sm-4" ng-class="{'hidden-xs': ('chats.show'|isState)}">
-        <div class="panel chat-row" ng-repeat="chat in chats | orderBy:'-latest.time'" ui-sref="chats.show({value:chat.pubkey})" ui-sref-active="active" style="cursor:pointer">
+        <div class="panel chat-row" ng-repeat="chat in chats | orderBy:'-latest.time'" ui-sref="chats.show({value:chat.pubkey})" ui-sref-active="active" ng-click="chat.unreadMsgs = 0" style="cursor:pointer">
           <div class="panel-body">
-            <identicon identity="chat.identity" width="35" ipfs="ipfs" show-distance="false"></identicon>
+            <notification-icon count="chat.unreadMsgs">
+              <identicon identity="chat.identity" width="35" ipfs="ipfs" show-distance="false"></identicon>
+            </notification-icon>
             <span ng-bind="chat.identity.primaryName" class="mar-left15"></span>
               <small class="pull-right" ng-bind="chat.latest.time | date: 'yyyy-MM-dd h:mm'"></small><br>
               <small class="pull-right">
