@@ -1,1 +1,5 @@
-Select a chat to start messaging
+<p>Select a chat to start messaging</p>
+
+<p ng-if="!notificationsAllowed">
+<button class="btn btn-primary" ng-click="subscribeToNotifications()">Get notifications from chats</button>
+</p>

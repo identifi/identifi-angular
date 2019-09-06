@@ -187,7 +187,8 @@ angular.module('irisAngular').controller 'MainController', [
               $scope.setIdentityNames(author).then (name) ->
                 NotificationService.create
                   message: "#{name} public messaged you!"
-                  onClick: () -> $state.go 'identities.show', { type: $scope.authentication.user.idType, value: $scope.authentication.user.idValue }
+                  onClick: () ->
+                    $state.go 'identities.show', { type: $scope.authentication.user.idType, value: $scope.authentication.user.idValue }
         $scope.authentication.identity.gun.on (data) ->
           if data.receivedPositive and $scope.authentication.identity.data and not $scope.authentication.identity.data.receivedPositive
             console.log 'great, you got your first upvote!'
@@ -688,4 +689,16 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.ipfs.bootstrap.rm url
       $scope.ipfs.swarm.disconnect(url).then ->
         $scope.updateIpfsPeers()
+
+    $scope.notificationsAllowed = Notification.permission == 'granted'
+
+    $scope.subscribeToNotifications = ->
+      Notification.requestPermission (status) ->
+        $scope.notificationsAllowed = status == 'granted'
+
+    $scope.bang = ->
+      setTimeout ->
+        NotificationService.create
+          message: "bang!"
+      , 5000
 ]

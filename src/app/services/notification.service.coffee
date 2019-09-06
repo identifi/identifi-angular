@@ -20,6 +20,10 @@ angular.module('irisAngular').service 'NotificationService', [
         this.notifications.splice 10 # maximum notifications length
         this.unseenCount++ unless options.seen
         uiNotification options
+        if document.hidden
+          if Notification.permission == 'granted'
+            navigator.serviceWorker.getRegistration().then (reg) ->
+              reg.showNotification options.message
       markAllSeen: (options) ->
         n.seen = true for n in this.notifications
         this.unseenCount = 0
