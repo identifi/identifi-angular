@@ -133,7 +133,8 @@ angular.module('irisAngular').controller 'MainController', [
                   return unless msg
                   chat.latest = msg if (chat.latest == null or msg.time > chat.latest.time)
                   console.log 'chat.latest', chat.latest
-                  if (!$state.is('chats.show', {value:key}) and !info.selfAuthored and msg.time > $scope.openTime)
+                  notify = ((!$state.is('chats.show', {value:key}) or document.hidden) and !info.selfAuthored and msg.time > $scope.openTime)
+                  if notify
                     NotificationService.create
                       message: "#{msg.author}: #{msg.text}"
                       onClick: () ->
