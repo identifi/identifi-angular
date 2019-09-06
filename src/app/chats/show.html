@@ -37,7 +37,7 @@
     </form>
 
     <div style="background:white;padding:5px" class="mar-bot5" ng-repeat="msg in chatMessages | orderBy:'-time'">
-      <b ng-bind="msg.author"></b> <small ng-bind="msg.time | date : 'yyyy-M-d HH:mm'"></small>
+      <b ng-bind="msg.author"></b> <small class="pull-right" ng-bind="msg.time | date : 'yyyy-M-d HH:mm'"></small>
 <br>
       <span ng-bind=msg.text></span>
     </div>
