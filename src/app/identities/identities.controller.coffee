@@ -50,9 +50,6 @@ angular.module('irisAngular').controller 'IdentitiesController', [
     $scope.share = true if s.share
     $scope.stream = true if s.stream
 
-    if $state.is('chats.show') and $scope.idType and not $scope.idValue # temporary, so old chat links work
-      $state.go 'chats.show', { type: 'keyID', value: $scope.idType }
-
     if $scope.query.term.length and $state.is 'identities.list'
       $scope.query.term = ''
       $scope.search()

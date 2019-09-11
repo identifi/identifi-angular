@@ -120,11 +120,21 @@ angular.module('irisAngular').controller 'MainController', [
         $scope.trustedIndexes = []
         $scope.chats = []
         if i.writable
+          $scope.irisIndex.gun.user().get('iris').get('chatMessagesByUuid').map().once (node, key) ->
+            identity = $scope.irisIndex.get('uuid', key)
+            $scope.setIdentityNames identity
+            $scope.chats.push
+              idValue: key
+              idType: 'uuid'
+              identity: identity
+              latest: null
+              unreadMsgs: 0
           $scope.irisIndex.gun.user().get('chat').map().once (node, key) ->
             identity = $scope.irisIndex.get('keyID', key)
             $scope.setIdentityNames identity
             chat =
-              pubkey: key
+              idValue: key
+              idType: 'keyID'
               identity: identity
               latest: null
               unreadMsgs: 0
