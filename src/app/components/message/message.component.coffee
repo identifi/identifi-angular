@@ -63,13 +63,14 @@ angular.module 'irisAngular'
           scope.$apply -> msg.author_name = mva.name.attribute.value
         else if mva.nickname
           scope.$apply -> msg.author_name = mva.nickname.attribute.value
-      msg.recipient = msg.getRecipient(scope.irisIndex)
-      msg.recipient.gun.get('attrs').open (d) ->
-        mva = window.irisLib.Identity.getMostVerifiedAttributes(d)
-        if mva.name
-          scope.$apply -> msg.recipient_name = mva.name.attribute.value
-        else if mva.nickname
-          scope.$apply -> msg.recipient_name = mva.nickname.attribute.value
+      if msg.signedData.recipient
+        msg.recipient = msg.getRecipient(scope.irisIndex)
+        msg.recipient.gun.get('attrs').open (d) ->
+          mva = window.irisLib.Identity.getMostVerifiedAttributes(d)
+          if mva.name
+            scope.$apply -> msg.recipient_name = mva.name.attribute.value
+          else if mva.nickname
+            scope.$apply -> msg.recipient_name = mva.nickname.attribute.value
       if msg.signedData.attachments
         msg.attachments = []
         addAttachment = (attachment) ->
@@ -100,26 +101,27 @@ angular.module 'irisAngular'
         i++
       i = 0
       smallestIndex = 1000
-      msg.recipientArray = msg.getRecipientArray()
-      for a in msg.recipientArray
-        msg.linkToRecipient = a unless msg.linkToAuthor
-        index = Object.keys(window.irisLib.Attribute.getUniqueIdValidators()).indexOf(a.type)
-        if index > -1 and index < smallestIndex
-          smallestIndex = index
-          msg.linkToRecipient = a
-        else if !msg.recipient_name and a.type in ['name', 'nickname']
-          msg.recipient_name = a.value
-        i++
-      if msg.linkToAuthor.equals(msg.linkToRecipient)
-        msg.sameAuthorAndRecipient = true
-      if !msg.author_name
-        msg.author_name = msg.linkToAuthor.value
-        if msg.linkToAuthor.type in ['keyID', 'uuid']
-          msg.author_name = msg.author_name.slice(0, 6) + '...'
-      if !msg.recipient_name
-        msg.recipient_name = msg.linkToRecipient.value
-        if msg.linkToAuthor.type in ['keyID', 'uuid']
-          msg.recipient_name = msg.recipient_name.slice(0, 6) + '...'
+      if msg.signedData.recipient
+        msg.recipientArray = msg.getRecipientArray()
+        for a in msg.recipientArray
+          msg.linkToRecipient = a unless msg.linkToAuthor
+          index = Object.keys(window.irisLib.Attribute.getUniqueIdValidators()).indexOf(a.type)
+          if index > -1 and index < smallestIndex
+            smallestIndex = index
+            msg.linkToRecipient = a
+          else if !msg.recipient_name and a.type in ['name', 'nickname']
+            msg.recipient_name = a.value
+          i++
+        if msg.linkToAuthor.equals(msg.linkToRecipient)
+          msg.sameAuthorAndRecipient = true
+        if !msg.author_name
+          msg.author_name = msg.linkToAuthor.value
+          if msg.linkToAuthor.type in ['keyID', 'uuid']
+            msg.author_name = msg.author_name.slice(0, 6) + '...'
+        if !msg.recipient_name
+          msg.recipient_name = msg.linkToRecipient.value
+          if msg.linkToAuthor.type in ['keyID', 'uuid']
+            msg.recipient_name = msg.recipient_name.slice(0, 6) + '...'
       alpha = undefined
       msg.bgColor = ''
       msg.iconCount = new Array(1)

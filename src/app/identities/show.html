@@ -8,7 +8,7 @@
           <button class="btn btn-default mar-left15" ng-click="openSharePageModal()">
             <span class="glyphicon glyphicon-qrcode mar-right5"></span> Share
           </button>
-          <button ng-if="!isCurrentUser && idType === 'keyID'" class="mar-left15 btn btn-default" ui-sref="chats.show({value:idValue})">
+          <button ng-if="showChatButton" class="mar-left15 btn btn-default" ui-sref="chats.show({value:idValue, type:idType})">
             <span class="fa fa-comment mar-right5"></span> Chat
           </button>
           <button ng-if="authentication.user && idType === 'keyID'" class="mar-left15 btn btn-default" ng-click="openVideoChatModal()">

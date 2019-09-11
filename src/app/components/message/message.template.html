@@ -9,14 +9,14 @@
           <span ng-bind="msg.author_name"></span>
         </a>
       </strong>
-      <span ng-show="!msg.sameAuthorAndRecipient">
+      <span ng-show="msg.signedData.type != 'chat' && !msg.sameAuthorAndRecipient">
         <small><i class="glyphicon glyphicon-play"></i></small>
         <a ui-sref="identities.show({ type: msg.linkToRecipient.type, value: msg.linkToRecipient.value })" class="id-link">
           <identicon ng-if="showRecipient" ipfs="ipfs" identity="msg.recipient" class="mar-right5" border="3" width="35"></identicon>
           <span ng-bind="(msg.recipientIsSelf && pageInfo.primaryName)||msg.recipient_name"></span>
         </a>
       </span>
-       - <a ui-sref="messages.show({ id: (msg.ipfsUri || msg.hash) })" ng-bind="msg.signedData.timestamp|date:'medium'" class="text-muted small" style="display:inline-block;"></a>
+       - <a ui-sref="messages.show({ id: (msg.ipfsUri || msg.hash) })" ng-bind="(msg.signedData.time||msg.signedData.timestamp)|date:'medium'" class="text-muted small" style="display:inline-block;"></a>
     </p>
 
     <div ng-if="msg.isVerification || msg.isUnverification">
@@ -43,10 +43,10 @@
     </div>
 
     <p style="white-space: pre-line;"
-    ng-if="msg.signedData.comment"
+    ng-if="(msg.signedData.text || msg.signedData.comment)"
     hm-read-more
     hm-limit="280"
-    hm-text="{{ msg.signedData.comment|linky }}"
+    hm-text="{{ (msg.signedData.text || msg.signedData.comment)|linky }}"
     hm-more-text="Show more"
     hm-less-text="Show less"></p>
 

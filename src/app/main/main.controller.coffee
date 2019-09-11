@@ -26,7 +26,7 @@ angular.module('irisAngular').controller 'MainController', [
     if $window.location.protocol != "https:"
       opt.peers.push('http://localhost:8765/gun')
     opt.store = RindexedDB(opt)
-    $scope.gun = new Gun(opt)
+    $scope.gun = $window.irisGun = new Gun(opt)
 
     # TODO: move everything to main controller?
     # set authentication
@@ -121,7 +121,6 @@ angular.module('irisAngular').controller 'MainController', [
         $scope.chats = []
         if i.writable
           $scope.irisIndex.gun.user().get('chat').map().once (node, key) ->
-            console.log 'found chat', node, key, $scope.privateKey
             identity = $scope.irisIndex.get('keyID', key)
             $scope.setIdentityNames identity
             chat =
@@ -133,7 +132,6 @@ angular.module('irisAngular').controller 'MainController', [
                 onMessage: (msg, info) ->
                   return unless msg
                   chat.latest = msg if (chat.latest == null or msg.time > chat.latest.time)
-                  console.log 'chat.latest', chat.latest
                   if ((msg.time > $scope.openTime) and !$state.is('chats.show', {value:key}) and !info.selfAuthored)
                     chat.unreadMsgs++
                   notify = ((!$state.is('chats.show', {value:key}) or document.hidden) and !info.selfAuthored and msg.time > $scope.openTime)
@@ -341,15 +339,13 @@ angular.module('irisAngular').controller 'MainController', [
         # Create new Message object
         message = null
         delete msg.files if msg.files
-        msg.recipient = msg.recipient || {}
         if $state.is 'identities.show'
+          msg.recipient = msg.recipient || {}
           if options.verifiedAttr and $stateParams.type == options.verifiedAttr.type
             msg.recipient[$stateParams.type] = [$stateParams.value, options.verifiedAttr.value]
           else
             msg.recipient[$stateParams.type] = $stateParams.value
             msg.recipient[options.verifiedAttr.type] = options.verifiedAttr.value if options.verifiedAttr
-        else unless $state.is 'identities.create'
-          msg.recipient.keyID = $scope.authentication.user.idValue
         if msg.type == 'rating'
           msg.maxRating |= 3
           msg.minRating |= -3
@@ -718,10 +714,4 @@ angular.module('irisAngular').controller 'MainController', [
         Notification.requestPermission (status) ->
           $scope.$apply ->
             $scope.notificationsAllowed = status == 'granted'
-
-    $scope.bang = ->
-      setTimeout ->
-        NotificationService.create
-          message: "bang!"
-      , 5000
 ]

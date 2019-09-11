@@ -50,6 +50,9 @@ angular.module('irisAngular').controller 'IdentitiesController', [
     $scope.share = true if s.share
     $scope.stream = true if s.stream
 
+    if $state.is('chats.show') and $scope.idType and not $scope.idValue # temporary, so old chat links work
+      $state.go 'chats.show', { type: 'keyID', value: $scope.idType }
+
     if $scope.query.term.length and $state.is 'identities.list'
       $scope.query.term = ''
       $scope.search()
@@ -74,6 +77,18 @@ angular.module('irisAngular').controller 'IdentitiesController', [
         $state.go 'identities.show', linkTo
       , (error) ->
         console.log "error", error
+
+    $scope.createChat = (chatName) ->
+      return unless chatName and chatName.length > 0
+      uuid = $window.irisLib.Attribute.getUuid().value
+      msg =
+        type: 'verification'
+        recipient:
+          uuid: uuid
+          name: chatName
+          type: 'group'
+      $scope.createMessage(undefined, msg)
+      $state.go 'chats.show', { type: 'uuid', value: uuid }
 
     $scope.guessAttributeType = ->
       if $scope.newVerification.value.length
@@ -271,6 +286,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
 
     $scope.idType = $stateParams.type
     $scope.idValue = $stateParams.value
+    $scope.showChatButton = !$scope.isCurrentUser && ($scope.idType == 'keyID' || $scope.idType == 'uuid')
 
     $scope.findOne = ->
       return unless $scope.irisIndex
@@ -281,7 +297,8 @@ angular.module('irisAngular').controller 'IdentitiesController', [
         $scope.idType == $scope.authentication.user.idType and
         $scope.idValue == $scope.authentication.user.idValue
       NotificationService.markAllSeen() if $scope.isCurrentUser
-      $scope.isUniqueType = $window.irisLib.Attribute.isUniqueType($scope.idType)
+      $scope.isUniqueType = () ->
+        $window.irisLib.Attribute.isUniqueType($scope.idType) or $scope.idType == 'channel'
       if !$scope.isUniqueType
         $state.go 'identities.list', { search: $scope.idValue }
         $scope.tabs[2].active = true if $scope.tabs
@@ -297,6 +314,38 @@ angular.module('irisAngular').controller 'IdentitiesController', [
       $scope.identity.gun.get('scores').open (scores) ->
         $scope.scores = scores
 
+    loadChatMessages = ->
+      $scope.chatMessages = []
+      onMessage = (msg) ->
+        $scope.$apply ->
+          $scope.chatMessages.push(msg) if msg
+      if $scope.idType == 'keyID'
+        # TODO: only init when opening chat fönster
+        $scope.chat = new $window.irisLib.Chat
+          onMessage: onMessage
+          key: $scope.privateKey
+          gun: $scope.gun
+          participants: $scope.idValue
+        $scope.sendChatMessage = (text) ->
+          t = new Date().getTime()
+          m =
+            author: $scope.viewpoint.identity.primaryName
+            text: text
+            time: t
+          $scope.chat.send(m)
+        $scope.irisIndex.getOnline $scope.idValue, (res) ->
+          $scope.isOnline = res.isOnline
+          $scope.lastActive = res.lastActive unless res.isOnline
+      if $scope.idType == 'uuid'
+        $scope.irisIndex.getChatMsgs($scope.idValue, {callback: onMessage})
+        $scope.sendChatMessage = (text) ->
+          msg = {}
+          msg.type = 'chat'
+          msg.text = text
+          msg.recipient = {uuid: $scope.idValue}
+          $scope.createMessage(undefined, msg)
+          console.log 'send public chat msg', msg
+
     load = ->
       if $scope.irisIndex
         if $state.is('identities.show') or $state.is('chats.show')
@@ -306,27 +355,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
           focus('idNameFocus')
           $scope.newEntry.name = $scope.capitalizeWords($scope.query.term)
 
-        if $scope.idType == 'keyID'
-          # TODO: only init when opening chat fönster
-          $scope.chatMessages = []
-          onMessage = (msg) ->
-            $scope.$apply ->
-              $scope.chatMessages.push(msg) if msg
-          $scope.chat = new $window.irisLib.Chat
-            onMessage: onMessage
-            key: $scope.privateKey
-            gun: $scope.gun
-            participants: $scope.idValue
-          $scope.sendChatMessage = (msg) ->
-            t = new Date().getTime()
-            m =
-              author: $scope.viewpoint.identity.primaryName
-              text: msg
-              time: t
-            $scope.chat.send(m)
-          $scope.irisIndex.getOnline $scope.idValue, (res) ->
-            $scope.isOnline = res.isOnline
-            $scope.lastActive = res.lastActive unless res.isOnline
+        loadChatMessages()
     $scope.$watch 'irisIndex', load
 
     $scope.qrScanSuccess = (data) ->

@@ -29,6 +29,12 @@ angular.module 'irisAngular'
         url: '/chats'
         templateUrl: 'app/chats/index.html'
         abstract: true
+      .state 'chats.create',
+        url: '/create'
+        templateUrl: 'app/chats/create.html'
+        controller: 'IdentitiesController'
+        controllerAs: 'messages'
+        title: 'Iris - Create chat'
       .state 'chats.list',
         url: ''
         templateUrl: 'app/chats/default.html'
@@ -36,13 +42,11 @@ angular.module 'irisAngular'
         controllerAs: 'messages'
         title: 'Iris - Chats'
       .state 'chats.show',
-        url: '/:value'
+        url: '/:type/:value'
         templateUrl: 'app/chats/show.html'
         controller: 'IdentitiesController'
         controllerAs: 'messages'
         title: 'Iris - Chats'
-        params:
-          type: 'keyID'
       .state 'messages',
         url: ''
         template: "<ui-view/>"
