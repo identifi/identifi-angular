@@ -45,11 +45,11 @@
 <br>
       <span ng-bind=msg.text></span>
     </div>
-
-    <div ng-if="idType == 'uuid'" style="background:white;padding:5px" class="mar-bot5">
-      <message auth="authentication" ipfs="ipfs" ng-repeat="msg in chatMessages | orderBy:'-signedData.time'" show-recipient="false" msg="msg"></message>
-    </div>
   </div>
+</div>
+
+<div ng-if="idType == 'uuid'">
+  <message auth="authentication" ipfs="ipfs" ng-repeat="msg in chatMessages | orderBy:'-signedData.time'" show-recipient="false" msg="msg"></message>
 </div>
 
 <div ng-include="'app/main/getstarted.partial.html'"></div>
