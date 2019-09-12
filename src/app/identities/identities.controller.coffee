@@ -78,6 +78,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
     $scope.createChat = (chatName) ->
       return unless chatName and chatName.length > 0
       uuid = $window.irisLib.Attribute.getUuid().value
+      $scope.irisIndex.gun.user().get('iris').get('chatMessagesByUuid').get(uuid).put({})
       msg =
         type: 'verification'
         recipient:
