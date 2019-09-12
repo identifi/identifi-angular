@@ -44,6 +44,7 @@
 
     <p style="white-space: pre-line;"
     ng-if="(msg.signedData.text || msg.signedData.comment)"
+    ng-class="{big: msg.emojisOnly}"
     hm-read-more
     hm-limit="280"
     hm-text="{{ (msg.signedData.text || msg.signedData.comment)|linky }}"
