@@ -122,7 +122,7 @@ angular.module 'irisAngular'
           msg.recipient_name = msg.linkToRecipient.value
           if msg.linkToAuthor.type in ['keyID', 'uuid']
             msg.recipient_name = msg.recipient_name.slice(0, 6) + '...'
-      if msg.signedData.text and msg.signedData.text.length == 2
+      if msg.signedData.text and msg.signedData.text.length <= 2
         emojis = '\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff]'
         if msg.signedData.text.match(new RegExp(emojis, 'g')).length
           msg.emojisOnly = true
