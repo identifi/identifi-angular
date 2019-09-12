@@ -1233,7 +1233,7 @@ h1 {
   // TODO: darker bg
 }
 
-message {
+message, .message {
   .msg, .message-panel {
     margin-bottom: 0;
     border-radius: 0;

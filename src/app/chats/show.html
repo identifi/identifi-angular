@@ -39,10 +39,14 @@
       <input ng-disabled="!authentication.user" class="form-control" type="text" ng-model="m" style="display:inline-block; width:80%">
       <button ng-disabled="!authentication.user" class="btn btn-default" type="submit" style="display:inline-block"><i class="glyphicon glyphicon-send"></i></button>
     </form>
+  </div>
+</div>
 
-    <div ng-if="idType == 'keyID'" style="background:white;padding:5px" class="mar-bot5" ng-repeat="msg in chatMessages | orderBy:'-time'">
+<div ng-if="idType == 'keyID'" class="message" ng-repeat="msg in chatMessages | orderBy:'-time'">
+  <div class="panel msg">
+    <div class="message-panel panel-body">
       <b ng-bind="msg.author"></b> <small class="pull-right" ng-bind="msg.time | date : 'yyyy-M-d HH:mm'"></small>
-<br>
+      <br>
       <span ng-bind=msg.text></span>
     </div>
   </div>
