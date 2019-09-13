@@ -92,3 +92,25 @@ self.addEventListener('push', function(e) {
     self.registration.showNotification('Hello world!', options)
   );
 });
+
+self.addEventListener('notificationclick', function(event) { // TODO: not working on chrome?
+  console.log('On notification click: ', event.notification);
+  event.notification.close();
+
+  // This looks to see if the current is already open and
+  // focuses if it is
+  event.waitUntil(clients.matchAll({
+    includeUncontrolled: true,
+    type: "window"
+  }).then(function(clientList) {
+    console.log('clientList', clientList);
+    for (var i = 0; i < clientList.length; i++) {
+      var client = clientList[i];
+      console.log('client', client);
+      if (client.url == '/' && 'focus' in client)
+        return client.focus();
+    }
+    if (clients.openWindow)
+      return clients.openWindow('/');
+  }));
+});

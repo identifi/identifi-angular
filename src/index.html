@@ -65,13 +65,15 @@
           <ul class="nav navbar-nav navbar-right">
             <li><a ng-click="openReadQRModal()" href="" ng-show="authentication.user" class="visible-xs"><span class="glyphicon glyphicon-qrcode"></span></a></li>
             <li ng-class="{active: ('chats'|includedByState)}" ng-cloak ng-show="authentication.user"><a ui-sref="chats.list">
-              <span class="fa fa-comment"></span>
+              <notification-icon count="notificationService.unseenChats">
+                <span class="fa fa-comment"></span>
+              </notification-icon>
             </a></li>
             <li ui-sref-active="active"><a ui-sref="identities.list"><span class="fa fa-book"></span></a></li>
             <li ng-cloak ng-show="authentication.user" ui-sref-active="active"><a ui-sref="settings"><span class="glyphicon glyphicon-cog"></span></a></li>
             <li ng-cloak ng-show="authentication.identity" ui-sref-active="active">
       				<a ui-sref="identities.show({ type: authentication.user.idType, value: authentication.user.idValue })" class="nav-identicon">
-                <notification-icon count="notificationService.unseenCount">
+                <notification-icon count="notificationService.unseenPosts">
       					  <identicon width="26" identity="authentication.identity" show-distance="0" ipfs="ipfs">
                 </notification-icon>
       				</a>

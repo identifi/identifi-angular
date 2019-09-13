@@ -147,9 +147,11 @@ angular.module('irisAngular').controller 'MainController', [
                   notify = ((!$state.is('chats.show', {value:key}) or document.hidden) and !info.selfAuthored and msg.time > $scope.openTime)
                   if notify
                     NotificationService.create
-                      message: "#{msg.author}: #{msg.text}"
+                      type: 'chat'
+                      from: msg.author
+                      text: msg.text
                       onClick: () ->
-                        $state.go 'chats.show', { value: key }
+                        $state.go 'chats.show', { type: 'keyID', value: key }
                 key: $scope.privateKey
                 gun: $scope.gun
                 participants: key
@@ -215,7 +217,9 @@ angular.module('irisAngular').controller 'MainController', [
               author = msg.getAuthor($scope.irisIndex)
               $scope.setIdentityNames(author).then (name) ->
                 NotificationService.create
-                  message: "#{name} public messaged you!"
+                  type: 'post'
+                  from: name
+                  text: "#{name} public messaged you!"
                   onClick: () ->
                     $state.go 'identities.show', { type: $scope.authentication.user.idType, value: $scope.authentication.user.idValue }
         $scope.authentication.identity.gun.on (data) ->
@@ -436,7 +440,6 @@ angular.module('irisAngular').controller 'MainController', [
           return r
       ###
       resultFound = (msg) ->
-        console.log 'got msg', msg
         found += 1
         $scope.loadingMsgs = false if found >= limit
         return if $scope.msgs.seen[msg.getHash()]

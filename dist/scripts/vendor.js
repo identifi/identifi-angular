@@ -92076,6 +92076,9 @@ Gun.chain.unset = function(node){
 	  };
 
 	  Identity._ordinal = function _ordinal(n) {
+	    if (n === 0) {
+	      return '';
+	    }
 	    var s = ['th', 'st', 'nd', 'rd'];
 	    var v = n % 100;
 	    return n + (s[(v - 20) % 10] || s[v] || s[0]);
@@ -93643,10 +93646,8 @@ Gun.chain.unset = function(node){
 	      }
 	      return true;
 	    }
-	    this.debug('search()', value, type, limit, cursor);
 	    var node = this.gun.get('identitiesBySearchKey');
 	    node.get({ '.': { '*': value, '>': cursor }, '%': 2000 }).once().map().on(function (id, key) {
-	      _this10.debug('search(' + value + ', ' + type + ', callback, ' + limit + ', ' + cursor + ') returned id ' + id + ' key ' + key);
 	      if (_Object$keys(seen).length >= limit) {
 	        // TODO: turn off .map cb
 	        return;
@@ -93811,7 +93812,7 @@ Gun.chain.unset = function(node){
 	  return Index;
 	}();
 
-	var version$1 = "0.0.116";
+	var version$1 = "0.0.117";
 
 	/*eslint no-useless-escape: "off", camelcase: "off" */
 

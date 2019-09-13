@@ -294,7 +294,8 @@ angular.module('irisAngular').controller 'IdentitiesController', [
         $scope.authentication.user and
         $scope.idType == $scope.authentication.user.idType and
         $scope.idValue == $scope.authentication.user.idValue
-      NotificationService.markAllSeen() if $scope.isCurrentUser
+      NotificationService.markPostsSeen() if $scope.isCurrentUser and $state.is 'identities.show'
+      NotificationService.markChatsSeen() if $state.includes 'chats'
       $scope.isUniqueType = () ->
         $window.irisLib.Attribute.isUniqueType($scope.idType) or $scope.idType == 'channel'
       if !$scope.isUniqueType
