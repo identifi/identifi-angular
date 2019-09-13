@@ -2,10 +2,10 @@
   <section>
     <div id="messages" class="row">
       <div class="col-sm-4" ng-class="{'hidden-xs': ('chats.show'|isState)}">
-        <div style="cursor:pointer" ui-sref="chats.create" class="panel panel-default chat-row" ui-sref-active="active">
+        <div style="cursor:pointer" ui-sref="chats.create" class="panel chat-row" ui-sref-active="active">
           <div class="panel-body"><span class="fa fa-edit mar-right15"></span>New</div>
         </div>
-        <div class="panel panel-default chat-row" ng-repeat="chat in chats | orderBy:'-latest.time'" ui-sref="chats.show({value:chat.idValue, type:chat.idType})" ui-sref-active="active" ng-click="chat.unreadMsgs = 0" style="cursor:pointer">
+        <div class="panel chat-row" ng-repeat="chat in chats | orderBy:'-latest.time'" ui-sref="chats.show({value:chat.idValue, type:chat.idType})" ui-sref-active="active" ng-click="chat.unreadMsgs = 0" style="cursor:pointer">
           <div class="panel-body">
             <notification-icon count="chat.unreadMsgs">
               <identicon identity="chat.identity" width="35" ipfs="ipfs" show-distance="false"></identicon>
