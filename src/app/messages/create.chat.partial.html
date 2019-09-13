@@ -1,0 +1,79 @@
+<div class="panel panel-default"
+ngf-drop
+ngf-keep="'distinct'"
+ngf-drop-disabled="addingMessage || loggingIn || !authentication.user"
+ng-model="newMessage.files"
+ngf-drag-over-class="'dragover'"
+ngf-multiple="true"
+>
+  <div class="panel-body">
+    <div class="mar-bot15">
+      <p style="color:red;" class="pull-right"><small><b>public chat</b></small></p>
+
+      <div ui-sref="identities.show({type:idType, value:idValue})" style="cursor:pointer">
+        <identicon identity="identity"
+          ipfs="ipfs"
+          width="35">
+        </identicon>
+
+        <span class="mar-right15">
+          <span ng-show="idType === 'keyID' || idType === 'uuid'">
+            <identicon identity="idAttr" width=35></identicon>
+          </span>
+          <span ng-hide="idType === 'keyID' || idType === 'uuid'">
+          <span ng-if="!(identity.data.mostVerifiedAttributes.name||identity.data.mostVerifiedAttributes.nickname)">
+          <span ng-bind="idValue" class="idValue"></span>
+          <small class="text-muted">
+          <span ng-hide="idType === 'url'" ng-bind="idType" class="idType"></span>
+          <a ng-href="{{idValue}}" ng-show="idType === 'url'" ng-bind="idType" class="idType"></a>
+          </small>
+          </span>
+          </span>
+        </span>
+        <span ng-bind="identity.primaryName"></span>
+        <small class="positive mar-left15" ng-show="isOnline">online</small>
+        <small class="mar-left15" ng-show="!isOnline && lastActive">
+          last active {{ lastActive * 1000 | date : 'yyyy-M-d HH:mm' }}
+        </small>
+      </div>
+    </div>
+
+    <form autocomplete="off" ng-submit="createMessage($event, { type: 'chat', recipient: { uuid: idValue }, text: newMessage.text, pollOptions: createPoll && newMessage.pollOptions }, { files: newMessage.files });createPoll = false">
+      <div class="row" ng-if="newMessage.files && newMessage.files.length">
+        <div class="col-xs-12">
+          <p ng-class="{'align-center': newMessage.files.length == 1}">
+            <span ng-repeat="file in newMessage.files" class="attachment">
+              <button type="button" class="close" aria-label="Close" ng-click="newMessage.files.splice($index,1)">
+                <span aria-hidden="true">&times;</span>
+              </button>
+              <a ng-show="['video','image','audio'].indexOf(file.type.substr(0,5)) == -1"  ng-bind="file.name"></a>
+              <img ngf-thumbnail="file || '/thumb.jpg'" ng-style="{'max-width': newMessage.files.length > 1 ? '150px' : '100%', 'max-height': newMessage.files.length > 1 ? '150px' : '450px'}">
+              <audio controls ngf-src="file"></audio>
+              <video controls ngf-src="file"></video>
+            </span>
+          </p>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <input
+          type="text"
+          style="resize: vertical"
+          ng-disabled="addingMessage || loggingIn || !authentication.user"
+          name="text" class="form-control" id="text"
+          ng-model="newMessage.text"
+          placeholder="Type a message"
+          >
+      </div>
+
+      <div class="row">
+        <div class="col-xs-12">
+          <button ng-disabled="addingMessage || loggingIn || !authentication.user || !(newMessage.text || newMessage.files.length)" type="submit" class="btn btn-primary" data-style="zoom-out">
+            <span class="glyphicon glyphicon-send"></span>
+          </button>
+          <button ngf-select ng-model="newMessage.files" ngf-multiple="true" href="" ng-disabled="addingMessage || loggingIn || !authentication.user" class="btn btn-default pull-right" data-style="zoom-out"><span class="fa fa-paperclip"></span> Add files</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

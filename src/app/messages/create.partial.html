@@ -1,4 +1,4 @@
-<div class="panel panel-default panel-default"
+<div class="panel panel-default"
 ngf-drop
 ngf-keep="'distinct'"
 ngf-drop-disabled="addingMessage || loggingIn || !authentication.user"
@@ -7,7 +7,7 @@ ngf-drag-over-class="'dragover'"
 ngf-multiple="true"
 >
   <div class="panel-body">
-    <form ng-submit="createMessage($event, { type: 'post', comment: newMessage.comment, pollOptions: createPoll && newMessage.pollOptions }, { files: newMessage.files });createPoll = false">
+    <form ng-submit="createMessage($event, { type: 'post', text: newMessage.text, pollOptions: createPoll && newMessage.pollOptions }, { files: newMessage.files });createPoll = false">
       <div class="row" ng-if="newMessage.files && newMessage.files.length">
         <div class="col-xs-12">
           <p ng-class="{'align-center': newMessage.files.length == 1}">
@@ -28,8 +28,8 @@ ngf-multiple="true"
         <textarea
           style="resize: vertical"
           ng-disabled="addingMessage || loggingIn || !authentication.user"
-          name="comment" class="form-control" id="comment"
-          ng-model="newMessage.comment"
+          name="text" class="form-control" id="text"
+          ng-model="newMessage.text"
           placeholder="What's on your mind?"
           ></textarea>
       </div>
@@ -38,7 +38,7 @@ ngf-multiple="true"
 
       <div class="row">
         <div class="col-xs-12">
-          <button ng-disabled="addingMessage || loggingIn || !authentication.user || !(newMessage.comment || newMessage.files.length)" type="submit" class="btn btn-primary" data-style="zoom-out">Publish</button>
+          <button ng-disabled="addingMessage || loggingIn || !authentication.user || !(newMessage.text || newMessage.files.length)" type="submit" class="btn btn-primary" data-style="zoom-out">Publish</button>
           <button ngf-select ng-model="newMessage.files" ngf-multiple="true" href="" ng-disabled="addingMessage || loggingIn || !authentication.user" class="btn btn-default pull-right" data-style="zoom-out"><span class="fa fa-paperclip"></span> Add files</button>
           <button class="btn btn-default pull-right" ng-click="$event.preventDefault();newMessage.pollOptions=[{text: ''}, {text: ''}];createPoll = !createPoll">
             <span class="glyphicon glyphicon-stats"></span> Create poll

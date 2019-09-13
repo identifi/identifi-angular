@@ -1,6 +1,7 @@
 <div ng-include="'app/main/createuser.partial.html'"></div>
+<div ng-if="idType =='uuid'" ng-include="'app/messages/create.chat.partial.html'"></div>
 
-<div class="panel panel-default">
+<div ng-if="idType != 'uuid'" class="panel panel-default">
   <div class="panel-heading">
     <div class="mar-bot15">
       <p style="color:red;" ng-if="idType=='keyID'"><small><b>private messages are encrypted, but anyone can see who are communicating with each other</b></small></p>
