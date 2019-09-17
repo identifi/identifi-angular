@@ -101,7 +101,9 @@ angular.module 'irisAngular'
         i++
       i = 0
       smallestIndex = 1000
-      if msg.signedData.recipient
+      if not msg.signedData.recipient
+        msg.sameAuthorAndRecipient = true
+      else
         msg.recipientArray = msg.getRecipientArray()
         for a in msg.recipientArray
           msg.linkToRecipient = a unless msg.linkToAuthor

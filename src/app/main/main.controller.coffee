@@ -599,13 +599,14 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.setMsgRawData(message)
       $scope.message = message
       # TODO: check sig
-      $scope.message.recipient = $scope.message.getRecipient($scope.irisIndex)
-      $scope.message.recipient.gun.get('attrs').open (d) ->
-        mva = $window.irisLib.Identity.getMostVerifiedAttributes(d)
-        if mva.name
-          $scope.$apply -> $scope.message.recipient_name = mva.name.attribute.value
-        else if mva.nickname
-          $scope.$apply -> $scope.message.recipient_name = mva.nickname.attribute.value
+      if message.signedData.recipient
+        $scope.message.recipient = $scope.message.getRecipient($scope.irisIndex)
+        $scope.message.recipient.gun.get('attrs').open (d) ->
+          mva = $window.irisLib.Identity.getMostVerifiedAttributes(d)
+          if mva.name
+            $scope.$apply -> $scope.message.recipient_name = mva.name.attribute.value
+          else if mva.nickname
+            $scope.$apply -> $scope.message.recipient_name = mva.nickname.attribute.value
       $scope.message.signerKeyID = $scope.message.getSignerKeyID()
       $scope.message.verifiedBy = $scope.irisIndex.get('keyID', $scope.message.signerKeyID)
       $scope.message.verifiedByAttr = new $window.irisLib.Attribute('keyID', $scope.message.signerKeyID)
