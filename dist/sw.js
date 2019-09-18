@@ -10,7 +10,8 @@ var urlsToCache = [
   'assets/fonts/Lato-700/Lato-700.woff2',
   'assets/fonts/Lato-300/Lato-300.woff2',
   'assets/fonts/Lato-regular/Lato-regular.woff2',
-  'fonts/fontawesome-webfont.woff2',
+  'fonts/fa-regular-400.woff2',
+  'fonts/fa-brands-400.woff2',
   'fonts/glyphicons-halflings-regular.woff2',
   'assets/images/favicon.ico'
 ];
