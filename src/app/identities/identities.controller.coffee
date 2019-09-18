@@ -160,31 +160,31 @@ angular.module('irisAngular').controller 'IdentitiesController', [
             when 'url'
               a.link = a.value
               if a.value.indexOf('facebook.com/') > -1
-                a.iconStyle = 'fa fa-facebook'
+                a.iconStyle = 'fab fa-facebook'
                 a.btnStyle = 'btn-facebook'
                 a.link = a.value
                 a.linkName = a.value.split('facebook.com/')[1]
                 a.quickContact = true
               else if a.value.indexOf('twitter.com/') > -1
-                a.iconStyle = 'fa fa-twitter'
+                a.iconStyle = 'fab fa-twitter'
                 a.btnStyle = 'btn-twitter'
                 a.link = a.value
                 a.linkName = a.value.split('twitter.com/')[1]
                 a.quickContact = true
               else if a.value.indexOf('plus.google.com/') > -1
-                a.iconStyle = 'fa fa-google-plus'
+                a.iconStyle = 'fab fa-google-plus'
                 a.btnStyle = 'btn-google-plus'
                 a.link = a.value
                 a.linkName = a.value.split('plus.google.com/')[1]
                 a.quickContact = true
               else if a.value.indexOf('linkedin.com/') > -1
-                a.iconStyle = 'fa fa-linkedin'
+                a.iconStyle = 'fab fa-linkedin'
                 a.btnStyle = 'btn-linkedin'
                 a.link = a.value
                 a.linkName = a.value.split('linkedin.com/')[1]
                 a.quickContact = true
               else if a.value.indexOf('github.com/') > -1
-                a.iconStyle = 'fa fa-github'
+                a.iconStyle = 'fab fa-github'
                 a.btnStyle = 'btn-github'
                 a.link = a.value
                 a.linkName = a.value.split('github.com/')[1]

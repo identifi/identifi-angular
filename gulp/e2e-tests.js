@@ -4,14 +4,13 @@ var path = require('path');
 var gulp = require('gulp');
 var conf = require('./conf');
 
+var server = require('./server');
+var serveE2E = server.serveE2E;
+var serveE2EDist = server.serveE2EDist;
+
 var browserSync = require('browser-sync');
 
 var $ = require('gulp-load-plugins')();
-
-// Downloads the selenium webdriver
-gulp.task('webdriver-update', $.protractor.webdriver_update);
-
-gulp.task('webdriver-standalone', $.protractor.webdriver_standalone);
 
 function runProtractor (done) {
   var params = process.argv;
@@ -33,6 +32,15 @@ function runProtractor (done) {
     });
 }
 
-gulp.task('protractor', ['protractor:src']);
-gulp.task('protractor:src', ['serve:e2e', 'webdriver-update'], runProtractor);
-gulp.task('protractor:dist', ['serve:e2e-dist', 'webdriver-update'], runProtractor);
+// Downloads the selenium webdriver
+exports.webdriverUpdate = gulp.series($.protractor.webdriver_update);
+exports.webdriverStandalone = gulp.series($.protractor.webdriver_standalone);
+exports.protractorSrc = gulp.series(serveE2E, exports.webdriverUpdate, runProtractor);
+exports.protractor = exports.protractorSrc;
+exports.protractorDist = gulp.series(serveE2EDist, exports.webdriverUpdate, runProtractor);
+
+// Add legacy aliases...
+exports.webdriverUpdate.alias = 'webdriver-update';
+exports.webdriverStandalone.alias = 'webdriver-standalone';
+exports.protractorSrc.alias = 'protractor:src';
+exports.protractorDist.alias = 'protractor:dist';

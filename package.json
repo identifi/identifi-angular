@@ -34,7 +34,7 @@
     "electron-builder": "^20.38.5",
     "eslint-plugin-angular": "~3.3.0",
     "estraverse": "~4.2.0",
-    "gulp": "~3.9.0",
+    "gulp": "~4.0.2",
     "gulp-angular-filesort": "~1.2.1",
     "gulp-angular-templatecache": "~2.2.0",
     "gulp-autoprefixer": "~5.0.0",
@@ -72,10 +72,10 @@
     "karma-phantomjs-shim": "^1.5.0",
     "lodash": "~4.17.2",
     "main-bower-files": "~2.13.1",
+    "protractor": "^5.4.2",
     "uglify-save-license": "~0.4.1",
     "wiredep": "~4.0.0",
-    "wrench": "~1.5.8",
-    "protractor": "^5.4.2"
+    "wrench": "~1.5.8"
   },
   "optionalDependencies": {
     "gun": "mmalmi/gun"

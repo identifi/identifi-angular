@@ -8,16 +8,6 @@ var browserSync = require('browser-sync');
 
 var $ = require('gulp-load-plugins')();
 
-
-gulp.task('scripts-reload', function() {
-  return buildScripts()
-    .pipe(browserSync.stream());
-});
-
-gulp.task('scripts', function() {
-  return buildScripts();
-});
-
 function buildScripts() {
   return gulp.src(path.join(conf.paths.src, '/app/**/*.coffee'))
     .pipe($.sourcemaps.init())
@@ -28,3 +18,15 @@ function buildScripts() {
     .pipe(gulp.dest(path.join(conf.paths.tmp, '/serve/app')))
     .pipe($.size())
 };
+
+function scriptsReload() {
+  return buildScripts()
+    .pipe(browserSync.stream());
+}
+
+function scripts() {
+  return buildScripts();
+}
+
+exports.scriptsReload = gulp.series(scriptsReload);
+exports.scripts = gulp.series(scripts);
