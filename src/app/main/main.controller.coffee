@@ -127,7 +127,7 @@ angular.module('irisAngular').controller 'MainController', [
               idValue: key
               idType: 'uuid'
               identity: identity
-              latest: null
+              latest: 0
               unreadMsgs: 0
           $scope.irisIndex.gun.user().get('chat').map().once (node, key) ->
             identity = $scope.irisIndex.get('keyID', key)
@@ -136,12 +136,12 @@ angular.module('irisAngular').controller 'MainController', [
               idValue: key
               idType: 'keyID'
               identity: identity
-              latest: null
+              latest: 0
               unreadMsgs: 0
               chat: new $window.irisLib.Chat
                 onMessage: (msg, info) ->
                   return unless msg
-                  chat.latest = msg if (chat.latest == null or msg.time > chat.latest.time)
+                  chat.latest = msg if (chat.latest == 0 or msg.time > chat.latest.time)
                   if ((msg.time > $scope.openTime) and !$state.is('chats.show', {value:key}) and !info.selfAuthored)
                     chat.unreadMsgs++
                   notify = ((!$state.is('chats.show', {value:key}) or document.hidden) and !info.selfAuthored and msg.time > $scope.openTime)

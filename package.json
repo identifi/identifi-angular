@@ -78,7 +78,7 @@
     "wrench": "~1.5.8"
   },
   "optionalDependencies": {
-    "gun": "mmalmi/gun"
+    "gun": "amark/gun"
   },
   "engines": {
     "node": ">=0.10.0"
