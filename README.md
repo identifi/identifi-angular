@@ -22,7 +22,7 @@ git clone https://github.com/irislib/iris-angular.git
 cd iris-angular
 ```
 
-Or run it on Glitch.com: https://glitch.com/~irislib-iris-angular
+Or run it on [Glitch.com](https://glitch.com/edit/#!/remix/clone-from-repo?REPO_URL=https://github.com/irislib/iris-angular.git).
 
 ### Install dependencies & build
 ```
