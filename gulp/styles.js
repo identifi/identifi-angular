@@ -45,7 +45,7 @@ var buildStyles = function() {
 
 function stylesReload() {
   return buildStyles()
-    .pipe(browserSync.stream());
+    .pipe(browserSync.stream())
 }
 
 function styles() {

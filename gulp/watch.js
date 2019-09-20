@@ -12,34 +12,22 @@ var stylesReload = require('./styles').stylesReload;
 
 var browserSync = require('browser-sync');
 
-function isOnlyChange(event) {
-  return event.type === 'changed';
-}
-
 function watch() {
   gulp.watch([path.join(conf.paths.src, '/*.html'), 'bower.json'], injectReload);
 
-  gulp.watch([
+  var stylePaths = [
     path.join(conf.paths.src, '/app/**/*.css'),
     path.join(conf.paths.src, '/app/**/*.scss')
-  ], gulp.series(function(event) {
-    if(isOnlyChange(event)) {
-      return gulp.series(stylesReload);
-    } else {
-      return gulp.series(injectReload);
-    }
-  }));
-
-  gulp.watch([
+  ];
+  var scriptPaths = [
     path.join(conf.paths.src, '/app/**/*.js'),
     path.join(conf.paths.src, '/app/**/*.coffee')
-  ], gulp.series(function(event) {
-    if(isOnlyChange(event)) {
-      return gulp.series(scriptsReload);
-    } else {
-      return gulp.series(injectReload);
-    }
-  }));
+  ];
+
+  gulp.watch(stylePaths.concat(scriptPaths), {events: ['add', 'unlink']}, injectReload);
+
+  gulp.watch(stylePaths, {events: 'change'}, stylesReload);
+  gulp.watch(scriptPaths, {events: 'change'}, scriptsReload);
 
   gulp.watch(path.join(conf.paths.src, '/app/**/*.hbs'), markups);
 
