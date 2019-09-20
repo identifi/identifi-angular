@@ -48,7 +48,7 @@ exports.errorHandler.exclude = true;
  * URL rewrite rules for CSS transformation
  */
 exports.cssRewrites = [
-  [/url\("..\/webfonts\//i, 'url("../fonts/'],
+  [/url\("..\/webfonts\//gi, 'url("../fonts/'],
   ['../../../bower_components/bootstrap-sass/assets/fonts/bootstrap/', '../fonts/']
 ];
 exports.jsRewrites = [];
