@@ -21,6 +21,7 @@ angular.module 'irisAngular'
       remoteVideo.preload = "none"
       remoteVideo.id = REMOTE_STREAM_ID
       element.append remoteVideo
+
       myVideo = document.createElement('video')
       myVideo.setAttribute('autoplay', true)
       myVideo.setAttribute('style', 'width: 100%;')
@@ -28,6 +29,28 @@ angular.module 'irisAngular'
       myVideo.setAttribute('controls', true)
       myVideo.id = 'record_video'
       element.append myVideo
+
+      buttonRow = document.createElement('div')
+      element.append buttonRow
+
+      startCameraButton = document.createElement('button')
+      startCameraButton.innerText = 'start camera'
+      startCameraButton.setAttribute 'class', 'btn btn-default'
+      startCameraButton.addEventListener 'click', () -> gunRecorder.startCamera()
+      buttonRow.append startCameraButton
+
+      startScreenCaptureButton = document.createElement('button')
+      startScreenCaptureButton.innerText = 'start screen capture'
+      startScreenCaptureButton.setAttribute 'class', 'btn btn-default'
+      startScreenCaptureButton.addEventListener 'click', () -> gunRecorder.startScreenCapture()
+      buttonRow.append startScreenCaptureButton
+
+      recordButton = document.createElement('button')
+      #recordButton.innerHtml = '<span class="glyphicon glyphicon-facetime-video mar-right5"></span> Go live'
+      recordButton.innerText = 'go live'
+      recordButton.setAttribute 'class', 'btn btn-default'
+      recordButton.addEventListener 'click', () -> gunRecorder.record()
+      buttonRow.append recordButton
 
       #Config for camera recorder
       CAMERA_OPTIONS =
@@ -69,25 +92,6 @@ angular.module 'irisAngular'
       #GUN Streamer is the data side. It will convert data and write to GUN db
       gunStreamer = new GunStreamer(streamer_config)
 
-      startCameraButton = document.createElement('button')
-      startCameraButton.innerText = 'start camera'
-      startCameraButton.setAttribute 'class', 'btn btn-default'
-      startCameraButton.addEventListener 'click', () -> gunRecorder.startCamera()
-      element.append startCameraButton
-
-      startScreenCaptureButton = document.createElement('button')
-      startScreenCaptureButton.innerText = 'start screen capture'
-      startScreenCaptureButton.setAttribute 'class', 'btn btn-default'
-      startScreenCaptureButton.addEventListener 'click', () -> gunRecorder.startScreenCapture()
-      element.append startScreenCaptureButton
-
-      recordButton = document.createElement('button')
-      #recordButton.innerHtml = '<span class="glyphicon glyphicon-facetime-video mar-right5"></span> Go live'
-      recordButton.innerText = 'go live'
-      recordButton.setAttribute 'class', 'btn btn-default'
-      recordButton.addEventListener 'click', () -> gunRecorder.record()
-      element.append recordButton
-
       #This is a callback function about the recording state, following states possible
       # STOPPED: 1¸
       # RECORDING:2
@@ -122,7 +126,7 @@ angular.module 'irisAngular'
         myPubKey = if u._.sea then u._.sea.pub else undefined
         if myPubKey != scope.pubkey
           if scope.watchOnly
-            # buttonRow.style.display = 'none'
+            buttonRow.style.display = 'none'
             remoteVideo.style.width = '100%'
             myVideo.style.display = 'none'
           myVideo.style.width = '50%'
