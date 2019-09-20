@@ -30,8 +30,6 @@
     "browser-sync-spa": "~1.0.3",
     "chalk": "~2.4.1",
     "del": "~3.0.0",
-    "electron": "^4.0.4",
-    "electron-builder": "^20.38.5",
     "eslint-plugin-angular": "~3.3.0",
     "estraverse": "~4.2.0",
     "gulp": "~4.0.2",
