@@ -20,8 +20,7 @@ function buildScripts() {
 };
 
 function scriptsReload() {
-  return buildScripts()
-    .pipe(browserSync.stream());
+  return buildScripts().pipe(browserSync.stream());
 }
 
 function scripts() {

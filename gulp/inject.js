@@ -14,8 +14,9 @@ var _ = require('lodash');
 
 var browserSync = require('browser-sync');
 
-function injectReload() {
-  return browserSync.reload();
+function injectReload(done) {
+  browserSync.reload();
+  done();
 }
 
 function inject() {
