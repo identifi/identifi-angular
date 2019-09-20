@@ -7,6 +7,9 @@
  */
 
 var gutil = require('gulp-util');
+var replace = require('gulp-replace');
+var Combine = require('stream-combiner');
+var debug = require('gulp-debug');
 
 /**
  *  The main paths of your project handle these with care
@@ -40,3 +43,31 @@ exports.errorHandler = function(title) {
   };
 };
 exports.errorHandler.exclude = true;
+
+/**
+ * URL rewrite rules for CSS transformation
+ */
+exports.cssRewrites = [
+  [/url\("..\/webfonts\//i, 'url("../fonts/'],
+  ['../../../bower_components/bootstrap-sass/assets/fonts/bootstrap/', '../fonts/']
+];
+exports.jsRewrites = [];
+exports.htmlRewrites = [];
+
+// Generic string replacers
+function transformer(title, sources) {
+  var func = function() {
+    return Combine([
+      debug({'title': title})
+    ].concat(sources.map(function(pattern) {
+      return replace(pattern[0], pattern[1])
+    })));
+  }
+  func.exclude = true;
+  return func;
+}
+
+exports.cssTransforms = transformer('cssTransforms', exports.cssRewrites)
+exports.jsTransforms = transformer('jsTransforms', exports.jsRewrites)
+exports.htmlTransforms = transformer('htmlTransforms', exports.htmlRewrites)
+

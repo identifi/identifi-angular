@@ -44,7 +44,7 @@
     "gulp-consolidate": "~0.2.0",
     "gulp-cssnano": "~2.1.1",
     "gulp-eslint": "~4.0.2",
-    "gulp-filter": "~5.1.0",
+    "gulp-filter": "~6.0.0",
     "gulp-flatten": "~0.4.0",
     "gulp-htmlmin": "~4.0.0",
     "gulp-inject": "~4.3.2",
@@ -82,5 +82,10 @@
   },
   "engines": {
     "node": ">=0.10.0"
+  },
+  "dependencies": {
+    "gulp-debug": "^4.0.0",
+    "gulp-if": "^3.0.0",
+    "stream-combiner": "^0.2.2"
   }
 }

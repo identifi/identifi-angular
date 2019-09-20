@@ -31,11 +31,20 @@ var buildStyles = function() {
   };
 
 
-  return gulp.src([
+  var stream = gulp.src([
     path.join(conf.paths.src, '/app/index.scss')
   ])
     .pipe($.inject(injectFiles, injectOptions))
-    .pipe(wiredep(_.extend({}, conf.wiredep)))
+    .pipe(wiredep(_.extend({}, conf.wiredep)));
+
+  stream = stream.pipe(conf.cssTransforms());
+
+  /*stream = conf.cssRewrites.reduce(function(acc, current) {
+    console.log(current[0], '->', current[1])
+    return acc.pipe($.replace(current[0], current[1]))
+  }, stream);*/
+
+  return stream
     .pipe($.sourcemaps.init())
     .pipe($.sass(sassOptions)).on('error', conf.errorHandler('Sass'))
     .pipe($.autoprefixer()).on('error', conf.errorHandler('Autoprefixer'))
