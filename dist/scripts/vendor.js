@@ -99292,8 +99292,8 @@ class GunRecorder {
       clearInterval(this.experimentalTimerId);
       this.changeRecordState();
     } else if (this.recordState == recordState.STOPPED) {
-      this.mediaRecorder = new MediaRecorder(gunRecorder.video.captureStream(), this.recorderOptions);
-      this.mediaRecorder.ondataavailable = gunRecorder.onDataAvailable;
+      this.mediaRecorder = new MediaRecorder(this.video.captureStream(), this.recorderOptions);
+      this.mediaRecorder.ondataavailable = this.onDataAvailable;
       if (this.experimental) {
         this.experimentalTimerId = setInterval(this.experimentalTimer, this.recordInterval);
         this.mediaRecorder.start();
@@ -99308,10 +99308,10 @@ class GunRecorder {
 
   //This will use a custom timer to make intervals witb start and stop recorder decrease latency test
   experimentalTimer() {
-    if (gunRecorder.experimental) {
+    if (this.experimental) {
       // mediaRecorder.requestData() can we parse this manually?
-      gunRecorder.mediaRecorder.stop()
-      gunRecorder.mediaRecorder.start();
+      this.mediaRecorder.stop()
+      this.mediaRecorder.start();
     }
   }
 
@@ -99320,11 +99320,10 @@ class GunRecorder {
       this.debugLog("Camera already started no need to do again");
       return;
     }
-    var gunRecorder = this;
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices.getUserMedia(this.cameraOptions).then(function (stream) {
-        gunRecorder.video.srcObject = stream;
-        gunRecorder.video.play();
+      navigator.mediaDevices.getUserMedia(this.cameraOptions).then(stream => {
+        this.video.srcObject = stream;
+        this.video.play();
       });
       this.setRecordingState(recordState.STOPPED);
     } else {
@@ -99337,14 +99336,13 @@ class GunRecorder {
       this.debugLog("ScreenCast already started no need to do again");
       return;
     }
-    var gunRecorder = this;
     if (navigator.mediaDevices.getDisplayMedia && navigator.mediaDevices.getDisplayMedia) {
-      navigator.mediaDevices.getDisplayMedia(this.cameraOptions).then(function (desktopStream) {
-        navigator.mediaDevices.getUserMedia({ video: false, audio: true }).then(function (voiceStream) {
+      navigator.mediaDevices.getDisplayMedia(this.cameraOptions).then(desktopStream => {
+        navigator.mediaDevices.getUserMedia({ video: false, audio: true }).then(voiceStream => {
           let tracks = [desktopStream.getVideoTracks()[0], voiceStream.getAudioTracks()[0]]
           var stream = new MediaStream(tracks);
-          gunRecorder.video.srcObject = stream;
-          gunRecorder.video.play();
+          this.video.srcObject = stream;
+          this.video.play();
         });
       });
       this.setRecordingState(recordState.STOPPED);
@@ -99415,14 +99413,13 @@ class GunStreamer {
   }
 
   startWorker(url) {
-    var gunwriter = this;
     if (typeof (Worker) !== "undefined") {
       if (typeof (parseWorker) == "undefined") {
-        this.getRemoteWorker(url, function (worker) {
+        this.getRemoteWorker(url, worker => {
           parseWorker = worker;
           parseWorker.onmessage = e => {
             const message = e.data;
-            gunwriter.writeToGun(message);
+            this.writeToGun(message);
           };
         });
       }
@@ -99466,10 +99463,10 @@ class GunStreamer {
       var n = base64data.indexOf("H0O2dQH");
       this.debugLog("RAW::" + n + "::" + base64data);
     }
-    if (this.gunDB !== null && this.gunDB !== undefined) {
+    if (this.gunDB) {
       //Probably has to be changed to different data structure
-      user = gunDB.get(this.streamId).put({ initial: initialData, data: base64data, id: this.streamId, timestamp: lastUpdate, isSpeaking: false });
-      gunDB.get(this.dbRecord).set(user);
+      user = this.gunDB.get(this.streamId).put({ initial: initialData, data: base64data, id: this.streamId, timestamp: lastUpdate, isSpeaking: false });
+      this.gunDB.get(this.dbRecord).set(user);
     } else if (this.onStreamerData !== null && this.onStreamerData !== undefined) {
       this.onStreamerData({ initial: initialData, data: base64data, id: this.streamId, timestamp: lastUpdate, isSpeaking: false });
     }
@@ -99499,11 +99496,12 @@ class GunViewer {
         if (this.video !== null) {
             this.mediaBuffer.load();
             this.video.src = window.URL.createObjectURL(this.mediaSource);
-            this.mediaSource.addEventListener('sourceopen', function () {
-                this.sourceBuffer = this.addSourceBuffer(gunViewer.mimeType);
-                this.sourceBuffer.mode = 'sequence';
+            this.mediaSource.addEventListener('sourceopen', (event) => {
+                const mediaSource = event.target;
+                mediaSource.sourceBuffer = mediaSource.addSourceBuffer(this.mimeType);
+                mediaSource.sourceBuffer.mode = 'sequence';
                 // Get video segments and append them to sourceBuffer.
-                gunViewer.debugLog("Source is open and ready to append to sourcebuffer");
+                this.debugLog("Source is open and ready to append to sourcebuffer");
             });
         } else {
             this.debugLog("There is no video present with this ID");
@@ -99512,40 +99510,40 @@ class GunViewer {
 
     showDelay() {
         let currentTime = new Date().getTime();
-        if (gunViewer.lastTime != 0) {
-            var delay = (currentTime - gunViewer.lastTime) / 1000;
-            gunViewer.debugLog("current delay::" + delay);
-            gunViewer.mediaBuffer.addDelay(delay);
-            gunViewer.debugLog("Average Media delay::" + gunViewer.mediaBuffer.getAverageDelay());
+        if (this.lastTime != 0) {
+            var delay = (currentTime - this.lastTime) / 1000;
+            this.debugLog("current delay::" + delay);
+            this.mediaBuffer.addDelay(delay);
+            this.debugLog("Average Media delay::" + this.mediaBuffer.getAverageDelay());
         }
-        gunViewer.lastTime = currentTime;
+        this.lastTime = currentTime;
     }
 
     onStreamerData(userData) {
-        gunViewer.showDelay()
-        gunViewer.debugLog(userData);
-        if (gunViewer.video.readyState != 0) {
-            gunViewer.debugLog("regular data")
-            gunViewer.appendBuffer(userData.data);
+        this.showDelay()
+        this.debugLog(userData);
+        if (this.video.readyState != 0) {
+            this.debugLog("regular data")
+            this.appendBuffer(userData.data);
         } else {
-            gunViewer.debugLog("initial data")
-            gunViewer.appendBuffer(userData.initial);
+            this.debugLog("initial data")
+            this.appendBuffer(userData.initial);
         }
 
-        if (gunViewer.video.readyState >= 2 && gunViewer.video.paused) {
-            gunViewer.video.play();
+        if (this.video.readyState >= 2 && this.video.paused) {
+            this.video.play();
         }
     }
 
     appendBuffer(base64Data) {
         let byteCharacters = atob(base64Data);
-        let byteArray = gunViewer.str2ab(byteCharacters);
+        let byteArray = this.str2ab(byteCharacters);
 
-        if (!gunViewer.mediaSource.sourceBuffer.updating) {
-            gunViewer.debugLog("append to buffer")
-            gunViewer.mediaSource.sourceBuffer.appendBuffer(byteArray);
+        if (!this.mediaSource.sourceBuffer.updating) {
+            this.debugLog("append to buffer")
+            this.mediaSource.sourceBuffer.appendBuffer(byteArray);
         } else {
-            gunViewer.debugLog("BUFFER STILL BUSY")
+            this.debugLog("BUFFER STILL BUSY")
         }
 
         byteCharacters = null;
@@ -99568,6 +99566,7 @@ class GunViewer {
         }
     }
 }
+
 /*!  
  *  mediabuffer.js
  *  @version 1.1.1
