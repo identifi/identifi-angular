@@ -22,22 +22,22 @@ function watch() {
   gulp.watch([
     path.join(conf.paths.src, '/app/**/*.css'),
     path.join(conf.paths.src, '/app/**/*.scss')
-  ], function(event) {
+  ], gulp.series(function(event) {
     if(isOnlyChange(event)) {
-      gulp.start(stylesReload);
+      return gulp.series(stylesReload);
     } else {
-      gulp.start(injectReload);
+      return gulp.series(injectReload);
     }
-  });
+  }));
 
   gulp.watch([
     path.join(conf.paths.src, '/app/**/*.js'),
     path.join(conf.paths.src, '/app/**/*.coffee')
   ], gulp.series(function(event) {
     if(isOnlyChange(event)) {
-      gulp.start(scriptsReload);
+      return gulp.series(scriptsReload);
     } else {
-      gulp.start(injectReload);
+      return gulp.series(injectReload);
     }
   }));
 
