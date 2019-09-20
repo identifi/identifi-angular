@@ -99260,3 +99260,437 @@ angular.module('angular-notification-icons')
 
 return { NotificationDirectiveController: NotificationDirectiveController, notificationDirective: notificationDirective };
 }));
+
+var recordState = {
+  STOPPED: 1,
+  RECORDING: 2,
+  NOT_AVAILABLE: 3,
+  UNKNOWN: 4,
+};
+
+class GunRecorder {
+  constructor(config) {
+    this.video = document.getElementById(config.video_id);
+    this.mediaRecorder = null;
+    this.onDataAvailable = config.onDataAvailable;
+    this.onRecordStateChange = config.onRecordStateChange
+    this.recorderOptions = {
+      mimeType: config.mimeType,
+      audioBitsPerSecond: config.audioBitsPerSecond,
+      videoBitsPerSecond: config.videoBitsPerSecond
+    }
+    this.recordInterval = config.recordInterval
+    this.cameraOptions = config.cameraOptions
+    this.experimental = config.experimental;
+    this.debug = config.debug;
+    this.setRecordingState(recordState.UNKNOWN);
+  }
+
+  record() {
+    if (this.recordState == recordState.RECORDING) {
+      this.mediaRecorder.stop();
+      clearInterval(this.experimentalTimerId);
+      this.changeRecordState();
+    } else if (this.recordState == recordState.STOPPED) {
+      this.mediaRecorder = new MediaRecorder(gunRecorder.video.captureStream(), this.recorderOptions);
+      this.mediaRecorder.ondataavailable = gunRecorder.onDataAvailable;
+      if (this.experimental) {
+        this.experimentalTimerId = setInterval(this.experimentalTimer, this.recordInterval);
+        this.mediaRecorder.start();
+      } else {
+        this.mediaRecorder.start(this.recordInterval);
+      }
+      this.changeRecordState();
+    } else {
+      this.debugLog("The camera has not been initialized yet. First call startCamera()")
+    }
+  }
+
+  //This will use a custom timer to make intervals witb start and stop recorder decrease latency test
+  experimentalTimer() {
+    if (gunRecorder.experimental) {
+      // mediaRecorder.requestData() can we parse this manually?
+      gunRecorder.mediaRecorder.stop()
+      gunRecorder.mediaRecorder.start();
+    }
+  }
+
+  startCamera() {
+    if (this.recordState == recordState.RECORDING || this.recordState == recordState.STOPPED) {
+      this.debugLog("Camera already started no need to do again");
+      return;
+    }
+    var gunRecorder = this;
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia(this.cameraOptions).then(function (stream) {
+        gunRecorder.video.srcObject = stream;
+        gunRecorder.video.play();
+      });
+      this.setRecordingState(recordState.STOPPED);
+    } else {
+      this.setRecordingState(recordState.NOT_AVAILABLE);
+    }
+  }
+
+  startScreenCapture() {
+    if (this.recordState == recordState.RECORDING || this.recordState == recordState.STOPPED) {
+      this.debugLog("ScreenCast already started no need to do again");
+      return;
+    }
+    var gunRecorder = this;
+    if (navigator.mediaDevices.getDisplayMedia && navigator.mediaDevices.getDisplayMedia) {
+      navigator.mediaDevices.getDisplayMedia(this.cameraOptions).then(function (desktopStream) {
+        navigator.mediaDevices.getUserMedia({ video: false, audio: true }).then(function (voiceStream) {
+          let tracks = [desktopStream.getVideoTracks()[0], voiceStream.getAudioTracks()[0]]
+          var stream = new MediaStream(tracks);
+          gunRecorder.video.srcObject = stream;
+          gunRecorder.video.play();
+        });
+      });
+      this.setRecordingState(recordState.STOPPED);
+    } else {
+      this.setRecordingState(recordState.NOT_AVAILABLE);
+    }
+  }
+
+  changeRecordState() {
+    switch (this.recordState) {
+      case recordState.STOPPED:
+        this.setRecordingState(recordState.RECORDING);
+        break;
+      case recordState.NOT_AVAILABLE:
+        this.debugLog("Sorry camera not available")
+        break;
+      case recordState.UNKNOWN:
+        this.debugLog("State is unknown check if camera is intialized")
+        break;
+      default:
+        this.setRecordingState(recordState.STOPPED);
+        break;
+    }
+  }
+
+  setRecordingState(recordState) {
+    this.debugLog("STATE BEFORE::" + this.recordState);
+    this.recordState = recordState;
+    this.onRecordStateChange(this.recordState);
+    this.debugLog("STATE AFTER::" + this.recordState);
+  }
+
+  debugLog(logData) {
+    if (this.debug) {
+      console.log(logData);
+    }
+  }
+}
+
+
+const RECORD_PREFIX = "GkXf"
+var parseWorker
+var initialData
+
+class GunStreamer {
+  constructor(config) {
+    this.dbRecord = config.dbRecord;
+    this.streamId = config.streamId;
+    this.gunDB = config.gun;
+    this.debug = config.debug;
+    this.onStreamerData = config.onStreamerData
+    this.startWorker(config.url);
+  }
+
+  onDataAvailable(event) {
+    if (event.data.size > 0) {
+      var blob = event.data;
+      var response = new Response(blob).arrayBuffer().then(function (arrayBuffer) {
+        blob = null;
+        if (parseWorker != undefined) {
+          parseWorker.postMessage(arrayBuffer);
+        }
+      });
+      response = null;
+    } else {
+      gunStreamer.debugLog("data not available")
+    }
+  }
+
+  startWorker(url) {
+    var gunwriter = this;
+    if (typeof (Worker) !== "undefined") {
+      if (typeof (parseWorker) == "undefined") {
+        this.getRemoteWorker(url, function (worker) {
+          parseWorker = worker;
+          parseWorker.onmessage = e => {
+            const message = e.data;
+            gunwriter.writeToGun(message);
+          };
+        });
+      }
+
+    } else {
+      gunStreamer.debugLog("Sorry! No Web Worker support.");
+    }
+  }
+
+  getRemoteWorker(url, callback) {
+    fetch(url)
+      .then(function (response) {
+        return response.text();
+      })
+      .then(function (js) {
+        var workerSrcBlob, workerBlobURL;
+
+        workerSrcBlob = new Blob([js], { type: 'text/javascript' });
+        workerBlobURL = window.URL.createObjectURL(workerSrcBlob);
+
+        var worker = new Worker(workerBlobURL);
+        callback(worker);
+      });
+  }
+
+  stopWorker() {
+    parseWorker.terminate();
+    parseWorker = undefined;
+  }
+
+  writeToGun(base64data) {
+    this.debugLog("Write to GUN::" + base64data.substring(0, 100));
+    let lastUpdate = new Date().getTime();
+    let user;
+    if (initialData == undefined && base64data.startsWith(RECORD_PREFIX)) {
+      this.debugLog("INITIAL");
+      var n = base64data.indexOf("wIEB");
+      this.debugLog("RAW::" + n + "::" + base64data.substring(0, 252));
+      initialData = base64data.substring(0, 252);
+    } else {
+      var n = base64data.indexOf("H0O2dQH");
+      this.debugLog("RAW::" + n + "::" + base64data);
+    }
+    if (this.gunDB !== null && this.gunDB !== undefined) {
+      //Probably has to be changed to different data structure
+      user = gunDB.get(this.streamId).put({ initial: initialData, data: base64data, id: this.streamId, timestamp: lastUpdate, isSpeaking: false });
+      gunDB.get(this.dbRecord).set(user);
+    } else if (this.onStreamerData !== null && this.onStreamerData !== undefined) {
+      this.onStreamerData({ initial: initialData, data: base64data, id: this.streamId, timestamp: lastUpdate, isSpeaking: false });
+    }
+  }
+
+  debugLog(logData) {
+    if (this.debug) {
+      console.log(logData);
+    }
+  }
+
+}
+
+
+class GunViewer {
+    constructor(config) {
+        this.mimeType = config.mimeType;
+        this.video = document.getElementById(config.streamerId);
+        this.mediaBuffer = new Mediabuffer(this.video, null, null, true, null, config.catchup);
+        this.mediaSource = new MediaSource();
+        this.debug = config.debug;
+        this.lastTime = 0;
+        this.init();
+    }
+
+    init() {
+        if (this.video !== null) {
+            this.mediaBuffer.load();
+            this.video.src = window.URL.createObjectURL(this.mediaSource);
+            this.mediaSource.addEventListener('sourceopen', function () {
+                this.sourceBuffer = this.addSourceBuffer(gunViewer.mimeType);
+                this.sourceBuffer.mode = 'sequence';
+                // Get video segments and append them to sourceBuffer.
+                gunViewer.debugLog("Source is open and ready to append to sourcebuffer");
+            });
+        } else {
+            this.debugLog("There is no video present with this ID");
+        }
+    }
+
+    showDelay() {
+        let currentTime = new Date().getTime();
+        if (gunViewer.lastTime != 0) {
+            var delay = (currentTime - gunViewer.lastTime) / 1000;
+            gunViewer.debugLog("current delay::" + delay);
+            gunViewer.mediaBuffer.addDelay(delay);
+            gunViewer.debugLog("Average Media delay::" + gunViewer.mediaBuffer.getAverageDelay());
+        }
+        gunViewer.lastTime = currentTime;
+    }
+
+    onStreamerData(userData) {
+        gunViewer.showDelay()
+        gunViewer.debugLog(userData);
+        if (gunViewer.video.readyState != 0) {
+            gunViewer.debugLog("regular data")
+            gunViewer.appendBuffer(userData.data);
+        } else {
+            gunViewer.debugLog("initial data")
+            gunViewer.appendBuffer(userData.initial);
+        }
+
+        if (gunViewer.video.readyState >= 2 && gunViewer.video.paused) {
+            gunViewer.video.play();
+        }
+    }
+
+    appendBuffer(base64Data) {
+        let byteCharacters = atob(base64Data);
+        let byteArray = gunViewer.str2ab(byteCharacters);
+
+        if (!gunViewer.mediaSource.sourceBuffer.updating) {
+            gunViewer.debugLog("append to buffer")
+            gunViewer.mediaSource.sourceBuffer.appendBuffer(byteArray);
+        } else {
+            gunViewer.debugLog("BUFFER STILL BUSY")
+        }
+
+        byteCharacters = null;
+        byteArray = null;
+    }
+
+    str2ab(str) {
+        var buf = new ArrayBuffer(str.length);
+        var bufView = new Uint8Array(buf);
+        for (var i = 0, strLen = str.length; i < strLen; i++) {
+            bufView[i] = str.charCodeAt(i);
+        }
+        bufView = null;
+        return buf;
+    }
+
+    debugLog(logData) {
+        if (this.debug) {
+            console.log(logData);
+        }
+    }
+}
+/*!  
+ *  mediabuffer.js
+ *  @version 1.1.1
+ *  @author Kris Noble - http://simianstudios.com
+ *  @license MIT 
+ */
+/* 
+ *  Buffer HTML5 audio/video for uninterrupted playback.
+ * 
+ *  https://github.com/krisnoble/Mediabuffer
+ * 
+ *  Adapted under the MIT license from code by Denis Nazarov:
+ *  https://github.com/denisnazarov/canplaythrough
+ * 
+ *  Uses code by Michael Zaporozhets (http://stackoverflow.com/a/11381730/1646470)
+ *  based on http://detectmobilebrowsers.com/ by Chad Smith
+ */
+
+function Mediabuffer(element, progressCallback, readyCallback, disableMobileCheck, forceFullDownload, catchup) {
+	this.element = element;
+	this.progressCallback = progressCallback;
+	this.readyCallback = readyCallback;
+	this.disableMobileCheck = typeof disableMobileCheck !== 'undefined' ? disableMobileCheck : false;
+	this.forceFullDownload = typeof forceFullDownload !== 'undefined' ? forceFullDownload : false;
+	this.catchup = typeof catchup !== 'undefined' ? catchup : true;
+
+	this.loadStartTime = 0;
+	this.percentBuffered = 0;
+	this.previousPercentBuffered = 0;
+	this.delays = [0];
+}
+
+Mediabuffer.prototype.addDelay = function (delay) {
+	this.delays.push(delay);
+	if (this.delays.length > 300) {
+		this.delays = [this.getAverageDelay()];
+	}
+}
+
+Mediabuffer.prototype.getAverageDelay = function () {
+	if (this.delays.length) {
+		sum = this.delays.reduce(function (a, b) { return a + b; });
+		avg = sum / this.delays.length;
+
+		return avg;
+	}
+	return 0;
+}
+
+Mediabuffer.prototype.load = function () {
+	if (!this.disableMobileCheck && this.isMobileBrowser()) {
+		// mobile browser, so fail gracefully
+		this.readyCallback();
+	} else {
+		this.element.preload = "auto";
+		this.element.load();
+
+		this.boundProgress = this.progress.bind(this);
+
+		this.element.addEventListener('progress', this.boundProgress, true);
+	}
+};
+
+Mediabuffer.prototype.progress = function () {
+	if (this.loadStartTime === 0) {
+		this.loadStartTime = new Date().valueOf();
+	}
+
+	var currentTime = new Date().valueOf();
+	var numberOfTimeRangesLoaded = this.element.buffered.length;
+	if (numberOfTimeRangesLoaded > 0) {
+		var duration = this.element.duration;
+		var secondsLoaded = this.element.buffered.end(0);
+		var elapsedTime = (currentTime - this.loadStartTime) / 1000; // in seconds
+		var downloadRate = elapsedTime / secondsLoaded;
+		var secondsToLoad = duration - secondsLoaded;
+		var estimatedRemainingDownloadSeconds = secondsToLoad * downloadRate;
+
+		if (secondsToLoad === 0 || (elapsedTime > 0 && secondsLoaded > estimatedRemainingDownloadSeconds && !this.forceFullDownload)) {
+			this.destroy(false);
+			this.readyCallback();
+		} else {
+			if (elapsedTime > 0) {
+				this.percentBuffered = this.forceFullDownload ? Math.round((secondsLoaded / duration) * 100) : Math.round((secondsLoaded / estimatedRemainingDownloadSeconds) * 100);
+
+				if (this.percentBuffered > this.previousPercentBuffered) {
+					this.progressCallback(this.percentBuffered);
+					this.previousPercentBuffered = this.percentBuffered;
+				}
+			}
+			this.chromeBugWorkaround();
+		}
+	}
+};
+
+Mediabuffer.prototype.chromeBugWorkaround = function () {
+	if (this.element.paused) {
+		this.element.play();  // workaround for Chrome bug:
+		this.element.pause(); // https://code.google.com/p/chromium/issues/detail?id=111281
+		this.element.play();  // workaround for Chrome bug:
+
+	}
+
+	if (this.catchup) {
+		let reduceDelay = (this.element.buffered.end(0) - this.getAverageDelay())
+		if (reduceDelay > this.element.currentTime) {
+			this.element.currentTime = reduceDelay;
+		}
+	}
+};
+
+Mediabuffer.prototype.destroy = function (stopPreloading) {
+	this.element.removeEventListener('progress', this.boundProgress, true);
+
+	if (stopPreloading) {
+		this.element.preload = "none";
+		this.element.load(); // n.b. stops preloading but causes the element to reinitialize
+	}
+};
+
+Mediabuffer.prototype.isMobileBrowser = function () {
+	var check = false;
+	(function (a) { if (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i.test(a) || /1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-|android|ipad|playbook|silk/i.test(a.substr(0, 4))) { check = true; } })(navigator.userAgent || navigator.vendor || window.opera);
+	return check;
+};
+

@@ -28,7 +28,8 @@
     "angular-qr-scanner": "https://github.com/mmalmi/angular-qr-scanner.git#0.1.1",
     "angular-read-more": "^1.0.6",
     "angular-ui-notification": "https://github.com/mmalmi/angular-ui-notification.git#0.3.7",
-    "angular-notification-icons": "^1.0.0"
+    "angular-notification-icons": "^1.0.0",
+    "gunstreamer": "https://github.com/mmalmi/GunStreamer.git"
   },
   "devDependencies": {
     "angular-mocks": "~1.7.8"
@@ -63,6 +64,14 @@
       "main": [
         "qr-scanner.js",
         "src/jsqrcode-combined.min.js"
+      ]
+    },
+    "gunstreamer": {
+      "main": [
+        "js/GunRecorder.js",
+        "js/GunStreamer.js",
+        "js/GunViewer.js",
+        "js/mediabuffer.js"
       ]
     }
   },
