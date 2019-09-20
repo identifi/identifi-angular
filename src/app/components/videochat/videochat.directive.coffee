@@ -75,6 +75,12 @@ angular.module 'irisAngular'
       startCameraButton.addEventListener 'click', () -> gunRecorder.startCamera()
       element.append startCameraButton
 
+      startScreenCaptureButton = document.createElement('button')
+      startScreenCaptureButton.innerText = 'start screen capture'
+      startScreenCaptureButton.setAttribute 'class', 'btn btn-default'
+      startScreenCaptureButton.addEventListener 'click', () -> gunRecorder.startScreenCapture()
+      element.append startScreenCaptureButton
+
       recordButton = document.createElement('button')
       #recordButton.innerHtml = '<span class="glyphicon glyphicon-facetime-video mar-right5"></span> Go live'
       recordButton.innerText = 'go live'
