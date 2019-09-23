@@ -144,8 +144,18 @@ angular.module('irisAngular').controller 'MainController', [
                   chat.latest = msg if (chat.latest == 0 or msg.time > chat.latest.time)
                   if ((msg.time > $scope.openTime) and !$state.is('chats.show', {value:key}) and !info.selfAuthored)
                     chat.unreadMsgs++
-                  notify = ((!$state.is('chats.show', {value:key}) or document.hidden) and !info.selfAuthored and msg.time > $scope.openTime)
-                  if notify
+                  shouldNotify = () ->
+                    if info.selfAuthored
+                      return false
+                    if $state.is('chats.show', {value:key}) and not document.hidden
+                      return false
+                    if chat.chat.myMsgsLastSeenTime
+                      if chat.chat.myMsgsLastSeenTime >= msg.time
+                        return false
+                    else if $scope.openTime >= msg.time
+                      return false
+                    return true
+                  if shouldNotify()
                     NotificationService.create
                       type: 'chat'
                       from: msg.author
