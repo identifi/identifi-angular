@@ -5,6 +5,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
   '$state'
   '$rootScope'
   '$window'
+  '$document'
   '$stateParams'
   '$transitions'
   '$location'
@@ -17,7 +18,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
   'localStorageService'
   'focus'
   'NotificationService'
-  ($scope, $state, $rootScope, $window, $stateParams, $transitions, $location, $http, $q, $timeout, $uibModal, config,
+  ($scope, $state, $rootScope, $window, $document, $stateParams, $transitions, $location, $http, $q, $timeout, $uibModal, config,
   localStorageService, focus, NotificationService) -> #, Authentication
     $scope.newEntry = {}
     $scope.activeTab = 1
@@ -318,6 +319,8 @@ angular.module('irisAngular').controller 'IdentitiesController', [
       onMessage = (msg) ->
         $scope.$apply ->
           $scope.chatMessages.push(msg) if msg
+          if $scope.chat and (msg.time > $scope.chat.myMsgsLastSeenTime) and not $document.hidden
+            $scope.chat.setMyMsgsLastSeenTime()
       if $scope.idType == 'keyID'
         if $scope.authentication.user
           $scope.chat = new $window.irisLib.Chat
@@ -325,6 +328,16 @@ angular.module('irisAngular').controller 'IdentitiesController', [
             key: $scope.privateKey
             gun: $scope.gun
             participants: $scope.idValue
+          visibilityChanged = () ->
+            if $document.visibilityState == 'visible'
+              $scope.chat.setMyMsgsLastSeenTime()
+          $document.on('visibilitychange', visibilityChanged)
+          $scope.$on('$destroy', () -> $document.off('visibilitychange', visibilityChanged))
+          $scope.chat.setMyMsgsLastSeenTime()
+          $scope.chat.getMyMsgsLastSeenTime (time) ->
+            $scope.$apply -> $scope.chat.myMsgsLastSeenTime = time
+          $scope.chat.getTheirMsgsLastSeenTime (time) ->
+            $scope.$apply -> $scope.chat.theirMsgsLastSeenTime = time
           $scope.sendChatMessage = (text) ->
             t = new Date().getTime()
             m =

@@ -155,6 +155,7 @@ angular.module('irisAngular').controller 'MainController', [
                 key: $scope.privateKey
                 gun: $scope.gun
                 participants: key
+            chat.chat.getMyMsgsLastSeenTime()
             $scope.chats.push(chat)
         $scope.irisIndex.gun.get('trustedIndexes').open (r) ->
           for k, v of r
