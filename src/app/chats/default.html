@@ -1,5 +1,3 @@
 <p>Select a chat to start messaging</p>
 
-<p ng-if="!notificationsAllowed">
-<button class="btn btn-primary" ng-click="subscribeToNotifications()">Get desktop notifications</button>
-</p>
+<div ng-include="'app/main/notificationsprompt.partial.html'"></div>

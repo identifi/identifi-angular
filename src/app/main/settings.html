@@ -34,12 +34,16 @@
           </p>
         </div>
       </div>
-      <div class="panel panel-default" ng-if="!notificationsAllowed">
+      <div class="panel panel-default">
         <div class="panel-heading">
           Notifications
         </div>
         <div class="panel-body">
-          <button class="btn btn-primary" ng-click="subscribeToNotifications()">Get desktop notifications</button>
+          <div ng-if="enableNotificationsFailed" class="alert alert-warning" style="margin-bottom: 15px;">
+            Failed to enable notifications - please check your browser settings
+          </div>
+          <button ng-if="!(notificationsPermitted && localSettings.desktopNotificationsEnabled)" class="btn btn-primary" ng-click="setDesktopNotificationsEnabled(true)">Get desktop notifications</button>
+          <button ng-if="notificationsPermitted && localSettings.desktopNotificationsEnabled" class="btn btn-default" ng-click="setDesktopNotificationsEnabled(false)">Disable desktop notifications</button>
         </div>
       </div>
     </div>

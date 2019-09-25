@@ -269,9 +269,13 @@ angular.module('irisAngular').controller 'MainController', [
       setInterval $scope.updateIpfsPeers, 5000
 
     $scope.localSettings = localStorageService.get('localSettings') || {}
-    $scope.closeProfileUploadNotification = ->
-      $scope.localSettings.profileUploadNotificationClosed = true
+
+    $scope.saveLocalSetting = (key, value) ->
+      $scope.localSettings[key] = value
       localStorageService.set('localSettings', $scope.localSettings)
+
+    $scope.closeProfileUploadNotification = ->
+      $scope.saveLocalSetting 'profileUploadNotificationClosed', true
 
     $scope.openProfilePhotoUploadModal = ->
       return unless $scope.authentication.identity
@@ -739,11 +743,16 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.ipfs.swarm.disconnect(url).then ->
         $scope.updateIpfsPeers()
 
-    $scope.notificationsAllowed = window.Notification and Notification.permission == 'granted'
+    $scope.notificationsPermitted = window.Notification and Notification.permission == 'granted'
+    NotificationService.desktopNotificationsEnabled = $scope.localSettings.desktopNotificationsEnabled
 
-    $scope.subscribeToNotifications = ->
-      if window.Notification
+    $scope.setDesktopNotificationsEnabled = (enabled = true) ->
+      $scope.saveLocalSetting 'desktopNotificationsEnabled', enabled
+      $scope.saveLocalSetting('desktopNotificationsNotNow', false) if enabled
+      NotificationService.desktopNotificationsEnabled = enabled
+      if enabled and window.Notification
         Notification.requestPermission (status) ->
           $scope.$apply ->
-            $scope.notificationsAllowed = status == 'granted'
+            $scope.notificationsPermitted = status == 'granted'
+            $scope.enableNotificationsFailed = !$scope.notificationsPermitted
 ]

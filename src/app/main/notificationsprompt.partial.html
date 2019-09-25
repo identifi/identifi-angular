@@ -1,0 +1,11 @@
+<div ng-if="!(notificationsPermitted && localSettings.desktopNotificationsEnabled) && !localSettings.desktopNotificationsNotNow" class="mar-bot15">
+  <div ng-if="enableNotificationsFailed" class="alert alert-warning" style="margin-bottom: 15px;">
+    Failed to enable notifications - please check your browser settings
+  </div>
+  <button class="btn btn-primary" ng-click="setDesktopNotificationsEnabled(true)">
+    Get desktop notifications
+  </button>
+  <button class="btn btn-default" ng-click="saveLocalSetting('desktopNotificationsNotNow', true)">
+    Not now
+  </button>
+</div>
