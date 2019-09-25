@@ -27,9 +27,14 @@ angular.module('irisAngular').service 'NotificationService', [
         uiNotification notification
         if this.desktopNotificationsEnabled and document.hidden
           if window.Notification and Notification.permission == 'granted'
-            navigator.serviceWorker.getRegistration().then (reg) ->
-              reg.showNotification notification.from,
-                body: notification.text
+            console.log 'notifying'
+            desktopNotification = new Notification(notification.from,
+              icon: '/assets/images/icon128.png'
+              body: notification.text)
+            desktopNotification.onclick = ->
+              uiNotification.clearAll()
+              notification.onClick() if notification.onClick
+              window.focus()
       markChatsSeen: (options) ->
         for n in this.notifications
           n.seen = true if n.type == 'chat'
