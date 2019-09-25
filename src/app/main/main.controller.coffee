@@ -745,6 +745,11 @@ angular.module('irisAngular').controller 'MainController', [
 
     $scope.notificationsPermitted = window.Notification and Notification.permission == 'granted'
     NotificationService.desktopNotificationsEnabled = $scope.localSettings.desktopNotificationsEnabled
+    NotificationService.audioNotificationsDisabled = $scope.localSettings.audioNotificationsDisabled
+
+    $scope.setAudioNotificationsEnabled = (enabled = true) ->
+      $scope.saveLocalSetting('audioNotificationsDisabled', enabled)
+      NotificationService.audioNotificationsDisabled = enabled
 
     $scope.setDesktopNotificationsEnabled = (enabled = true) ->
       $scope.saveLocalSetting 'desktopNotificationsEnabled', enabled

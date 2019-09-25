@@ -6,6 +6,7 @@ angular.module('irisAngular').service 'NotificationService', [
       notifications: []
       unseenChats: 0
       unseenPosts: 0
+      audio: new Audio('/assets/audio/notification.mp3')
       create: (notification) ->
         defaultOptions =
           seen: false
@@ -21,6 +22,7 @@ angular.module('irisAngular').service 'NotificationService', [
         notification.message = "#{notification.from}: #{notification.text}"
         this.notifications.push notification
         this.notifications.splice 10 # maximum notifications length
+        this.audio.play() unless this.audioNotificationsDisabled
         unless notification.seen
           this.unseenPosts++ if notification.type == 'post'
           this.unseenChats++ if notification.type == 'chat'
