@@ -31,6 +31,12 @@
             <button class="btn btn-danger" ng-click="downloadText(privateKey|json)">
               Download
             </button>
+            <button class="btn btn-danger" ng-click="showPrivateKeyQr = !showPrivateKeyQr">
+              Show QR code
+            </button>
+          </p>
+          <p ng-if="showPrivateKeyQr">
+            <qrcode data={{privateKey|json}} size="230"></qrcode>
           </p>
         </div>
       </div>
