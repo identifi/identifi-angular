@@ -71,8 +71,18 @@ angular.module('irisAngular').controller 'MainController', [
       else
         return s
 
-    $scope.copyToClipboard = (text) ->
+    $scope.copyToClipboard = (text, event) ->
+      originalText = event.target.innerHTML
+      originalWidth = event.target.offsetWidth
+      originalStyleWidth = event.target.style.width
       clipboard.copyText text
+      if event
+        event.target.innerHTML = 'Copied'
+        event.target.style.width = originalWidth + 'px'
+        setTimeout ->
+          event.target.innerHTML = originalText
+          event.target.style.width = originalStyleWidth
+        , 2000
 
     $scope.search = (query, limit) ->
       return unless $scope.irisIndex

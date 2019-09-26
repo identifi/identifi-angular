@@ -25,7 +25,7 @@
         <div class="panel-body">
           <p>Private key is used to log in to your account. Keep your private key safe!</p>
           <p>
-            <button class="btn btn-danger" ng-click="copyToClipboard(privateKey|json)">
+            <button class="btn btn-danger" ng-click="copyToClipboard(privateKey|json, $event)">
               Copy to clipboard
             </button>
             <button class="btn btn-danger" ng-click="downloadText(privateKey|json)">

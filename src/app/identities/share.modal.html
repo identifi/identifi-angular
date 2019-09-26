@@ -1,7 +1,7 @@
 <div class="col-md-10 col-md-offset-1" ng-controller="IdentitiesController">
   <div class="panel panel-default mar-top15">
     <div class="panel-heading text-center">
-      <p><button ng-click="copyToClipboard(idUrl)" class="btn btn-primary mar-top10">Copy link to clipboard</button></p>
+      <p><button ng-click="copyToClipboard(idUrl, $event)" class="btn btn-primary mar-top10">Copy link to clipboard</button></p>
       <div class="mar-top20 mar-bot10"><qrcode data="{{idUrl}}" size="240"></qrcode></div>
       <!-- <div class="mar-top15 mar-bot10"><button ng-click="shareModal.close()" class="btn btn-default">Close</button></div> -->
     </div>
