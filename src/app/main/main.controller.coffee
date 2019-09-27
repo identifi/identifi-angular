@@ -753,6 +753,9 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.ipfs.swarm.disconnect(url).then ->
         $scope.updateIpfsPeers()
 
+    $scope.onVideoError = (error) ->
+      console.error 'video error', error
+
     $scope.desktopNotificationsAvailable = !!window.Notification
     $scope.notificationsPermitted = window.Notification and Notification.permission == 'granted'
     NotificationService.desktopNotificationsDisabled = $scope.localSettings.desktopNotificationsDisabled
