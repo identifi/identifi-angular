@@ -140,43 +140,46 @@ angular.module('irisAngular').controller 'MainController', [
               latest: 0
               unreadMsgs: 0
           $scope.irisIndex.gun.user().get('chat').map().once (node, key) ->
-            identity = $scope.irisIndex.get('keyID', key)
-            $scope.setIdentityNames identity
-            chat =
-              idValue: key
-              idType: 'keyID'
-              identity: identity
-              latest: 0
-              unreadMsgs: 0
-              chat: new $window.irisLib.Chat
-                onMessage: (msg, info) ->
-                  return unless msg
-                  chat.latest = msg if (chat.latest == 0 or msg.time > chat.latest.time)
-                  if ((msg.time > $scope.openTime) and !$state.is('chats.show', {value:key}) and !info.selfAuthored)
-                    chat.unreadMsgs++
-                  shouldNotify = () ->
-                    if info.selfAuthored
-                      return false
-                    if $state.is('chats.show', {value:key}) and not document.hidden
-                      return false
-                    if chat.chat.myMsgsLastSeenTime
-                      if chat.chat.myMsgsLastSeenTime >= msg.time
-                        return false
-                    else if $scope.openTime >= msg.time
-                      return false
-                    return true
-                  if shouldNotify()
-                    NotificationService.create
-                      type: 'chat'
-                      from: msg.author
-                      text: msg.text
-                      onClick: () ->
-                        $state.go 'chats.show', { type: 'keyID', value: key }
-                key: $scope.privateKey
-                gun: $scope.gun
-                participants: key
-            chat.chat.getMyMsgsLastSeenTime()
-            $scope.chats.push(chat)
+            setTimeout ->
+              $scope.$apply ->
+                identity = $scope.irisIndex.get('keyID', key)
+                $scope.setIdentityNames identity
+                chat =
+                  idValue: key
+                  idType: 'keyID'
+                  identity: identity
+                  latest: 0
+                  unreadMsgs: 0
+                  chat: new $window.irisLib.Chat
+                    onMessage: (msg, info) ->
+                      return unless msg
+                      chat.latest = msg if (chat.latest == 0 or msg.time > chat.latest.time)
+                      if ((msg.time > $scope.openTime) and !$state.is('chats.show', {value:key}) and !info.selfAuthored)
+                        chat.unreadMsgs++
+                      shouldNotify = () ->
+                        if info.selfAuthored
+                          return false
+                        if $state.is('chats.show', {value:key}) and not document.hidden
+                          return false
+                        if chat.chat.myMsgsLastSeenTime
+                          if chat.chat.myMsgsLastSeenTime >= msg.time
+                            return false
+                        else if $scope.openTime >= msg.time
+                          return false
+                        return true
+                      if shouldNotify()
+                        NotificationService.create
+                          type: 'chat'
+                          from: msg.author
+                          text: msg.text
+                          onClick: () ->
+                            $state.go 'chats.show', { type: 'keyID', value: key }
+                    key: $scope.privateKey
+                    gun: $scope.gun
+                    participants: key
+                chat.chat.getMyMsgsLastSeenTime()
+                $scope.chats.push(chat)
+            , Math.floor(Math.random() * 5000) # TODO lol fix
         $scope.irisIndex.gun.get('trustedIndexes').open (r) ->
           for k, v of r
             $scope.trustedIndexes.push
