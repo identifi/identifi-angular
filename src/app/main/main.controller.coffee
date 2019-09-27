@@ -129,6 +129,7 @@ angular.module('irisAngular').controller 'MainController', [
         , 1000
         $scope.trustedIndexes = []
         $scope.chats = []
+        $scope.chatKeys = {}
         if i.writable
           $scope.irisIndex.gun.user().get('iris').get('chatMessagesByUuid').map().once (node, key) ->
             identity = $scope.irisIndex.get('uuid', key)
@@ -139,7 +140,10 @@ angular.module('irisAngular').controller 'MainController', [
               identity: identity
               latest: 0
               unreadMsgs: 0
-          $scope.irisIndex.gun.user().get('chat').map().once (node, key) ->
+          timeout = 0
+          $scope.irisIndex.gun.user().get('chat').map().on (node, key) ->
+            return if $scope.chatKeys[key]
+            $scope.chatKeys[key] = true
             setTimeout ->
               $scope.$apply ->
                 identity = $scope.irisIndex.get('keyID', key)
@@ -179,7 +183,8 @@ angular.module('irisAngular').controller 'MainController', [
                     participants: key
                 chat.chat.getMyMsgsLastSeenTime()
                 $scope.chats.push(chat)
-            , Math.floor(Math.random() * 5000) # TODO lol fix
+            , timeout # TODO lol fix
+            timeout = timeout + 500
         $scope.irisIndex.gun.get('trustedIndexes').open (r) ->
           for k, v of r
             $scope.trustedIndexes.push
