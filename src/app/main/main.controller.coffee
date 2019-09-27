@@ -765,9 +765,12 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.saveLocalSetting 'desktopNotificationsDisabled', disabled
       $scope.saveLocalSetting('desktopNotificationsNotNow', false) if disabled
       NotificationService.desktopNotificationsDisabled = disabled
-      if !disabled and window.Notification
-        Notification.requestPermission (status) ->
-          $scope.$apply ->
-            $scope.notificationsPermitted = status == 'granted'
-            $scope.enableNotificationsFailed = !$scope.notificationsPermitted
+      if !disabled
+        if window.Notification
+          Notification.requestPermission (status) ->
+            $scope.$apply ->
+              $scope.notificationsPermitted = status == 'granted'
+              $scope.enableNotificationsFailed = !$scope.notificationsPermitted
+        else
+          $scope.enableNotificationsFailed = true
 ]

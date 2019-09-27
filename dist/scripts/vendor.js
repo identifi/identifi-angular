@@ -92623,17 +92623,27 @@ Gun.chain.unset = function(node){
 	  }
 
 	  Chat.prototype.getSecret = async function getSecret(pub) {
+	    var _this = this;
+
 	    if (!this.secrets[pub]) {
-	      var epub = await this.gun.user(pub).get('epub').once().then();
+	      var epub = await new _Promise(function (resolve) {
+	        _this.gun.user(pub).get('epub').on(function (epub) {
+	          if (epub) {
+	            resolve(epub);
+	          }
+	        });
+	      });
 	      this.secrets[pub] = await Gun.SEA.secret(epub, this.key);
 	    }
 	    return this.secrets[pub];
 	  };
 
 	  Chat.prototype.messageReceived = async function messageReceived(data, pub, selfAuthored) {
-	    var decrypted = await Gun.SEA.decrypt(data, (await this.getSecret(pub)));
+	    var secret = await this.getSecret(pub);
+	    console.log('decrypt', data, secret, pub);
+	    var decrypted = await Gun.SEA.decrypt(data, secret);
 	    if (typeof decrypted !== 'object') {
-	      // console.log(`chat data received`, decrypted);
+	      console.log('fail!', data, secret, pub);
 	      return;
 	    }
 	    if (this.onMessage) {
@@ -92662,15 +92672,15 @@ Gun.chain.unset = function(node){
 
 
 	  Chat.prototype.getMyMsgsLastSeenTime = function getMyMsgsLastSeenTime(callback) {
-	    var _this = this;
+	    var _this2 = this;
 
 	    var keys = _Object$keys(this.secrets);
 
 	    var _loop = function _loop(i) {
-	      _this.gun.user().get('chat').get(keys[i]).get('msgsLastSeenTime').on(async function (data) {
-	        _this.myMsgsLastSeenTime = await Gun.SEA.decrypt(data, (await _this.getSecret(keys[i])));
+	      _this2.gun.user().get('chat').get(keys[i]).get('msgsLastSeenTime').on(async function (data) {
+	        _this2.myMsgsLastSeenTime = await Gun.SEA.decrypt(data, (await _this2.getSecret(keys[i])));
 	        if (callback) {
-	          callback(_this.myMsgsLastSeenTime);
+	          callback(_this2.myMsgsLastSeenTime);
 	        }
 	      });
 	    };
@@ -92686,15 +92696,15 @@ Gun.chain.unset = function(node){
 
 
 	  Chat.prototype.getTheirMsgsLastSeenTime = function getTheirMsgsLastSeenTime(callback) {
-	    var _this2 = this;
+	    var _this3 = this;
 
 	    var keys = _Object$keys(this.secrets);
 
 	    var _loop2 = function _loop2(i) {
-	      _this2.gun.user(keys[i]).get('chat').get(_this2.key.pub).get('msgsLastSeenTime').on(async function (data) {
-	        _this2.theirMsgsLastSeenTime = await Gun.SEA.decrypt(data, (await _this2.getSecret(keys[i])));
+	      _this3.gun.user(keys[i]).get('chat').get(_this3.key.pub).get('msgsLastSeenTime').on(async function (data) {
+	        _this3.theirMsgsLastSeenTime = await Gun.SEA.decrypt(data, (await _this3.getSecret(keys[i])));
 	        if (callback) {
-	          callback(_this2.theirMsgsLastSeenTime, keys[i]);
+	          callback(_this3.theirMsgsLastSeenTime, keys[i]);
 	        }
 	      });
 	    };
@@ -92711,17 +92721,17 @@ Gun.chain.unset = function(node){
 
 
 	  Chat.prototype.addPub = function addPub(pub) {
-	    var _this3 = this;
+	    var _this4 = this;
 
 	    this.secrets[pub] = null;
 	    this.getSecret(pub);
 	    // Subscribe to their messages
 	    this.gun.user(pub).get('chat').get(this.key.pub).map().once(function (data) {
-	      _this3.messageReceived(data, pub);
+	      _this4.messageReceived(data, pub);
 	    });
 	    // Subscribe to our messages
 	    this.user.get('chat').get(pub).map().once(function (data) {
-	      _this3.messageReceived(data, pub, true);
+	      _this4.messageReceived(data, pub, true);
 	    });
 	  };
 
@@ -94110,7 +94120,7 @@ Gun.chain.unset = function(node){
 	  return Index;
 	}();
 
-	var version$1 = "0.0.119";
+	var version$1 = "0.0.120";
 
 	/*eslint no-useless-escape: "off", camelcase: "off" */
 
