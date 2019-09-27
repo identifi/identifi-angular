@@ -99084,7 +99084,6 @@ ngFileUpload.service('UploadExif', ['UploadResize', '$q', function (UploadResize
             link: function(scope, element, attrs) {
 
                 window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
-                navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
 
                 var height = attrs.height || 300;
                 var width = attrs.width || 250;
@@ -99093,8 +99092,6 @@ ngFileUpload.service('UploadExif', ['UploadResize', '$q', function (UploadResize
                 video.setAttribute('width', width);
                 video.setAttribute('height', height);
                 video.setAttribute('autoplay', true);
-                video.setAttribute('muted', true);
-                video.setAttribute('playsinline', true);
                 video.setAttribute('style', '-moz-transform:rotateY(-180deg);-webkit-transform:rotateY(-180deg);transform:rotateY(-180deg);');
 
                 var canvas = $window.document.createElement('canvas');
@@ -99129,17 +99126,26 @@ ngFileUpload.service('UploadExif', ['UploadResize', '$q', function (UploadResize
                     stopScan = $interval(scan, 500);
                 }
 
-                // Call the getUserMedia method with our callback functions
                 if (navigator.getUserMedia) {
-                    var constraint = {
+                    var constraints = {
                         audio: false,
                         video: {
                             facingMode: { ideal: "environment" }
                         }
                     };
 
-                    navigator.getUserMedia(constraint, successCallback, function(e) {
-                        scope.ngVideoError({error: e});
+                    navigator.mediaDevices.getUserMedia(constraints)
+                    .then(function(stream) {
+                      video.srcObject = stream;
+                      $window.localMediaStream = stream;
+
+                      scope.video = video;
+
+                      video.play();
+                      stopScan = $interval(scan, 500);
+                    })
+                    .catch(function(error) {
+                      scope.ngVideoError({error: error});
                     });
                 } else {
                     scope.ngVideoError({error: 'Native web camera streaming (getUserMedia) not supported in this browser.'});

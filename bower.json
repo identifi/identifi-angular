@@ -25,7 +25,7 @@
     "angular-clipboard": "https://github.com/mmalmi/angular-clipboard.git#1.6.3",
     "angular-qrcode": "^7.2.0",
     "ng-file-upload": "^12.2.13",
-    "angular-qr-scanner": "https://github.com/mmalmi/angular-qr-scanner.git#0.1.1",
+    "angular-qr-scanner": "https://github.com/mmalmi/angular-qr-scanner.git#0.1.2",
     "angular-read-more": "^1.0.6",
     "angular-ui-notification": "https://github.com/mmalmi/angular-ui-notification.git#0.3.7",
     "angular-notification-icons": "^1.0.0",
