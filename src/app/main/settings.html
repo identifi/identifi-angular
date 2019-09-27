@@ -49,15 +49,15 @@
             Failed to enable notifications - please check your browser settings
           </div>
           <p>
-            <button ng-if="!(notificationsPermitted && localSettings.desktopNotificationsEnabled)" class="btn btn-primary" ng-click="setDesktopNotificationsEnabled(true)">Get desktop notifications</button>
-            <button ng-if="notificationsPermitted && localSettings.desktopNotificationsEnabled" class="btn btn-default" ng-click="setDesktopNotificationsEnabled(false)">Disable desktop notifications</button>
+            <button ng-if="!(notificationsPermitted && !localSettings.desktopNotificationsDisabled)" class="btn btn-primary" ng-click="setDesktopNotificationsDisabled(false)">Get desktop notifications</button>
+            <button ng-if="notificationsPermitted && !localSettings.desktopNotificationsDisabled" class="btn btn-default" ng-click="setDesktopNotificationsDisabled(true)">Disable desktop notifications</button>
           </p>
 
           <p>
-            <button ng-if="localSettings.audioNotificationsDisabled" ng-click="setAudioNotificationsEnabled(true)" class="btn btn-primary">
+            <button ng-if="localSettings.audioNotificationsDisabled" ng-click="setAudioNotificationsDisabled(false)" class="btn btn-primary">
               Enable notification sounds
             </button>
-            <button ng-if="!localSettings.audioNotificationsDisabled" ng-click="setAudioNotificationsEnabled(false)" class="btn btn-default">
+            <button ng-if="!localSettings.audioNotificationsDisabled" ng-click="setAudioNotificationsDisabled(true)" class="btn btn-default">
               Disable notification sounds
             </button>
           </p>

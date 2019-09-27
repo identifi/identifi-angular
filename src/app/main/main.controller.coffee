@@ -754,18 +754,18 @@ angular.module('irisAngular').controller 'MainController', [
         $scope.updateIpfsPeers()
 
     $scope.notificationsPermitted = window.Notification and Notification.permission == 'granted'
-    NotificationService.desktopNotificationsEnabled = $scope.localSettings.desktopNotificationsEnabled
+    NotificationService.desktopNotificationsDisabled = $scope.localSettings.desktopNotificationsDisabled
     NotificationService.audioNotificationsDisabled = $scope.localSettings.audioNotificationsDisabled
 
-    $scope.setAudioNotificationsEnabled = (enabled = true) ->
-      $scope.saveLocalSetting('audioNotificationsDisabled', enabled)
-      NotificationService.audioNotificationsDisabled = enabled
+    $scope.setAudioNotificationsDisabled = (disabled) ->
+      $scope.saveLocalSetting('audioNotificationsDisabled', disabled)
+      NotificationService.audioNotificationsDisabled = disabled
 
-    $scope.setDesktopNotificationsEnabled = (enabled = true) ->
-      $scope.saveLocalSetting 'desktopNotificationsEnabled', enabled
-      $scope.saveLocalSetting('desktopNotificationsNotNow', false) if enabled
-      NotificationService.desktopNotificationsEnabled = enabled
-      if enabled and window.Notification
+    $scope.setDesktopNotificationsDisabled = (disabled) ->
+      $scope.saveLocalSetting 'desktopNotificationsDisabled', disabled
+      $scope.saveLocalSetting('desktopNotificationsNotNow', false) if disabled
+      NotificationService.desktopNotificationsDisabled = disabled
+      if !disabled and window.Notification
         Notification.requestPermission (status) ->
           $scope.$apply ->
             $scope.notificationsPermitted = status == 'granted'

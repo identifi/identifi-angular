@@ -27,7 +27,7 @@ angular.module('irisAngular').service 'NotificationService', [
           this.unseenPosts++ if notification.type == 'post'
           this.unseenChats++ if notification.type == 'chat'
         uiNotification notification
-        if this.desktopNotificationsEnabled and document.hidden
+        if document.hidden and not this.desktopNotificationsDisabled
           if window.Notification and Notification.permission == 'granted'
             console.log 'notifying'
             desktopNotification = new Notification(notification.from,
