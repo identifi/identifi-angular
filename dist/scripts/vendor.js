@@ -99126,7 +99126,7 @@ ngFileUpload.service('UploadExif', ['UploadResize', '$q', function (UploadResize
                     stopScan = $interval(scan, 500);
                 }
 
-                if (navigator.getUserMedia) {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                     var constraints = {
                         audio: false,
                         video: {
