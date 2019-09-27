@@ -753,6 +753,7 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.ipfs.swarm.disconnect(url).then ->
         $scope.updateIpfsPeers()
 
+    $scope.desktopNotificationsAvailable = !!window.Notification
     $scope.notificationsPermitted = window.Notification and Notification.permission == 'granted'
     NotificationService.desktopNotificationsDisabled = $scope.localSettings.desktopNotificationsDisabled
     NotificationService.audioNotificationsDisabled = $scope.localSettings.audioNotificationsDisabled

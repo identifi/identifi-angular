@@ -48,7 +48,7 @@
           <div ng-if="enableNotificationsFailed" class="alert alert-warning" style="margin-bottom: 15px;">
             Failed to enable notifications - please check your browser settings
           </div>
-          <p>
+          <p ng-if="desktopNotificationsAvailable">
             <button ng-if="!(notificationsPermitted && !localSettings.desktopNotificationsDisabled)" class="btn btn-primary" ng-click="setDesktopNotificationsDisabled(false)">Get desktop notifications</button>
             <button ng-if="notificationsPermitted && !localSettings.desktopNotificationsDisabled" class="btn btn-default" ng-click="setDesktopNotificationsDisabled(true)">Disable desktop notifications</button>
           </p>

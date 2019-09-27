@@ -1,4 +1,4 @@
-<div ng-if="!(notificationsPermitted && !localSettings.desktopNotificationsDisabled) && !localSettings.desktopNotificationsNotNow" class="mar-bot15">
+<div ng-if="desktopNotificationsAvailable && !(notificationsPermitted && !localSettings.desktopNotificationsDisabled) && !localSettings.desktopNotificationsNotNow" class="mar-bot15">
   <div ng-if="enableNotificationsFailed" class="alert alert-warning" style="margin-bottom: 15px;">
     Failed to enable notifications - please check your browser settings
   </div>
