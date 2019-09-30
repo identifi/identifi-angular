@@ -22,7 +22,9 @@
     <meta name="theme-color" content="#ffffff">
 
     <script>
-    if ('serviceWorker' in navigator) {
+    var userAgent = navigator.userAgent.toLowerCase();
+    var isElectron = (userAgent.indexOf(' electron/') > -1);
+    if (!isElectron && ('serviceWorker' in navigator)) {
       window.addEventListener('load', function() {
         navigator.serviceWorker.register('sw.js')
         .then(function(registration) {
