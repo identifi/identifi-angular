@@ -390,7 +390,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
         json = JSON.parse(data)
         console.log 'read qr json', json
         if json.priv and json.epriv and not $scope.authentication.user
-          $scope.loginWithKey data
+          $scope.loginWithKey(data, undefined, true)
         else
           console.log 'Unrecognized identity url', data
     $scope.qrScanError = (e) ->

@@ -92938,7 +92938,6 @@ Gun.chain.unset = function(node){
 	    this.gun = user.get('iris');
 	    var uri = this.viewpoint.uri();
 	    var g = this.gun.get('identitiesBySearchKey').get(uri);
-	    g.put({});
 	    var attrs = {};
 	    attrs[uri] = this.viewpoint;
 	    if (this.options.self) {
@@ -93307,7 +93306,7 @@ Gun.chain.unset = function(node){
 	      console.error(e.stack);
 	      throw e;
 	    }
-	    var hash = Gun.node.soul(id) || 'todo';
+	    var hash = Gun.node.soul(id) || id._ && id._.link || 'todo';
 	    var indexKeys = await this.getIdentityIndexKeys(id, hash.substr(0, 6));
 
 	    var indexes = _Object$keys(indexKeys);
@@ -93409,7 +93408,7 @@ Gun.chain.unset = function(node){
 	  };
 
 	  Index.prototype._updateMsgRecipientIdentity = async function _updateMsgRecipientIdentity(msg, msgIndexKey, recipient) {
-	    var hash = 'todo';
+	    var hash = recipient._ && recipient._.link || 'todo';
 	    var identityIndexKeysBefore = await this.getIdentityIndexKeys(recipient, hash.substr(0, 6));
 	    var attrs = await new _Promise(function (resolve) {
 	      recipient.get('attrs').load(function (r) {

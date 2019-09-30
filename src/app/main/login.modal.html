@@ -16,7 +16,7 @@
       <h3>Existing user</h3>
       <form>
         <textarea rows="6" class="form-control" placeholder="Paste private key or drop file" ng-model="privateKeySerialized"></textarea><br>
-        <button class="btn btn-primary" ng-disabled="!privateKeySerialized" ng-click="loginWithKey(privateKeySerialized, publicKeyPEM)">Log in</button>
+        <button class="btn btn-primary" ng-disabled="!privateKeySerialized" ng-click="loginWithKey(privateKeySerialized, undefined, true)">Log in</button>
         <a class="pull-right" href="" ng-click="lostKey = !lostKey">Lost your key?</a>
       </form>
       <div ng-if="lostKey" class="mar-top30 panel panel-info">
