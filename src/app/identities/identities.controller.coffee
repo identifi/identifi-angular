@@ -314,7 +314,13 @@ angular.module('irisAngular').controller 'IdentitiesController', [
       $scope.identity.gun.get('scores').open (scores) ->
         $scope.scores = scores
 
+    checkEmptyChats = -> # hack for resetting broken chats
+      for chat in $scope.chats
+        if chat.idType == 'keyID' and chat.chat and not chat.latest
+          chat.chat = $scope.getPrivateChat(chat)
+
     loadChatMessages = ->
+      checkEmptyChats()
       $scope.chatMessages = []
       onMessage = (msg) ->
         $scope.$apply ->

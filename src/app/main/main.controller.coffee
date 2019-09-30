@@ -116,6 +116,37 @@ angular.module('irisAngular').controller 'MainController', [
           resolve($scope.ids.list)
         , 1000
 
+    $scope.getPrivateChat = (chat) ->
+      o = new $window.irisLib.Chat
+        onMessage: (msg, info) ->
+          return unless msg
+          chat.latest = msg if (chat.latest == 0 or msg.time > chat.latest.time)
+          if ((msg.time > $scope.openTime) and !$state.is('chats.show', {value:chat.idValue}) and !info.selfAuthored)
+            chat.unreadMsgs++
+          shouldNotify = () ->
+            if info.selfAuthored
+              return false
+            if $state.is('chats.show', {value:chat.idValue}) and not document.hidden
+              return false
+            if chat.chat.myMsgsLastSeenTime
+              if chat.chat.myMsgsLastSeenTime >= msg.time
+                return false
+            else if $scope.openTime >= msg.time
+              return false
+            return true
+          if shouldNotify()
+            NotificationService.create
+              type: 'chat'
+              from: msg.author
+              text: msg.text
+              onClick: () ->
+                $state.go 'chats.show', { type: 'keyID', value: chat.idValue }
+        key: $scope.privateKey
+        gun: $scope.gun
+        participants: chat.idValue
+      o.getMyMsgsLastSeenTime()
+      return o
+
     setIndex = (i) ->
       i.setOnline(true) if i.writable
       i.ready.then ->
@@ -154,34 +185,7 @@ angular.module('irisAngular').controller 'MainController', [
                   identity: identity
                   latest: 0
                   unreadMsgs: 0
-                  chat: new $window.irisLib.Chat
-                    onMessage: (msg, info) ->
-                      return unless msg
-                      chat.latest = msg if (chat.latest == 0 or msg.time > chat.latest.time)
-                      if ((msg.time > $scope.openTime) and !$state.is('chats.show', {value:key}) and !info.selfAuthored)
-                        chat.unreadMsgs++
-                      shouldNotify = () ->
-                        if info.selfAuthored
-                          return false
-                        if $state.is('chats.show', {value:key}) and not document.hidden
-                          return false
-                        if chat.chat.myMsgsLastSeenTime
-                          if chat.chat.myMsgsLastSeenTime >= msg.time
-                            return false
-                        else if $scope.openTime >= msg.time
-                          return false
-                        return true
-                      if shouldNotify()
-                        NotificationService.create
-                          type: 'chat'
-                          from: msg.author
-                          text: msg.text
-                          onClick: () ->
-                            $state.go 'chats.show', { type: 'keyID', value: key }
-                    key: $scope.privateKey
-                    gun: $scope.gun
-                    participants: key
-                chat.chat.getMyMsgsLastSeenTime()
+                chat.chat = $scope.getPrivateChat(chat)
                 $scope.chats.push(chat)
             , timeout # TODO lol fix
             timeout = timeout + 500
