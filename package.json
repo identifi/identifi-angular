@@ -3,26 +3,14 @@
   "version": "1.22.49",
   "description": "A social networking application that stores everything on its users' devices which communicate directly with each other - no corporate gatekeepers needed.",
   "author": "Martti Malmi",
-  "main": "electron.js",
+  "main": "index.js",
   "files": "dist",
   "scripts": {
     "start": "gulp serve",
-    "postinstall": "bower install && bash build.sh && electron-builder install-app-deps && webdriver-manager update",
+    "postinstall": "bower install && bash build.sh && webdriver-manager update",
     "build": "bash build.sh",
     "serve": "gulp serve",
-    "test": "http-server dist -s & protractor",
-    "electron": "DEV=true electron .",
-    "pack": "electron-builder --dir",
-    "dist": "electron-builder"
-  },
-  "build": {
-    "appId": "fi.identi",
-    "mac": {
-      "category": "public.app-category.social-networking"
-    },
-    "directories": {
-      "output": "electron"
-    }
+    "test": "http-server dist -s & protractor"
   },
   "devDependencies": {
     "bower": "^1.8.8",
@@ -73,17 +61,12 @@
     "protractor": "^5.4.2",
     "uglify-save-license": "~0.4.1",
     "wiredep": "~4.0.0",
-    "wrench": "~1.5.8"
-  },
-  "optionalDependencies": {
-    "gun": "amark/gun"
-  },
-  "engines": {
-    "node": ">=0.10.0"
-  },
-  "dependencies": {
+    "wrench": "~1.5.8",
     "gulp-debug": "^4.0.0",
     "gulp-if": "^3.0.0",
     "stream-combiner": "^0.2.2"
+  },
+  "engines": {
+    "node": ">=0.10.0"
   }
 }
