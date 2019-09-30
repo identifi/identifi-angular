@@ -227,6 +227,7 @@ angular.module('irisAngular').controller 'MainController', [
         idValue: $window.irisLib.Key.getId($scope.privateKey)
       $scope.authentication.user.url = $scope.getIdUrl 'keyID', $scope.authentication.user.idValue
       $scope.loginModal.close() if $scope.loginModal
+      $scope.readQRModal.close() if $scope.readQRModal
       keyID = $window.irisLib.Key.getId($scope.privateKey)
       $scope.viewpoint = {type: 'keyID', value: keyID}
       $scope.ids.list = []

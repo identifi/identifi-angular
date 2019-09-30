@@ -387,7 +387,12 @@ angular.module('irisAngular').controller 'IdentitiesController', [
         console.log 'data', data
         $state.go 'identities.show', {type, value}
       else
-        console.log 'Unrecognized identity url', data
+        json = JSON.parse(data)
+        console.log 'read qr json', json
+        if json.priv and json.epriv and not $scope.authentication.user
+          $scope.loginWithKey data
+        else
+          console.log 'Unrecognized identity url', data
     $scope.qrScanError = (e) ->
       # this is called each time a QR code is not found on the camera
       # console.error e

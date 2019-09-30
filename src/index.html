@@ -63,7 +63,7 @@
           </div>
 
           <ul class="nav navbar-nav navbar-right">
-            <li><a ng-click="openReadQRModal()" href="" ng-show="authentication.user" class="visible-xs"><span class="glyphicon glyphicon-qrcode"></span></a></li>
+            <li><a ng-click="openReadQRModal()" href="#" class="visible-xs"><span class="glyphicon glyphicon-qrcode"></span></a></li>
             <li ng-class="{active: ('chats'|includedByState)}" ng-cloak ng-show="authentication.user"><a ui-sref="chats.list">
               <notification-icon count="notificationService.unseenChats">
                 <span class="fa fa-comment"></span>
@@ -79,7 +79,7 @@
       				</a>
       			</li>
             <li class="dropdown" ng-hide="authentication.user">
-              <a ng-click="openLoginModal()" href="" class="dropdown-toggle login-button" uib-dropdown-toggle="dropdown"><span class="glyphicon glyphicon-log-in"></span> Log in</a>
+              <a ng-click="openLoginModal()" href="#" class="dropdown-toggle login-button" uib-dropdown-toggle="dropdown"><span class="glyphicon glyphicon-log-in"></span> Log in</a>
             </li>
           </ul>
 
