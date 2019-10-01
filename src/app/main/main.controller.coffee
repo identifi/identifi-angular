@@ -25,7 +25,8 @@ angular.module('irisAngular').controller 'MainController', [
       opt.peers = ['https://gun-us.herokuapp.com/gun', 'https://gun-eu.herokuapp.com/gun'] # 'https://gunmeetingserver.herokuapp.com/gun'
     if $window.location.protocol != "https:"
       opt.peers.push('http://localhost:8765/gun')
-    opt.store = RindexedDB(opt)
+    $scope.isElectron = (userAgent.indexOf(' electron/') > -1)
+    opt.store = RindexedDB(opt) unless $scope.isElectron
     $scope.gun = $window.irisGun = new Gun(opt)
 
     # TODO: move everything to main controller?
