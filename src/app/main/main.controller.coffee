@@ -86,6 +86,13 @@ angular.module('irisAngular').controller 'MainController', [
 
     $scope.search = (query, limit) ->
       return unless $scope.irisIndex
+      if query and query.trim().indexOf('https://iris.to/#/') == 0
+        s = query.split('/')
+        if s.length >= 7
+          $state.go 'identities.show', {type: s[5], value: s[6]}
+          $scope.query.term = ''
+          # TODO: close dropdown somehow
+          return
       $scope.ids.activeKey = -1
       $scope.ids.list = []
       searchKey = (query or $scope.query.term or '').toLowerCase().trim()
