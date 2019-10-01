@@ -6,7 +6,7 @@ angular.module('irisAngular').service 'NotificationService', [
       notifications: []
       unseenChats: 0
       unseenPosts: 0
-      audio: new Audio('/assets/audio/notification.mp3')
+      audio: new Audio('assets/audio/notification.mp3')
       create: (notification) ->
         defaultOptions =
           seen: false
@@ -31,8 +31,9 @@ angular.module('irisAngular').service 'NotificationService', [
           if window.Notification and Notification.permission == 'granted'
             console.log 'notifying'
             desktopNotification = new Notification(notification.from,
-              icon: '/assets/images/icon128.png'
-              body: notification.text)
+              icon: 'assets/images/icon128.png'
+              body: notification.text
+              silent: true)
             desktopNotification.onclick = ->
               uiNotification.clearAll()
               notification.onClick() if notification.onClick
