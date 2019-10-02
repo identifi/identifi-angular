@@ -92500,7 +92500,7 @@ Gun.chain.unset = function(node){
 	  Chat.prototype.send = async function send(msg) {
 	    if (typeof msg === 'string') {
 	      msg = {
-	        time: new Date().getTime(),
+	        time: new Date().toISOString(),
 	        author: 'anonymous',
 	        text: msg
 	      };
@@ -92704,7 +92704,6 @@ Gun.chain.unset = function(node){
 	    this.gun = user.get('iris');
 	    var uri = this.viewpoint.uri();
 	    var g = this.gun.get('identitiesBySearchKey').get(uri);
-	    g.put({});
 	    var attrs = {};
 	    attrs[uri] = this.viewpoint;
 	    if (this.options.self) {
@@ -93073,7 +93072,7 @@ Gun.chain.unset = function(node){
 	      console.error(e.stack);
 	      throw e;
 	    }
-	    var hash = Gun.node.soul(id) || 'todo';
+	    var hash = Gun.node.soul(id) || id._ && id._.link || 'todo';
 	    var indexKeys = await this.getIdentityIndexKeys(id, hash.substr(0, 6));
 
 	    var indexes = _Object$keys(indexKeys);
@@ -93119,10 +93118,16 @@ Gun.chain.unset = function(node){
 	    var _this7 = this;
 
 	    this._getMsgs(this.gun.get('chatMessagesByUuid').get(uuid), options.callback, options.limit, options.cursor, true, options.filter);
+	    var callback = function callback(msg) {
+	      if (options.callback) {
+	        options.callback(msg);
+	      }
+	      _this7.addMessage(msg, { checkIfExists: true });
+	    };
 	    this.gun.get('trustedIndexes').map().once(function (val, key) {
 	      if (val) {
 	        var n = _this7.gun.user(key).get('iris').get('chatMessagesByUuid').get(uuid);
-	        _this7._getMsgs(n, options.callback, options.limit, options.cursor, false, options.filter);
+	        _this7._getMsgs(n, callback, options.limit, options.cursor, false, options.filter);
 	      }
 	    });
 	  };
@@ -93175,7 +93180,7 @@ Gun.chain.unset = function(node){
 	  };
 
 	  Index.prototype._updateMsgRecipientIdentity = async function _updateMsgRecipientIdentity(msg, msgIndexKey, recipient) {
-	    var hash = 'todo';
+	    var hash = recipient._ && recipient._.link || 'todo';
 	    var identityIndexKeysBefore = await this.getIdentityIndexKeys(recipient, hash.substr(0, 6));
 	    var attrs = await new _Promise(function (resolve) {
 	      recipient.get('attrs').load(function (r) {
@@ -93876,7 +93881,7 @@ Gun.chain.unset = function(node){
 	  return Index;
 	}();
 
-	var version$1 = "0.0.119";
+	var version$1 = "0.0.120";
 
 	/*eslint no-useless-escape: "off", camelcase: "off" */
 

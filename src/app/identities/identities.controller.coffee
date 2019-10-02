@@ -322,8 +322,12 @@ angular.module('irisAngular').controller 'IdentitiesController', [
     loadChatMessages = ->
       checkEmptyChats()
       $scope.chatMessages = []
+      $scope.seenChatMessages = {}
       onMessage = (msg) ->
         $scope.$apply ->
+          if msg.hash
+            return if $scope.seenChatMessages[msg.hash]
+            $scope.seenChatMessages[msg.hash] = true
           $scope.chatMessages.push(msg) if msg
           if $scope.chat and (msg.time > $scope.chat.myMsgsLastSeenTime) and not $document.hidden
             $scope.chat.setMyMsgsLastSeenTime()
@@ -334,6 +338,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
             key: $scope.privateKey
             gun: $scope.gun
             participants: $scope.idValue
+          $scope.chat.seen = {}
           visibilityChanged = () ->
             if $document.visibilityState == 'visible'
               $scope.chat.setMyMsgsLastSeenTime()

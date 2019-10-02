@@ -124,31 +124,38 @@ angular.module('irisAngular').controller 'MainController', [
           resolve($scope.ids.list)
         , 1000
 
+    $scope.onChatMessage = (msg, info = {}, chat) ->
+      return unless msg
+      chat.seen = {} unless chat.seen
+      return if msg.hash and chat.seen[msg.hash]
+      chat.seen[msg.hash] = true
+      msg = msg.signedData or msg
+      msg.time = (new Date(msg.time)).getTime()
+      chat.latest = msg if (chat.latest == 0 or msg.time > chat.latest.time)
+      if (msg.time > $scope.openTime) and !$state.is('chats.show', {value:chat.idValue}) and !info.selfAuthored
+        chat.unreadMsgs++
+      shouldNotify = () ->
+        if info.selfAuthored
+          return false
+        if $state.is('chats.show', {value:chat.idValue}) and not document.hidden
+          return false
+        if chat.chat and chat.chat.myMsgsLastSeenTime
+          if chat.chat.myMsgsLastSeenTime >= msg.time
+            return false
+        else if $scope.openTime >= msg.time
+          return false
+        return true
+      if shouldNotify()
+        NotificationService.create
+          type: 'chat'
+          from: msg.author
+          text: msg.text
+          onClick: () ->
+            $state.go 'chats.show', { type: 'keyID', value: chat.idValue }
+
     $scope.getPrivateChat = (chat) ->
       o = new $window.irisLib.Chat
-        onMessage: (msg, info) ->
-          return unless msg
-          chat.latest = msg if (chat.latest == 0 or msg.time > chat.latest.time)
-          if ((msg.time > $scope.openTime) and !$state.is('chats.show', {value:chat.idValue}) and !info.selfAuthored)
-            chat.unreadMsgs++
-          shouldNotify = () ->
-            if info.selfAuthored
-              return false
-            if $state.is('chats.show', {value:chat.idValue}) and not document.hidden
-              return false
-            if chat.chat.myMsgsLastSeenTime
-              if chat.chat.myMsgsLastSeenTime >= msg.time
-                return false
-            else if $scope.openTime >= msg.time
-              return false
-            return true
-          if shouldNotify()
-            NotificationService.create
-              type: 'chat'
-              from: msg.author
-              text: msg.text
-              onClick: () ->
-                $state.go 'chats.show', { type: 'keyID', value: chat.idValue }
+        onMessage: (msg, info) -> $scope.onChatMessage(msg, info, chat)
         key: $scope.privateKey
         gun: $scope.gun
         participants: chat.idValue
@@ -173,12 +180,17 @@ angular.module('irisAngular').controller 'MainController', [
           $scope.irisIndex.gun.user().get('iris').get('chatMessagesByUuid').map().once (node, key) ->
             identity = $scope.irisIndex.get('uuid', key)
             $scope.setIdentityNames identity
-            $scope.chats.push
+            chat =
               idValue: key
               idType: 'uuid'
               identity: identity
               latest: 0
               unreadMsgs: 0
+            $scope.chats.push chat
+            onMessage = (msg, info) ->
+              msg.getHash()
+              $scope.onChatMessage(msg, info, chat)
+            $scope.irisIndex.getChatMsgs(key, {callback: onMessage})
           timeout = 0
           $scope.irisIndex.gun.user().get('chat').map().on (node, key) ->
             return if $scope.chatKeys[key]

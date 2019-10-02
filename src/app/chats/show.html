@@ -58,7 +58,7 @@
 </div>
 
 <div ng-if="idType == 'uuid'">
-  <message auth="authentication" ipfs="ipfs" ng-repeat="msg in chatMessages | orderBy:'-signedData.time'" show-recipient="false" msg="msg"></message>
+  <message auth="authentication" ipfs="ipfs" ng-repeat="msg in chatMessages | orderBy:'-signedData.time' track by msg.hash" show-recipient="false" msg="msg"></message>
 </div>
 
 <div ng-include="'app/main/getstarted.partial.html'"></div>
