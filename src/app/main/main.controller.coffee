@@ -177,20 +177,24 @@ angular.module('irisAngular').controller 'MainController', [
         $scope.chats = []
         $scope.chatKeys = {}
         if i.writable
-          $scope.irisIndex.gun.user().get('iris').get('chatMessagesByUuid').map().once (node, key) ->
-            identity = $scope.irisIndex.get('uuid', key)
-            $scope.setIdentityNames identity
-            chat =
-              idValue: key
-              idType: 'uuid'
-              identity: identity
-              latest: 0
-              unreadMsgs: 0
-            $scope.chats.push chat
-            onMessage = (msg, info) ->
-              msg.getHash()
-              $scope.onChatMessage(msg, info, chat)
-            $scope.irisIndex.getChatMsgs(key, {callback: onMessage})
+          $scope.irisIndex.gun.user().get('iris').get('chatMessagesByUuid').map().on (node, key) ->
+            return if $scope.chatKeys[key]
+            $scope.chatKeys[key] = true
+            $scope.$apply ->
+              identity = $scope.irisIndex.get('uuid', key)
+              $scope.setIdentityNames identity
+              chat =
+                idValue: key
+                idType: 'uuid'
+                identity: identity
+                latest: 0
+                unreadMsgs: 0
+              $scope.chats.push chat
+              onMessage = (msg, info) ->
+                $scope.$apply ->
+                  msg.getHash()
+                  $scope.onChatMessage(msg, info, chat)
+              $scope.irisIndex.getChatMsgs(key, {callback: onMessage})
           timeout = 0
           $scope.irisIndex.gun.user().get('chat').map().on (node, key) ->
             return if $scope.chatKeys[key]
