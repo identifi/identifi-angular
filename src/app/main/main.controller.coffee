@@ -33,7 +33,7 @@ angular.module('irisAngular').controller 'MainController', [
     # set authentication
     $scope.authentication = {} # Authentication
 
-    $scope.openTime = new Date().getTime()
+    $scope.openTime = new Date()
     $scope.notificationService = NotificationService
 
     $scope.trustDistanceComparator = (a, b) ->
@@ -130,17 +130,23 @@ angular.module('irisAngular').controller 'MainController', [
       return if msg.hash and chat.seen[msg.hash]
       chat.seen[msg.hash] = true
       msg = msg.signedData or msg
-      msg.time = (new Date(msg.time)).getTime()
+      msg.time = new Date(msg.time)
       chat.latest = msg if (chat.latest == 0 or msg.time > chat.latest.time)
-      if (msg.time > $scope.openTime) and !$state.is('chats.show', {value:chat.idValue}) and !info.selfAuthored
-        chat.unreadMsgs++
+
+      if !$state.is('chats.show', {value:chat.idValue}) and !info.selfAuthored
+        if chat.myMsgsLastSeenTime or (chat.chat and chat.chat.myMsgsLastSeenTime)
+          if new Date(chat.myMsgsLastSeenTime or chat.chat.myMsgsLastSeenTime) < msg.time
+            chat.unreadMsgs++
+        else if $scope.openTime < msg.time
+          chat.unreadMsgs++
+
       shouldNotify = () ->
         if info.selfAuthored
           return false
         if $state.is('chats.show', {value:chat.idValue}) and not document.hidden
           return false
-        if chat.chat and chat.chat.myMsgsLastSeenTime
-          if chat.chat.myMsgsLastSeenTime >= msg.time
+        if chat.myMsgsLastSeenTime or (chat.chat and chat.chat.myMsgsLastSeenTime)
+          if new Date(chat.myMsgsLastSeenTime or chat.chat.myMsgsLastSeenTime) >= msg.time
             return false
         else if $scope.openTime >= msg.time
           return false
@@ -148,10 +154,10 @@ angular.module('irisAngular').controller 'MainController', [
       if shouldNotify()
         NotificationService.create
           type: 'chat'
-          from: msg.author
+          from: if typeof msg.author == 'string' then msg.author else ''
           text: msg.text
           onClick: () ->
-            $state.go 'chats.show', { type: 'keyID', value: chat.idValue }
+            $state.go 'chats.show', { type: chat.idType, value: chat.idValue }
 
     $scope.getPrivateChat = (chat) ->
       o = new $window.irisLib.Chat
@@ -178,17 +184,19 @@ angular.module('irisAngular').controller 'MainController', [
         $scope.chatKeys = {}
         if i.writable
           $scope.irisIndex.gun.user().get('iris').get('chatMessagesByUuid').map().on (node, key) ->
-            return if $scope.chatKeys[key]
-            $scope.chatKeys[key] = true
+            return if $scope.chatKeys['uuid' + key]
+            $scope.chatKeys['uuid' + key] = true
+            chat =
+              idValue: key
+              idType: 'uuid'
+              latest: 0
+              unreadMsgs: 0
+            $scope.irisIndex.gun.user().get('iris').get('chatMessagesByUuid').get(key).get('msgsLastSeenTime').on (time) ->
+              chat.myMsgsLastSeenTime = new Date(time)
             $scope.$apply ->
               identity = $scope.irisIndex.get('uuid', key)
               $scope.setIdentityNames identity
-              chat =
-                idValue: key
-                idType: 'uuid'
-                identity: identity
-                latest: 0
-                unreadMsgs: 0
+              Object.assign chat, {identity}
               $scope.chats.push chat
               onMessage = (msg, info) ->
                 $scope.$apply ->
@@ -197,8 +205,8 @@ angular.module('irisAngular').controller 'MainController', [
               $scope.irisIndex.getChatMsgs(key, {callback: onMessage})
           timeout = 0
           $scope.irisIndex.gun.user().get('chat').map().on (node, key) ->
-            return if $scope.chatKeys[key]
-            $scope.chatKeys[key] = true
+            return if $scope.chatKeys['keyID' + key]
+            $scope.chatKeys['keyID' + key] = true
             setTimeout ->
               $scope.$apply ->
                 identity = $scope.irisIndex.get('keyID', key)

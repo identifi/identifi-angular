@@ -323,12 +323,17 @@ angular.module('irisAngular').controller 'IdentitiesController', [
       checkEmptyChats()
       $scope.chatMessages = []
       $scope.seenChatMessages = {}
+      setUuidLastSeenTime = () ->
+        time = new Date().toISOString()
+        $scope.irisIndex.gun.user().get('iris').get('chatMessagesByUuid').get($scope.idValue).get('msgsLastSeenTime').put(time)
       onMessage = (msg) ->
         $scope.$apply ->
           if msg.hash
             return if $scope.seenChatMessages[msg.hash]
             $scope.seenChatMessages[msg.hash] = true
           $scope.chatMessages.push(msg) if msg
+          if $scope.idType == 'uuid'
+            setUuidLastSeenTime()
           if $scope.chat and (msg.time > $scope.chat.myMsgsLastSeenTime) and not $document.hidden
             $scope.chat.setMyMsgsLastSeenTime()
       if $scope.idType == 'keyID'
@@ -350,7 +355,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
           $scope.chat.getTheirMsgsLastSeenTime (time) ->
             $scope.$apply -> $scope.chat.theirMsgsLastSeenTime = time
           $scope.sendChatMessage = (text) ->
-            t = new Date().getTime()
+            t = new Date().toISOString()
             m =
               author: $scope.viewpoint.identity.primaryName
               text: text
@@ -368,6 +373,12 @@ angular.module('irisAngular').controller 'IdentitiesController', [
           msg.recipient = {uuid: $scope.idValue}
           $scope.createMessage(undefined, msg)
           console.log 'send public chat msg', msg
+        if $scope.authentication.user
+          visibilityChanged = () ->
+            if $document.visibilityState == 'visible'
+              setUuidLastSeenTime()
+          $document.on('visibilitychange', visibilityChanged)
+          setUuidLastSeenTime()
 
     load = ->
       if $scope.irisIndex
