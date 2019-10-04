@@ -92415,7 +92415,7 @@ Gun.chain.unset = function(node){
 
 	  Chat.prototype.setMyMsgsLastSeenTime = async function setMyMsgsLastSeenTime(time) {
 	    var keys = _Object$keys(this.secrets);
-	    time = time || new Date().getTime();
+	    time = time || new Date().toISOString();
 	    for (var i = 0; i < keys.length; i++) {
 	      var encrypted = await Gun.SEA.encrypt(time, (await this.getSecret(keys[i])));
 	      this.user.get('chat').get(keys[i]).get('msgsLastSeenTime').put(encrypted);
@@ -93764,12 +93764,14 @@ Gun.chain.unset = function(node){
 
 	    var isIpfsUri = hash.indexOf('Qm') === 0;
 	    return new _Promise(async function (resolve) {
-	      var resolveIfHashMatches = async function resolveIfHashMatches(d) {
+	      var resolveIfHashMatches = async function resolveIfHashMatches(d, fromIpfs) {
 	        var obj = typeof d === 'object' ? d : JSON.parse(d);
 	        var m = await Message.fromSig(obj);
 	        var h = void 0;
 	        var republished = false;
-	        if (isIpfsUri && _this11.options.ipfs) {
+	        if (fromIpfs) {
+	          return resolve(m);
+	        } else if (isIpfsUri && _this11.options.ipfs) {
 	          h = await m.saveToIpfs(_this11.options.ipfs);
 	          republished = true;
 	        } else {
@@ -93777,7 +93779,7 @@ Gun.chain.unset = function(node){
 	        }
 	        if (h === hash || isIpfsUri && !_this11.options.ipfs) {
 	          // does not check hash validity if it's an ipfs uri and we don't have ipfs
-	          if (!isIpfsUri && _this11.options.ipfs && _this11.writable && !republished) {
+	          if (!fromIpfs && _this11.options.ipfs && _this11.writable && !republished) {
 	            m.saveToIpfs(_this11.options.ipfs).then(function (ipfsUri) {
 	              obj.ipfsUri = ipfsUri;
 	              _this11.gun.get('messagesByHash').get(hash).put(obj);
@@ -93793,7 +93795,7 @@ Gun.chain.unset = function(node){
 	        _this11.options.ipfs.cat(hash).then(function (file) {
 	          var s = _this11.options.ipfs.types.Buffer.from(file).toString('utf8');
 	          _this11.debug('got msg ' + hash + ' from ipfs');
-	          resolveIfHashMatches(s);
+	          resolveIfHashMatches(s, true);
 	        });
 	      }
 	      _this11.gun.get('messagesByHash').get(hash).on(function (d) {
