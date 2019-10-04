@@ -2,7 +2,8 @@
   <div class="col-md-8 col-md-offset-2 msg-col">
     <message auth="authentication" msg-utils="msgUtils" ipfs="ipfs" show-recipient="true" msg="msg" page-info="info" ng-repeat="msg in [message]"></message>
     <div class="panel panel-info">
-      <div class="panel-heading">
+      <div class="panel-heading" ng-if="!message">Looking for message...</div>
+      <div class="panel-heading" ng-if="message">
         Message origin verified by
         <span ng-show="message.verifiedByAttr">
           <identicon identity="message.verifiedByAttr" class="mar-right5" border="3" width="35"></identicon>
