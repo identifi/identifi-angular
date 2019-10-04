@@ -699,7 +699,7 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.message.signerKeyID = $scope.message.getSignerKeyID()
       $scope.message.verifiedBy = $scope.irisIndex.get('keyID', $scope.message.signerKeyID)
       $scope.message.verifiedByAttr = new $window.irisLib.Attribute('keyID', $scope.message.signerKeyID)
-      $scope.openModal('chatModal', {templateUrl: 'app/messages/show.modal.html'})
+      $scope.openModal('chatModal', {templateUrl: 'app/messages/show.modal.html', size})
 
     unless $scope.filters
       $scope.filters = Object.assign {}, config.defaultFilters
