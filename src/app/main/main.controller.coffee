@@ -141,6 +141,8 @@ angular.module('irisAngular').controller 'MainController', [
           chat.unreadMsgs++
 
       shouldNotify = () ->
+        if $scope.localSettings.hasOwnProperty(chat.idValue) and $scope.localSettings[chat.idValue].muted
+          return false
         if info.selfAuthored
           return false
         if $state.is('chats.show', {value:chat.idValue}) and not document.hidden
@@ -816,6 +818,11 @@ angular.module('irisAngular').controller 'MainController', [
 
     $scope.onVideoError = (error) ->
       console.error 'video error', error
+
+    $scope.muteChat = (key) ->
+      muted = !($scope.localSettings.hasOwnProperty(key) and $scope.localSettings[key].muted)
+      $scope.saveLocalSetting key, {muted}
+      console.log $scope.localSettings
 
     $scope.desktopNotificationsAvailable = !!window.Notification
     $scope.notificationsPermitted = window.Notification and Notification.permission == 'granted'

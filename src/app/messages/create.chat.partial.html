@@ -9,28 +9,34 @@ ngf-multiple="true"
   <div class="panel-body">
     <div class="mar-bot15">
       <p style="color:red;" class="pull-right"><small><b>public chat</b></small></p>
+      <button class="btn btn-default pull-right" ng-click="muteChat(idValue)">
+        <span class="fa" ng-class="{'fa-volume-up': localSettings[idValue].muted, 'fa-volume-mute': !localSettings[idValue].muted}"></span>
+          {{localSettings[idValue].muted ? 'Unmute' : 'Mute'}}
+      </button>
 
-      <div ui-sref="identities.show({type:idType, value:idValue})" style="cursor:pointer">
-        <identicon identity="identity"
-          ipfs="ipfs"
-          width="35">
-        </identicon>
+      <div>
+        <span ui-sref="identities.show({type:idType, value:idValue})" style="cursor:pointer">
+          <identicon identity="identity"
+            ipfs="ipfs"
+            width="35">
+          </identicon>
 
-        <span class="mar-right15">
-          <span ng-show="idType === 'keyID' || idType === 'uuid'">
-            <identicon identity="idAttr" width=35></identicon>
+          <span class="mar-right15">
+            <span ng-show="idType === 'keyID' || idType === 'uuid'">
+              <identicon identity="idAttr" width=35></identicon>
+            </span>
+            <span ng-hide="idType === 'keyID' || idType === 'uuid'">
+            <span ng-if="!(identity.data.mostVerifiedAttributes.name||identity.data.mostVerifiedAttributes.nickname)">
+            <span ng-bind="idValue" class="idValue"></span>
+            <small class="text-muted">
+            <span ng-hide="idType === 'url'" ng-bind="idType" class="idType"></span>
+            <a ng-href="{{idValue}}" ng-show="idType === 'url'" ng-bind="idType" class="idType"></a>
+            </small>
+            </span>
+            </span>
           </span>
-          <span ng-hide="idType === 'keyID' || idType === 'uuid'">
-          <span ng-if="!(identity.data.mostVerifiedAttributes.name||identity.data.mostVerifiedAttributes.nickname)">
-          <span ng-bind="idValue" class="idValue"></span>
-          <small class="text-muted">
-          <span ng-hide="idType === 'url'" ng-bind="idType" class="idType"></span>
-          <a ng-href="{{idValue}}" ng-show="idType === 'url'" ng-bind="idType" class="idType"></a>
-          </small>
-          </span>
-          </span>
+          <span ng-bind="identity.primaryName"></span>
         </span>
-        <span ng-bind="identity.primaryName"></span>
         <small class="positive mar-left15" ng-show="isOnline">online</small>
         <small class="mar-left15" ng-show="!isOnline && lastActive">
           last active {{ lastActive * 1000 | date : 'yyyy-M-d HH:mm' }}

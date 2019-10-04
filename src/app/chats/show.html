@@ -4,39 +4,43 @@
 
 <div ng-if="idType =='uuid'" ng-include="'app/messages/create.chat.partial.html'"></div>
 
-<div ng-if="idType != 'uuid'" class="panel panel-default">
+<div ng-if="idType == 'keyID'" class="panel panel-default">
   <div class="panel-heading">
     <div class="mar-bot15">
-      <p style="color:red;" ng-if="idType=='keyID'"><small><b>private messages are encrypted, but anyone can see who are communicating with each other</b></small></p>
-      <p style="color:red;" class="pull-right" ng-if="idType!='keyID'"><small><b>public chat</b></small></p>
+      <p style="color:red;"><small><b>private messages are encrypted, but anyone can see who are communicating with each other</b></small></p>
 
-      <div ui-sref="identities.show({type:idType, value:idValue})" style="cursor:pointer">
-        <identicon identity="identity"
-          ipfs="ipfs"
-          width="35">
-        </identicon>
+      <div>
+        <span ui-sref="identities.show({type:idType, value:idValue})" style="cursor:pointer">
+          <identicon identity="identity"
+            ipfs="ipfs"
+            width="35">
+          </identicon>
 
-        <span class="mar-right15">
-          <span ng-show="idType === 'keyID' || idType === 'uuid'">
-            <identicon identity="idAttr" width=35></identicon>
+          <span class="mar-right15">
+            <span ng-show="idType === 'keyID' || idType === 'uuid'">
+              <identicon identity="idAttr" width=35></identicon>
+            </span>
+            <span ng-hide="idType === 'keyID' || idType === 'uuid'">
+            <span ng-if="!(identity.data.mostVerifiedAttributes.name||identity.data.mostVerifiedAttributes.nickname)">
+            <span ng-bind="idValue" class="idValue"></span>
+            <small class="text-muted">
+            <span ng-hide="idType === 'url'" ng-bind="idType" class="idType"></span>
+            <a ng-href="{{idValue}}" ng-show="idType === 'url'" ng-bind="idType" class="idType"></a>
+            </small>
+            </span>
+            </span>
           </span>
-          <span ng-hide="idType === 'keyID' || idType === 'uuid'">
-          <span ng-if="!(identity.data.mostVerifiedAttributes.name||identity.data.mostVerifiedAttributes.nickname)">
-          <span ng-bind="idValue" class="idValue"></span>
-          <small class="text-muted">
-          <span ng-hide="idType === 'url'" ng-bind="idType" class="idType"></span>
-          <a ng-href="{{idValue}}" ng-show="idType === 'url'" ng-bind="idType" class="idType"></a>
-          </small>
-          </span>
-          </span>
+          <span ng-bind="identity.primaryName"></span>
         </span>
-        <span ng-bind="identity.primaryName"></span>
         <small class="positive mar-left15" ng-show="isOnline">online</small>
         <small class="mar-left15" ng-show="!isOnline && lastActive">
           last active {{ lastActive * 1000 | date : 'yyyy-M-d HH:mm' }}
         </small>
+        <button class="btn btn-default pull-right" ng-click="muteChat(idValue)">
+          <span class="fa" ng-class="{'fa-volume-up': localSettings[idValue].muted, 'fa-volume-mute': !localSettings[idValue].muted}"></span>
+            {{localSettings[idValue].muted ? 'Unmute' : 'Mute'}}
+        </button>
       </div>
-
     </div>
 
     <form class="form-inline mar-bot5" ng-submit="sendChatMessage(m);m = ''">

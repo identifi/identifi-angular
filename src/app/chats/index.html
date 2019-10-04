@@ -15,6 +15,7 @@
             <small class="pull-right">
               {{chat.latest.text|limitTo:35}}{{chat.latest.text.length > 35 ? '...':''}}
             </small>
+            <span class="fa fa-volume-mute mar-left10" ng-if="localSettings[chat.idValue].muted"></span>
           </div>
         </div>
       </div>
