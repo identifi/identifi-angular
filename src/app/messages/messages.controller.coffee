@@ -60,8 +60,9 @@ angular.module('irisAngular').controller 'MessagesController', [
           $scope.message.ipfsUri = hash if isIpfsHash
 
         $scope.irisIndex.getMessageByHash(hash).then (m) ->
-          $scope.message = m
-          processResponse()
+          $scope.$apply ->
+            $scope.message = m
+            processResponse()
 
     load = ->
       return unless $scope.irisIndex

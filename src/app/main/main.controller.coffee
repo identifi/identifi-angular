@@ -85,15 +85,16 @@ angular.module('irisAngular').controller 'MainController', [
           event.target.style.width = originalStyleWidth
         , 2000
 
+    $scope.copyCurrentLocationToClipboard = (event) ->
+      $scope.copyToClipboard 'https://iris.to' + $window.location.pathname + $window.location.hash, event
+
     $scope.search = (query, limit) ->
       return unless $scope.irisIndex
-      if query and query.trim().indexOf('https://iris.to/#/') == 0
-        s = query.split('/')
-        if s.length >= 7
-          $state.go 'identities.show', {type: s[5], value: s[6]}
-          $scope.query.term = ''
-          # TODO: close dropdown somehow
-          return
+      q = query or $scope.query.term
+      if q and q.trim().indexOf('https://iris.to/#/') == 0
+        $window.location.href = q.replace('https://iris.to/', '')
+        $scope.query.term = ''
+        return
       $scope.ids.activeKey = -1
       $scope.ids.list = []
       searchKey = (query or $scope.query.term or '').toLowerCase().trim()
