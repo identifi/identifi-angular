@@ -18,7 +18,10 @@
       </div>
     </div>
     <p ng-if="message.data.context"><small>Context: {{message.data.context}}</small></p>
-    <p><button class="btn btn-default" ng-click="collapseRawData = !collapseRawData">Show raw data</button></p>
+    <p>
+      <button class="btn btn-default mar-right5" ng-click="collapseRawData = !collapseRawData">Show raw data</button>
+      <button class="btn btn-default" ng-click="copyToClipboard('https://iris.to/#/messages/' + message.hash, $event)">Copy link</button>
+    </p>
     <pre uib-collapse="!collapseRawData" ng-bind="message.strData"></pre>
     <message ng-repeat="msg in message.repliesArr" auth="authentication" msg-utils="msgUtils" ipfs="ipfs" show-recipient="true" msg="msg" page-info="info"></message>
     <!-- <div class="mar-top15 mar-bot10"><button ng-click="chatModal.close()" class="btn btn-default">Close</button></div> -->
