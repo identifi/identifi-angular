@@ -45,44 +45,40 @@
     </div>
   </div>
 </section>
-<div class="container">
-  <div>
-    <section>
-      <div class="row">
-        <div class="col-md-3 id-left-column">
-          <div ng-if="isUniqueType" ng-include="'app/identities/show.stats.html'"></div>
-          <div class="hidden-xs" ng-include="'app/messages/distance-selector.partial.html'"></div>
-        </div>
-        <div class="col-md-8 id-right-column">
-          <!-- Nav tabs -->
-          <div ng-include="'app/main/createuser.partial.html'"></div>
-          <uib-tabset active="activeTab">
-            <uib-tab index="1" ng-if="isUniqueType">
-              <uib-tab-heading>
-                <span class="hidden-xs">Received ({{0+identity.data.receivedPositive+identity.data.receivedNeutral+identity.data.receivedNegative}})</span>
-                <span class="visible-xs">Recv ({{0+identity.data.receivedPositive+identity.data.receivedNeutral+identity.data.receivedNegative}})</span>
-              </uib-tab-heading>
-              <div ng-if="isCurrentUser" ng-include="'app/main/getstarted.partial.html'"></div>
-              <div class="panel panel-info" ng-if="!isCurrentUser && authentication.user && authentication.identity.data && !authentication.identity.data.sentPositive">
-                <div class="panel-heading">
-                  Trust this user? Upvote them to see their posts!
-                </div>
-              </div>
-              <div ng-include="'app/messages/create.rating.partial.html'" ng-show="!loggingIn && authentication.user && !isCurrentUser"></div>
-              <div ng-include="'app/identities/show.received.html'"></div>
-              <div ng-if="!isCurrentUser && receivedFiltered.length == 0" class="alert alert-info text-center">No messages yet</div>
-            </uib-tab>
-            <uib-tab index="2" ng-if="isUniqueType">
-              <uib-tab-heading>Sent ({{0+identity.data.sentPositive+identity.data.sentNeutral+identity.data.sentNegative}})</uib-tab-heading>
-              <div ng-include="'app/identities/show.sent.html'"></div>
-            </uib-tab>
-            <uib-tab index="3">
-              <uib-tab-heading>Id<span class="hidden-xs">entity</span> (<span ng-bind="attributesLength || 0"></span>)</uib-tab-heading>
-              <div ng-include="'app/identities/show.attributes.html'" id="attributes"></div>
-            </uib-tab>
-          </uib-tabset>
-        </div>
-      </div>
-    </section>
+<div class="container no-padding-xs">
+  <div class="row">
+    <div class="col-md-3 id-left-column">
+      <div ng-if="isUniqueType" ng-include="'app/identities/show.stats.html'"></div>
+      <div class="hidden-xs" ng-include="'app/messages/distance-selector.partial.html'"></div>
+    </div>
+    <div class="col-md-8 id-right-column">
+      <!-- Nav tabs -->
+      <div ng-include="'app/main/createuser.partial.html'"></div>
+      <uib-tabset active="activeTab">
+        <uib-tab index="1" ng-if="isUniqueType">
+          <uib-tab-heading>
+            <span class="hidden-xs">Received ({{0+identity.data.receivedPositive+identity.data.receivedNeutral+identity.data.receivedNegative}})</span>
+            <span class="visible-xs">Recv ({{0+identity.data.receivedPositive+identity.data.receivedNeutral+identity.data.receivedNegative}})</span>
+          </uib-tab-heading>
+          <div ng-if="isCurrentUser" ng-include="'app/main/getstarted.partial.html'"></div>
+          <div class="panel panel-info" ng-if="!isCurrentUser && authentication.user && authentication.identity.data && !authentication.identity.data.sentPositive">
+            <div class="panel-heading">
+              Trust this user? Upvote them to see their posts!
+            </div>
+          </div>
+          <div ng-include="'app/messages/create.rating.partial.html'" ng-show="!loggingIn && authentication.user && !isCurrentUser"></div>
+          <div ng-include="'app/identities/show.received.html'"></div>
+          <div ng-if="!isCurrentUser && receivedFiltered.length == 0" class="alert alert-info text-center">No messages yet</div>
+        </uib-tab>
+        <uib-tab index="2" ng-if="isUniqueType">
+          <uib-tab-heading>Sent ({{0+identity.data.sentPositive+identity.data.sentNeutral+identity.data.sentNegative}})</uib-tab-heading>
+          <div ng-include="'app/identities/show.sent.html'"></div>
+        </uib-tab>
+        <uib-tab index="3">
+          <uib-tab-heading>Id<span class="hidden-xs">entity</span> (<span ng-bind="attributesLength || 0"></span>)</uib-tab-heading>
+          <div ng-include="'app/identities/show.attributes.html'" id="attributes"></div>
+        </uib-tab>
+      </uib-tabset>
+    </div>
   </div>
 </div>

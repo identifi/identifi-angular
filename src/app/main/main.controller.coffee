@@ -486,7 +486,7 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.filters.maxDistance = -1 # because the user doesn't have a trust index yet
 
     $scope.openModal = (modalName, options) ->
-      options = Object.assign {size: 'lg', animation: true, scope: $scope}, options
+      options = Object.assign {size: 'md', animation: true, scope: $scope}, options
       $scope[modalName] = $uibModal.open(options)
       $scope[modalName].result.then (->), (->) # avoid backdrop rejection console error
       $scope[modalName].rendered.then ->

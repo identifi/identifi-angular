@@ -1,13 +1,15 @@
 <div class="text-center alert alert-info">
-  Viewing as:
-  <br class="hidden-sm">
-  <span ng-if="viewpoint">
-    <a ui-sref="identities.show({ type: viewpoint.type, value: viewpoint.value })" class="id-link">
-      <span class="distance-container mar-right5 mar-left5"><identicon ipfs="ipfs" identity="viewpoint.identity" class="" border="3" width="35"></identicon></span><strong ng-bind="viewpoint.mostVerifiedAttributes.name.attribute.value"></strong>
-    </a>
+  <span ng-if="!authentication.user">
+    Viewing as:
+    <br class="hidden-sm">
+    <span ng-if="viewpoint">
+      <a ui-sref="identities.show({ type: viewpoint.type, value: viewpoint.value })" class="id-link">
+        <span class="distance-container mar-right5 mar-left5"><identicon ipfs="ipfs" identity="viewpoint.identity" class="" border="3" width="35"></identicon></span><strong ng-bind="viewpoint.mostVerifiedAttributes.name.attribute.value"></strong>
+      </a>
+    </span>
+    <br class="hidden-sm">
   </span>
-  <br class="hidden-sm">
-  Max distance from viewpoint:
+  Filter by trust distance:
   <span class="btn-group trust-distance-selector">
     <button type="button" class="btn btn-default" ng-click="setFilters({maxDistance: -1})" ng-class="{active: filters.maxDistance === -1}" uib-tooltip="Distance filter off">✕</button>
     <button type="button" class="btn btn-default" ng-click="setFilters({maxDistance: 1})" ng-class="{active: filters.maxDistance === 1}">1</button>
