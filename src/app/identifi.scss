@@ -918,6 +918,13 @@ textarea.form-control {
           border-radius: 0;
 }
 
+.form-control {
+  border: 0;
+  box-shadow: none !important;
+  outline: none;
+  transition: none;
+}
+
 div.cform-response-output {
 	max-width: 60%;
 	text-align: center;
@@ -1790,6 +1797,7 @@ a {
   margin-bottom: 15px;
   &:last-of-type {
     margin-right: 0;
+    margin-bottom: 0;
   }
   video {
     max-width: 100%;
@@ -1799,5 +1807,14 @@ a {
     position: absolute;
     right: 0;
     top: 0;
+  }
+}
+
+.attachments {
+  margin-left: -15px;
+  margin-right: -15px;
+  @media(max-width: 767px) {
+    margin-left: -16px;
+    margin-right: -16px;
   }
 }
