@@ -29,7 +29,7 @@
         </div>
     </div>
 
-    <div ng-class="{'align-center': msg.attachments.length == 1}" class="attachments">
+    <p ng-class="{'align-center': msg.attachments.length == 1}" class="attachments">
       <span ng-repeat="attachment in msg.attachments" class="attachment">
         <a ng-if="['video','image','audio'].indexOf(attachment.typeSubstr) == -1" download="{{attachment.name}}" ng-click="download(attachment.name, null, null, null, attachment.src)">
           <i class="fa fa-download mar-right5"></i> {{attachment.name}}
@@ -38,7 +38,7 @@
         <videostream ng-if="attachment.typeSubstr == 'video' || attachment.typeSubstr == 'audio'" ipfs="ipfs" uri="attachment.uri"></videostream>
         <span ng-bind-html="attachment.element" ng-if="attachment.element"></span>
       </span>
-    </div>
+    </p>
 
     <p style="white-space: pre-line;"
     ng-if="(msg.signedData.text || msg.signedData.comment)"

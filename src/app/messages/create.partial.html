@@ -10,7 +10,7 @@ ngf-multiple="true"
     <form ng-submit="createMessage($event, { type: 'post', text: newMessage.text, pollOptions: createPoll && newMessage.pollOptions }, { files: newMessage.files });createPoll = false">
       <div class="row" ng-if="newMessage.files && newMessage.files.length">
         <div class="col-xs-12">
-          <p ng-class="{'align-center': newMessage.files.length == 1}">
+          <p class="attachments" ng-class="{'align-center': newMessage.files.length == 1}">
             <span ng-repeat="file in newMessage.files" class="attachment">
               <button type="button" class="close" aria-label="Close" ng-click="newMessage.files.splice($index,1)">
                 <span aria-hidden="true">&times;</span>
