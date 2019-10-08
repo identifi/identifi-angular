@@ -35,7 +35,7 @@
     <tr ng-repeat-end ng-if="!a.isCurrent" class="active connectingmsgs">
       <td class="connectingmsgs" data-style="zoom-in" data-spinner-color="#000">
         <div uib-collapse="!a.collapse">
-          <div ng-repeat="msg in a.connectingMsgs" ng-click="openMessage($event, msg, 'lg')" class="confirmation-panel">
+          <div ng-repeat="msg in a.connectingMsgs" ng-click="openMessage($event, msg)" class="confirmation-panel">
               <span ng-if="msg.signedData.type === 'verification'">
                 <span class="positive glyphicon glyphicon-ok hidden-xs mar-left5 pull-right"></span>
                 <span class="positive glyphicon glyphicon-ok visible-xs-inline-block mar-right10"></span>
