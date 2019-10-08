@@ -638,9 +638,6 @@ angular.module('irisAngular').controller 'MainController', [
           return false
       return true
 
-    $scope.removeFocus = (event) ->
-      event.currentTarget.blur()
-
     $scope.setMsgRawData = (msg) ->
       showRawData =
         hash: msg.hash
