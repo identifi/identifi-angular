@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "iris",
   "description": "A social networking application that stores everything on its users' devices which communicate directly with each other.",
-  "version": "1.22.49",
+  "version": "1.22.50",
   "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
   "browser_action": {
     "browser_style": true,
