@@ -487,6 +487,9 @@ section.section {
 	font-weight: 900;
 	text-shadow: none;
   &:hover, &:focus { color: #2A6496; }
+  &:active {
+    opacity: 0.8;
+  }
 }
 
 .navbar-brand {
