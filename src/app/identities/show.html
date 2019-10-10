@@ -1,10 +1,10 @@
 <section class="cover-container">
   <div ng-click="openCoverPhotoUploadModal()" class="cover" parallax-background parallax-ratio="-0.2" ng-style="coverPhoto"></div>
   <div class="container hidden-xs hidden-sm">
-    <div class="heading-row row">
+    <div class="heading-row row row-no-padding">
       <div class="col-md-8 col-md-offset-3">
         <h4 ng-show="idType === 'keyID' || idType === 'uuid'">
-          <identicon identity="idAttr" width=35 show-distance="0"></identicon>
+          <identicon identity="idAttr" width=35 show-distance="false"></identicon>
           <button class="btn btn-default mar-left15" ng-click="openSharePageModal()">
             <span class="glyphicon glyphicon-qrcode mar-right5"></span> Share
           </button>
@@ -28,7 +28,7 @@
         </h4>
       </div>
     </div>
-    <div class="row">
+    <div class="row row-no-padding">
       <div class="col-md-9 col-md-offset-3">
         <ul class="list-inline tab-list">
           <li ng-if="isUniqueType">
@@ -45,8 +45,8 @@
     </div>
   </div>
 </section>
-<div class="container no-padding-xs">
-  <div class="row">
+<div class="container">
+  <div class="row row-no-padding">
     <div class="col-md-3 id-left-column">
       <div ng-if="isUniqueType" ng-include="'app/identities/show.stats.html'"></div>
       <div class="hidden-xs" ng-include="'app/messages/distance-selector.partial.html'"></div>

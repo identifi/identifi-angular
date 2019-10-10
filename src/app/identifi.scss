@@ -1288,6 +1288,7 @@ message, .message, {
   message, .message {
     .msg, .message-panel {
       border: 0 !important;
+      border-radius: 6px;
       box-shadow: none !important;
     }
   }
@@ -1629,7 +1630,14 @@ a {
     border-radius: 0;
   }
 
-  .no-padding-xs {
+  .row-no-padding {
+    [class*="col-"] {
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+    }
+  }
+
+  .no-padding-xs, .row-no-padding {
     padding: 0 !important;
     .row {
       padding: 0;

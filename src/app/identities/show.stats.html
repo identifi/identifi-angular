@@ -7,8 +7,8 @@
     </small>
   </p>
   <div class="stats-box">
-    <div class="row">
-      <div class="col-xs-12">
+    <div>
+      <div>
         <p class="align-center">
           <identicon ng-click="openProfilePhotoUploadModal()" identity="identity"
             ipfs="ipfs"
@@ -27,8 +27,8 @@
         </p>
       </div>
     </div>
-    <div class="row">
-      <div class="col-xs-12">
+    <div>
+      <div>
         <h4>
           <span class="visible-xs-inline-block visible-sm-inline-block mar-right15">
             <span ng-show="idType === 'keyID' || idType === 'uuid'">
@@ -67,8 +67,8 @@
         </h4>
       </div>
     </div>
-    <div class="row">
-      <div class="col-xs-12 col-sm-6 col-md-12 mar-bot10 mar-top10">
+    <div>
+      <div class="mar-bot10 mar-top10">
         <div class="mar-bot10" ng-if="authentication.user && !identity.hasProperName && !nameAdded">
           <a href="" ng-click="addName()" ng-hide="addingName">Add name</a>
           <form class="form-inline" ng-show="addingName" ng-submit="addName(name)">
@@ -133,7 +133,7 @@
           </ul>
         </div>
       </div>
-      <div class="col-xs-12 col-sm-6 col-md-12 mar-top10">
+      <div class="mar-top10">
         <div ng-if="isUniqueType && hasThumbsUp" class="stats-box mar-bot10">
           <h5>Thumbs up</h5>
           <a ng-repeat="msg in thumbsUp | orderBy:'authorTrustDistance'"
