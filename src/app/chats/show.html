@@ -55,7 +55,7 @@
     <div class="message-panel panel-body">
       <b ng-bind="msg.author"></b> <small class="pull-right" ng-bind="msg.time | date : 'yyyy-M-d HH:mm'"></small>
       <br>
-      <span ng-bind="msg.text" ng-class="{big: msg.text.length<=2}"></span>
+      <span ng-bind-html="msg.text|linky" ng-class="{big: msg.text.length<=2}"></span>
       <small uib-tooltip="Seen" class="pull-right fa fa-check positive" ng-if="msg.time <= chat.theirMsgsLastSeenTime"></small>
     </div>
   </div>

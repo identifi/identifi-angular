@@ -490,9 +490,12 @@ section.section {
 	color: #428BCA;
 	font-weight: 900;
 	text-shadow: none;
+  transition: opacity 0.2s;
+  opacity: 1;
   &:hover, &:focus { color: #2A6496; }
   &:active {
     opacity: 0.8;
+    transition: opacity 0s;
   }
 }
 
