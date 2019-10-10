@@ -1265,8 +1265,12 @@ message, .message, {
     margin-bottom: 0;
     border-radius: 0;
     border-bottom: 0;
+    border-left: 0;
+    border-right: 0;
   }
   @media(min-width: 768px) {
+    border-left: 1px;
+    border-right: 1px;
     &:first-of-type {
       .msg, .message-panel {
         border-top-left-radius: 4px;
@@ -1426,6 +1430,10 @@ a {
 .stats-box {
   @media (max-height: 767px) {
     padding-top: 20px;
+    div {
+      padding-left: 5px;
+      padding-right: 5px;
+    }
   }
 
   h4 { display: inline; }
@@ -1821,8 +1829,4 @@ a {
 .attachments {
   margin-left: -15px;
   margin-right: -15px;
-  @media(max-width: 767px) {
-    margin-left: -16px;
-    margin-right: -16px;
-  }
 }
