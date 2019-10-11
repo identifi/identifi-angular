@@ -9,21 +9,39 @@
   <div class="stats-box">
     <div>
       <div>
-        <p class="align-center">
-          <identicon ng-click="openProfilePhotoUploadModal()" identity="identity"
-            ipfs="ipfs"
-            border="4"
-            show-distance="0"
-            width="230"
-            ng-if="hideProfilePhoto">
-          </identicon>
-          <identicon ng-click="openProfilePhotoUploadModal()" identity="identity"
-            ipfs="ipfs"
-            border="4"
-            show-distance="0"
-            width="230"
-            ng-if="!hideProfilePhoto">
-          </identicon>
+        <p>
+          <div class="hidden-md align-center">
+            <identicon ng-click="openProfilePhotoUploadModal()" identity="identity"
+              ipfs="ipfs"
+              border="4"
+              show-distance="0"
+              width="230"
+              ng-if="hideProfilePhoto">
+            </identicon>
+            <identicon ng-click="openProfilePhotoUploadModal()" identity="identity"
+              ipfs="ipfs"
+              border="4"
+              show-distance="0"
+              width="230"
+              ng-if="!hideProfilePhoto">
+            </identicon>
+          </div>
+          <div class="visible-md align-center">
+            <identicon ng-click="openProfilePhotoUploadModal()" identity="identity"
+              ipfs="ipfs"
+              border="4"
+              show-distance="0"
+              width="180"
+              ng-if="hideProfilePhoto">
+            </identicon>
+            <identicon ng-click="openProfilePhotoUploadModal()" identity="identity"
+              ipfs="ipfs"
+              border="4"
+              show-distance="0"
+              width="180"
+              ng-if="!hideProfilePhoto">
+            </identicon>
+          </div>
         </p>
       </div>
     </div>
