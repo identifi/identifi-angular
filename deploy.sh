@@ -1,8 +1,8 @@
 ssh identifi 'sh deploy.sh'
-cp -R dist/* ../irislib.github.io/
-cp -R ../iris-lib/example ../irislib.github.io/
-cp -R ../iris-lib/docs ../irislib.github.io/
-cd ../irislib.github.io
+cp -R dist/* ~/src/irislib.github.io/
+cp -R ~/src/iris-lib/example ~/src/irislib.github.io/
+cp -R ~/src/iris-lib/docs ~/src/irislib.github.io/
+cd ~/src/irislib.github.io
 git commit -a -m '.'
 git push origin master
 git push identifi master
