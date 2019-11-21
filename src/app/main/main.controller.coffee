@@ -138,7 +138,7 @@ angular.module('irisAngular').controller 'MainController', [
         if chat.myMsgsLastSeenTime or (chat.chat and chat.chat.myMsgsLastSeenTime)
           if new Date(chat.myMsgsLastSeenTime or chat.chat.myMsgsLastSeenTime) < msg.time
             chat.unreadMsgs++
-        else if $scope.openTime < msg.time
+        else
           chat.unreadMsgs++
 
       shouldNotify = () ->
@@ -151,8 +151,6 @@ angular.module('irisAngular').controller 'MainController', [
         if chat.myMsgsLastSeenTime or (chat.chat and chat.chat.myMsgsLastSeenTime)
           if new Date(chat.myMsgsLastSeenTime or chat.chat.myMsgsLastSeenTime) >= msg.time
             return false
-        else if $scope.openTime >= msg.time
-          return false
         return true
       if shouldNotify()
         NotificationService.create
