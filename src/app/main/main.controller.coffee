@@ -207,7 +207,7 @@ angular.module('irisAngular').controller 'MainController', [
                   $scope.onChatMessage(msg, info, chat)
               $scope.irisIndex.getChatMsgs(key, {callback: onMessage})
           timeout = 0
-          $scope.irisIndex.gun.user().get('chat').map().on (node, key) ->
+          $scope.irisIndex.getChats (key) ->
             return if $scope.chatKeys['keyID' + key]
             $scope.chatKeys['keyID' + key] = true
             setTimeout ->
