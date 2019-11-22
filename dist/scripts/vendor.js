@@ -79642,7 +79642,7 @@ Gun.chain.load = function(cb, opt, at){
       var r = shim.Buffer.from(work, 'binary').toString(opt.encode || 'base64')
       if(cb){ try{ cb(r) }catch(e){console.log(e)} }
       return r;
-    } catch(e) { 
+    } catch(e) {
       console.log(e);
       SEA.err = e;
       if(SEA.throw){ throw e }
@@ -79688,7 +79688,7 @@ Gun.chain.load = function(cb, opt, at){
         // but split on a non-base64 letter.
         return key;
       })
-      
+
       // To include PGPv4 kind of keyId:
       // const pubId = await SEA.keyid(keys.pub)
       // Next: ECDH keys for encryption/decryption...
@@ -79890,7 +79890,7 @@ Gun.chain.load = function(cb, opt, at){
 
       if(cb){ try{ cb(r) }catch(e){console.log(e)} }
       return r;
-    } catch(e) { 
+    } catch(e) {
       console.log(e);
       SEA.err = e;
       if(SEA.throw){ throw e }
@@ -79932,7 +79932,7 @@ Gun.chain.load = function(cb, opt, at){
       var r = S.parse(new shim.TextDecoder('utf8').decode(ct));
       if(cb){ try{ cb(r) }catch(e){console.log(e)} }
       return r;
-    } catch(e) { 
+    } catch(e) {
       console.log(e);
       SEA.err = e;
       if(SEA.throw){ throw e }
@@ -79947,7 +79947,7 @@ Gun.chain.load = function(cb, opt, at){
     var SEA = USE('./root');
     var shim = USE('./shim');
     var S = USE('./settings');
-    // Derive shared secret from other's pub and my epub/epriv 
+    // Derive shared secret from other's pub and my epub/epriv
     SEA.secret = SEA.secret || (async (key, pair, cb, opt) => { try {
       opt = opt || {};
       if(!pair || !pair.epriv || !pair.epub){
@@ -80066,7 +80066,7 @@ Gun.chain.load = function(cb, opt, at){
     var Gun = SEA.Gun;
     var then = USE('./then');
 
-    function User(root){ 
+    function User(root){
       this._ = {$: this};
     }
     User.prototype = (function(){ function F(){}; F.prototype = Gun.chain; return new F() }()) // Object.create polyfill
@@ -80103,6 +80103,16 @@ Gun.chain.load = function(cb, opt, at){
     var Gun = SEA.Gun;
 
     var noop = function(){};
+
+    User.prototype.top = function(key){
+     var gun = this, root = gun.back(-1), user = root.user();
+     if(!user.is){ throw {err: "Not logged in!"} }
+     var top = user.chain(), at = (top._);
+     at.soul = at.get = "~"+user.is.pub+"."+key;
+     var tmp = (root.get(at.soul)._);
+     (tmp.echo || (tmp.echo = {}))[at.id] = at;
+     return top;
+    }
 
     // Well first we have to actually create a user. That is what this function does.
     User.prototype.create = function(alias, pass, cb, opt){
@@ -80147,11 +80157,11 @@ Gun.chain.load = function(cb, opt, at){
         act.e();
       }
       act.e = function(){
-        act.data.epub = act.pair.epub; 
+        act.data.epub = act.pair.epub;
         SEA.encrypt({priv: act.pair.priv, epriv: act.pair.epriv}, act.proof, act.f, {raw:1}); // to keep the private key safe, we AES encrypt it with the proof of work!
       }
       act.f = function(auth){
-        act.data.auth = JSON.stringify({ek: auth, s: act.salt}); 
+        act.data.auth = JSON.stringify({ek: auth, s: act.salt});
         act.g(act.data.auth);
       }
       act.g = function(auth){ var tmp;
@@ -80193,7 +80203,7 @@ Gun.chain.load = function(cb, opt, at){
         var get = (act.list = (act.list||[]).concat(list||[])).shift();
         if(u === get){
           if(act.name){ return act.err('Your user account is not published for dApps to access, please consider syncing it online, or allowing local access by adding your device as a peer.') }
-          return act.err('Wrong user or password.') 
+          return act.err('Wrong user or password.')
         }
         root.get(get).once(act.a);
       }
@@ -80671,6 +80681,7 @@ Gun.chain.load = function(cb, opt, at){
 
   })(USE, './index');
 }());
+
 var Gun = (typeof window !== "undefined")? window.Gun : require('../gun');
 
 // Returns a gun reference in a promise and then calls a callback if specified
@@ -92152,8 +92163,13 @@ Gun.chain.unset = function(node){
 	    } else {
 	      data.linkTo = Identity.getLinkTo(data.attrs);
 	    }
+	    var uri = data.linkTo.uri();
+	    console.log('uri', uri);
+	    var attrs = gun.top(uri + '/attrs').put(data.attrs);
+	    delete data['attrs'];
 	    gun.put(data);
-	    return new Identity(gun, data.linkTo, index);
+	    gun.get('attrs').put(attrs);
+	    return new Identity(gun, uri, index);
 	  };
 
 	  Identity.getLinkTo = function getLinkTo(attrs) {
@@ -92944,7 +92960,8 @@ Gun.chain.unset = function(node){
 	    this.gun.get('messagesByDistance').put(user.top('messagesByDistance'));
 
 	    var uri = this.viewpoint.uri();
-	    var g = this.gun.get('identitiesBySearchKey').get(uri).put(user.top(uri));
+	    var g = user.top(uri);
+	    this.gun.get('identitiesBySearchKey').get(uri).put(g);
 	    var attrs = {};
 	    attrs[uri] = this.viewpoint;
 	    if (this.options.self) {
@@ -94155,7 +94172,7 @@ Gun.chain.unset = function(node){
 	  return Index;
 	}();
 
-	var version$1 = "0.0.125";
+	var version$1 = "0.0.126";
 
 	/*eslint no-useless-escape: "off", camelcase: "off" */
 
