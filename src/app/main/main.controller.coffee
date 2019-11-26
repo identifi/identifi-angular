@@ -171,7 +171,7 @@ angular.module('irisAngular').controller 'MainController', [
       o.myMsgsLastSeenTimePromise = new Promise (resolve) ->
         o.getMyMsgsLastSeenTime (time) ->
           resolve time
-        setTimeout resolve, 1000
+        setTimeout resolve, 5000
       return o
 
     setIndex = (i) ->
