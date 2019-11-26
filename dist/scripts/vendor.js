@@ -92808,18 +92808,19 @@ Gun.chain.unset = function(node){
 	      root = gun.back(-1),
 	      user = root.user();
 	  if (!user.is) {
-	    throw { err: "Not logged in!" };
+	    throw { err: 'Not logged in!' };
 	  }
 	  var top = user.chain(),
 	      at = top._;
-	  at.soul = at.get = "~" + user.is.pub + "." + key;
+	  at.soul = at.get = '~' + user.is.pub + '.' + key;
 	  var tmp = root.get(at.soul)._;
 	  (tmp.echo || (tmp.echo = {}))[at.id] = at;
 	  return top;
 	};
 
 	// temp method for GUN search
-	async function searchText(node, callback, query, limit, cursor, desc) {
+	async function searchText(node, callback, query, limit) {
+	  // , cursor, desc
 	  var seen = {};
 	  node.map().once(function (value, key) {
 	    //console.log(`searchText`, value, key, desc);
@@ -93321,7 +93322,7 @@ Gun.chain.unset = function(node){
 	    this.gun.get('trustedIndexes').map().on(function (value, key) {
 	      if (value) {
 	        console.log('trustedIndex', key);
-	        _this5.gun.user(key).get('chat').get(_this5.options.keypair.pub).on(function (v, k) {
+	        _this5.gun.user(key).get('chat').get(_this5.options.keypair.pub).on(function (v) {
 	          if (v) {
 	            callback(key);
 	          }
@@ -93982,12 +93983,12 @@ Gun.chain.unset = function(node){
 	  Index.prototype.search = async function search() {
 	    var value = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
 	    var type = arguments[1];
-	    var callback = arguments[2];
 
 	    var _this11 = this;
 
+	    var callback = arguments[2];
 	    var limit = arguments[3];
-	    // TODO: param 'exact', type param
+	    // cursor // TODO: param 'exact', type param
 	    var seen = {};
 	    function searchTermCheck(key) {
 	      var arr = key.split(':');

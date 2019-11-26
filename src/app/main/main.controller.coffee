@@ -134,31 +134,33 @@ angular.module('irisAngular').controller 'MainController', [
       msg.time = new Date(msg.time)
       chat.latest = msg if (chat.latest == 0 or msg.time > chat.latest.time)
 
-      if !$state.is('chats.show', {value:chat.idValue}) and !info.selfAuthored
-        if chat.myMsgsLastSeenTime or (chat.chat and chat.chat.myMsgsLastSeenTime)
-          if new Date(chat.myMsgsLastSeenTime or chat.chat.myMsgsLastSeenTime) < msg.time
-            chat.unreadMsgs++
-        else
-          chat.unreadMsgs++
+      promise = chat.myMsgsLastSeenTimePromise or (chat.chat and chat.chat.myMsgsLastSeenTimePromise)
+      if promise
+        promise.then (myMsgsLastSeenTime) ->
+          if !$state.is('chats.show', {value:chat.idValue}) and !info.selfAuthored
+            if myMsgsLastSeenTime
+              if (new Date(myMsgsLastSeenTime) < msg.time)
+                chat.unreadMsgs++
+            else
+              chat.unreadMsgs++
 
-      shouldNotify = () ->
-        if $scope.localSettings.hasOwnProperty(chat.idValue) and $scope.localSettings[chat.idValue].muted
-          return false
-        if info.selfAuthored
-          return false
-        if $state.is('chats.show', {value:chat.idValue}) and not document.hidden
-          return false
-        if chat.myMsgsLastSeenTime or (chat.chat and chat.chat.myMsgsLastSeenTime)
-          if new Date(chat.myMsgsLastSeenTime or chat.chat.myMsgsLastSeenTime) >= msg.time
-            return false
-        return true
-      if shouldNotify()
-        NotificationService.create
-          type: 'chat'
-          from: if typeof msg.author == 'string' then msg.author else ''
-          text: msg.text
-          onClick: () ->
-            $state.go 'chats.show', { type: chat.idType, value: chat.idValue }
+          shouldNotify = () ->
+            if $scope.localSettings.hasOwnProperty(chat.idValue) and $scope.localSettings[chat.idValue].muted
+              return false
+            if info.selfAuthored
+              return false
+            if $state.is('chats.show', {value:chat.idValue}) and not document.hidden
+              return false
+            if myMsgsLastSeenTime and (new Date(myMsgsLastSeenTime) >= msg.time)
+              return false
+            return true
+          if shouldNotify()
+            NotificationService.create
+              type: 'chat'
+              from: if typeof msg.author == 'string' then msg.author else ''
+              text: msg.text
+              onClick: () ->
+                $state.go 'chats.show', { type: chat.idType, value: chat.idValue }
 
     $scope.getPrivateChat = (chat) ->
       o = new $window.irisLib.Chat
@@ -166,7 +168,10 @@ angular.module('irisAngular').controller 'MainController', [
         key: $scope.privateKey
         gun: $scope.gun
         participants: chat.idValue
-      o.getMyMsgsLastSeenTime()
+      o.myMsgsLastSeenTimePromise = new Promise (resolve) ->
+        o.getMyMsgsLastSeenTime (time) ->
+          resolve time
+        setTimeout resolve, 1000
       return o
 
     setIndex = (i) ->
