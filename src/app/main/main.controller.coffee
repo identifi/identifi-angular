@@ -262,59 +262,44 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.loginModal.close() if $scope.loginModal
       $scope.readQRModal.close() if $scope.readQRModal
       localStorageService.set('irisKey', privateKeySerialized)
-      p = Promise.resolve()
-      if previouslyExisting # hack to fix index overwrite bug https://github.com/irislib/iris-angular/issues/3
-        p = new Promise (resolve) ->
-          resolved = false
-          a = new $window.irisLib.Attribute('keyID', $scope.privateKey.pub)
-          $scope.gun.user($scope.privateKey.pub).get('iris').get('identitiesBySearchKey').get(a.uri()).on (data) ->
-            if data
-              resolved = true
-              resolve()
-          setTimeout ->
-            unless resolved
-              console.log('previously used index was not found,',
-              'may cause overwrite issue https://github.com/irislib/iris-angular/issues/3')
-              resolve()
-          , 5000
-      p.then ->
-        $scope.authentication.user =
-          idType: 'keyID'
-          idValue: $window.irisLib.Key.getId($scope.privateKey)
-        $scope.authentication.user.url = $scope.getIdUrl 'keyID', $scope.authentication.user.idValue
-        keyID = $window.irisLib.Key.getId($scope.privateKey)
-        $scope.viewpoint = {type: 'keyID', value: keyID}
-        $scope.ids.list = []
-        $scope.msgs.list = []
-        $scope.msgs.seen = {}
-        i = new $window.irisLib.Index({gun: $scope.gun, keypair: $scope.privateKey, self, ipfs: $scope.ipfs, debug: true})
-        setIndex(i)
-        i.ready.then ->
-          $scope.loggingIn = false
-          $scope.authentication.identity = $scope.irisIndex.get('keyID', keyID)
-          $scope.authentication.identity.gun.get('attrs').open (val, key, msg, eve) ->
-            mva = $window.irisLib.Identity.getMostVerifiedAttributes(val)
-            $scope.authentication.identity.mva = mva
-            eve.off() if mva.profilePhoto
-          startAt = new Date()
-          $scope.authentication.identity.gun.get('received').map().once (m) ->
-            return if m.pubKey == $scope.viewpoint.value
-            console.log 'you got a msg'
-            $window.irisLib.Message.fromSig(m).then (msg) ->
-              if new Date(msg.signedData.timestamp) > startAt
-                author = msg.getAuthor($scope.irisIndex)
-                $scope.setIdentityNames(author).then (name) ->
-                  NotificationService.create
-                    type: 'post'
-                    from: name
-                    text: "#{name} public messaged you!"
-                    onClick: () ->
-                      $state.go 'identities.show', { type: $scope.authentication.user.idType, value: $scope.authentication.user.idValue }
-          $scope.authentication.identity.gun.on (data) ->
-            if data.receivedPositive and $scope.authentication.identity.data and not $scope.authentication.identity.data.receivedPositive
-              console.log 'great, you got your first upvote!'
-              # TODO: notification
-            $scope.authentication.identity.data = data
+
+      $scope.authentication.user =
+        idType: 'keyID'
+        idValue: $window.irisLib.Key.getId($scope.privateKey)
+      $scope.authentication.user.url = $scope.getIdUrl 'keyID', $scope.authentication.user.idValue
+      keyID = $window.irisLib.Key.getId($scope.privateKey)
+      $scope.viewpoint = {type: 'keyID', value: keyID}
+      $scope.ids.list = []
+      $scope.msgs.list = []
+      $scope.msgs.seen = {}
+      i = new $window.irisLib.Index({gun: $scope.gun, keypair: $scope.privateKey, self, ipfs: $scope.ipfs, debug: true})
+      setIndex(i)
+      i.ready.then ->
+        $scope.loggingIn = false
+        $scope.authentication.identity = $scope.irisIndex.get('keyID', keyID)
+        $scope.authentication.identity.gun.get('attrs').open (val, key, msg, eve) ->
+          mva = $window.irisLib.Identity.getMostVerifiedAttributes(val)
+          $scope.authentication.identity.mva = mva
+          eve.off() if mva.profilePhoto
+        startAt = new Date()
+        $scope.authentication.identity.gun.get('received').map().once (m) ->
+          return if m.pubKey == $scope.viewpoint.value
+          console.log 'you got a msg'
+          $window.irisLib.Message.fromSig(m).then (msg) ->
+            if new Date(msg.signedData.timestamp) > startAt
+              author = msg.getAuthor($scope.irisIndex)
+              $scope.setIdentityNames(author).then (name) ->
+                NotificationService.create
+                  type: 'post'
+                  from: name
+                  text: "#{name} public messaged you!"
+                  onClick: () ->
+                    $state.go 'identities.show', { type: $scope.authentication.user.idType, value: $scope.authentication.user.idValue }
+        $scope.authentication.identity.gun.on (data) ->
+          if data.receivedPositive and $scope.authentication.identity.data and not $scope.authentication.identity.data.receivedPositive
+            console.log 'great, you got your first upvote!'
+            # TODO: notification
+          $scope.authentication.identity.data = data
 
     privateKey = localStorageService.get('irisKey') or localStorageService.get('identifiKey')
     if privateKey
