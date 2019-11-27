@@ -169,9 +169,13 @@ angular.module('irisAngular').controller 'MainController', [
         gun: $scope.gun
         participants: chat.idValue
       o.myMsgsLastSeenTimePromise = new Promise (resolve) ->
+        resolved = false
         o.getMyMsgsLastSeenTime (time) ->
-          resolve time
-        setTimeout resolve, 5000
+          resolved = true
+          resolve time if time
+        setTimeout () ->
+          resolve() unless resolved
+        , 10000
       return o
 
     setIndex = (i) ->
