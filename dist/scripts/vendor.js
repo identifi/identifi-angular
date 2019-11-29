@@ -79642,7 +79642,7 @@ Gun.chain.load = function(cb, opt, at){
       var r = shim.Buffer.from(work, 'binary').toString(opt.encode || 'base64')
       if(cb){ try{ cb(r) }catch(e){console.log(e)} }
       return r;
-    } catch(e) {
+    } catch(e) { 
       console.log(e);
       SEA.err = e;
       if(SEA.throw){ throw e }
@@ -79688,7 +79688,7 @@ Gun.chain.load = function(cb, opt, at){
         // but split on a non-base64 letter.
         return key;
       })
-
+      
       // To include PGPv4 kind of keyId:
       // const pubId = await SEA.keyid(keys.pub)
       // Next: ECDH keys for encryption/decryption...
@@ -79890,7 +79890,7 @@ Gun.chain.load = function(cb, opt, at){
 
       if(cb){ try{ cb(r) }catch(e){console.log(e)} }
       return r;
-    } catch(e) {
+    } catch(e) { 
       console.log(e);
       SEA.err = e;
       if(SEA.throw){ throw e }
@@ -79932,7 +79932,7 @@ Gun.chain.load = function(cb, opt, at){
       var r = S.parse(new shim.TextDecoder('utf8').decode(ct));
       if(cb){ try{ cb(r) }catch(e){console.log(e)} }
       return r;
-    } catch(e) {
+    } catch(e) { 
       console.log(e);
       SEA.err = e;
       if(SEA.throw){ throw e }
@@ -79947,7 +79947,7 @@ Gun.chain.load = function(cb, opt, at){
     var SEA = USE('./root');
     var shim = USE('./shim');
     var S = USE('./settings');
-    // Derive shared secret from other's pub and my epub/epriv
+    // Derive shared secret from other's pub and my epub/epriv 
     SEA.secret = SEA.secret || (async (key, pair, cb, opt) => { try {
       opt = opt || {};
       if(!pair || !pair.epriv || !pair.epub){
@@ -80066,7 +80066,7 @@ Gun.chain.load = function(cb, opt, at){
     var Gun = SEA.Gun;
     var then = USE('./then');
 
-    function User(root){
+    function User(root){ 
       this._ = {$: this};
     }
     User.prototype = (function(){ function F(){}; F.prototype = Gun.chain; return new F() }()) // Object.create polyfill
@@ -80103,16 +80103,6 @@ Gun.chain.load = function(cb, opt, at){
     var Gun = SEA.Gun;
 
     var noop = function(){};
-
-    User.prototype.top = function(key){
-     var gun = this, root = gun.back(-1), user = root.user();
-     if(!user.is){ throw {err: "Not logged in!"} }
-     var top = user.chain(), at = (top._);
-     at.soul = at.get = "~"+user.is.pub+"."+key;
-     var tmp = (root.get(at.soul)._);
-     (tmp.echo || (tmp.echo = {}))[at.id] = at;
-     return top;
-    }
 
     // Well first we have to actually create a user. That is what this function does.
     User.prototype.create = function(alias, pass, cb, opt){
@@ -80157,11 +80147,11 @@ Gun.chain.load = function(cb, opt, at){
         act.e();
       }
       act.e = function(){
-        act.data.epub = act.pair.epub;
+        act.data.epub = act.pair.epub; 
         SEA.encrypt({priv: act.pair.priv, epriv: act.pair.epriv}, act.proof, act.f, {raw:1}); // to keep the private key safe, we AES encrypt it with the proof of work!
       }
       act.f = function(auth){
-        act.data.auth = JSON.stringify({ek: auth, s: act.salt});
+        act.data.auth = JSON.stringify({ek: auth, s: act.salt}); 
         act.g(act.data.auth);
       }
       act.g = function(auth){ var tmp;
@@ -80203,7 +80193,7 @@ Gun.chain.load = function(cb, opt, at){
         var get = (act.list = (act.list||[]).concat(list||[])).shift();
         if(u === get){
           if(act.name){ return act.err('Your user account is not published for dApps to access, please consider syncing it online, or allowing local access by adding your device as a peer.') }
-          return act.err('Wrong user or password.')
+          return act.err('Wrong user or password.') 
         }
         root.get(get).once(act.a);
       }
@@ -80681,7 +80671,6 @@ Gun.chain.load = function(cb, opt, at){
 
   })(USE, './index');
 }());
-
 var Gun = (typeof window !== "undefined")? window.Gun : require('../gun');
 
 // Returns a gun reference in a promise and then calls a callback if specified
@@ -92616,16 +92605,18 @@ Gun.chain.unset = function(node){
 	    this.user.auth(this.key);
 	    this.user.put({ epub: this.key.epub });
 	    this.secrets = {}; // maps participant public key to shared secret
+	    this.ourSecretChatIds = {}; // maps participant public key to our secret chat id
+	    this.theirSecretChatIds = {}; // maps participant public key to their secret chat id
 	    this.onMessage = options.onMessage;
 
-	    if (typeof options.participants === 'string') {
+	    if (typeof options.participants === "string") {
 	      this.addPub(options.participants);
 	    } else if (Array.isArray(options.participants)) {
 	      for (var i = 0; i < options.participants.length; i++) {
-	        if (typeof options.participants[i] === 'string') {
+	        if (typeof options.participants[i] === "string") {
 	          this.addPub(options.participants[i]);
 	        } else {
-	          console.log('participant public key must be string, got', _typeof(options.participants[i]), options.participants[i]);
+	          console.log("participant public key must be string, got", _typeof(options.participants[i]), options.participants[i]);
 	        }
 	      }
 	    }
@@ -92633,15 +92624,63 @@ Gun.chain.unset = function(node){
 
 	  Chat.prototype.getSecret = async function getSecret(pub) {
 	    if (!this.secrets[pub]) {
-	      var epub = await this.gun.user(pub).get('epub').once().then();
+	      var epub = await this.gun.user(pub).get("epub").once().then();
 	      this.secrets[pub] = await Gun.SEA.secret(epub, this.key);
 	    }
 	    return this.secrets[pub];
 	  };
 
+	  Chat.getOurSecretChatId = async function getOurSecretChatId(gun, pub, pair) {
+	    var epub = await gun.user(pub).get("epub").once().then();
+	    var secret = await Gun.SEA.secret(epub, pair);
+	    return Gun.SEA.work(secret + pub, null, null, { name: "SHA-256" });
+	  };
+
+	  Chat.getTheirSecretChatId = async function getTheirSecretChatId(gun, pub, pair) {
+	    var epub = await gun.user(pub).get("epub").once().then();
+	    var secret = await Gun.SEA.secret(epub, pair);
+	    return Gun.SEA.work(secret + pair.pub, null, null, { name: "SHA-256" });
+	  };
+
+	  /**
+	  * Return a list of public keys that you have chats with.
+	  * @param {Object} gun user.authed gun instance
+	  * @param {Object} keypair SEA keypair that the gun instance is authenticated with
+	  * @param callback callback function that is called for each public key you have a chat with
+	  **/
+
+
+	  Chat.getChats = async function getChats(gun, keypair, callback) {
+	    var mySecret = await Gun.SEA.secret(keypair.epub, keypair);
+	    gun.user().get("chats").map().on(async function (value, ourSecretChatId) {
+	      if (value) {
+	        gun.user().get("chats").get(ourSecretChatId).get("pub").once(async function (encryptedPub) {
+	          var pub = await Gun.SEA.decrypt(encryptedPub, mySecret);
+	          callback(pub);
+	        });
+	      }
+	    });
+	  };
+
+	  Chat.prototype.getOurSecretChatId = async function getOurSecretChatId(pub) {
+	    if (!this.ourSecretChatIds[pub]) {
+	      var secret = await this.getSecret(pub);
+	      this.ourSecretChatIds[pub] = await Gun.SEA.work(secret + pub, null, null, { name: "SHA-256" });
+	    }
+	    return this.ourSecretChatIds[pub];
+	  };
+
+	  Chat.prototype.getTheirSecretChatId = async function getTheirSecretChatId(pub) {
+	    if (!this.theirSecretChatIds[pub]) {
+	      var secret = await this.getSecret(pub);
+	      this.theirSecretChatIds[pub] = await Gun.SEA.work(secret + this.key.pub, null, null, { name: "SHA-256" });
+	    }
+	    return this.theirSecretChatIds[pub];
+	  };
+
 	  Chat.prototype.messageReceived = async function messageReceived(data, pub, selfAuthored) {
 	    var decrypted = await Gun.SEA.decrypt(data, (await this.getSecret(pub)));
-	    if (typeof decrypted !== 'object') {
+	    if (typeof decrypted !== "object") {
 	      // console.log(`chat data received`, decrypted);
 	      return;
 	    }
@@ -92661,7 +92700,8 @@ Gun.chain.unset = function(node){
 	    time = time || new Date().toISOString();
 	    for (var i = 0; i < keys.length; i++) {
 	      var encrypted = await Gun.SEA.encrypt(time, (await this.getSecret(keys[i])));
-	      this.user.get('chat').get(keys[i]).get('msgsLastSeenTime').put(encrypted);
+	      var ourSecretChatId = await this.getOurSecretChatId(keys[i]);
+	      this.user.get("chats").get(ourSecretChatId).get("msgsLastSeenTime").put(encrypted);
 	    }
 	  };
 
@@ -92670,13 +92710,14 @@ Gun.chain.unset = function(node){
 	  */
 
 
-	  Chat.prototype.getMyMsgsLastSeenTime = function getMyMsgsLastSeenTime(callback) {
+	  Chat.prototype.getMyMsgsLastSeenTime = async function getMyMsgsLastSeenTime(callback) {
 	    var _this = this;
 
 	    var keys = _Object$keys(this.secrets);
 
-	    var _loop = function _loop(i) {
-	      _this.gun.user().get('chat').get(keys[i]).get('msgsLastSeenTime').on(async function (data) {
+	    var _loop = async function _loop(i) {
+	      var ourSecretChatId = await _this.getOurSecretChatId(keys[i]);
+	      _this.gun.user().get("chats").get(ourSecretChatId).get("msgsLastSeenTime").on(async function (data) {
 	        _this.myMsgsLastSeenTime = await Gun.SEA.decrypt(data, (await _this.getSecret(keys[i])));
 	        if (callback) {
 	          callback(_this.myMsgsLastSeenTime);
@@ -92685,7 +92726,7 @@ Gun.chain.unset = function(node){
 	    };
 
 	    for (var i = 0; i < keys.length; i++) {
-	      _loop(i);
+	      await _loop(i);
 	    }
 	  };
 
@@ -92694,13 +92735,14 @@ Gun.chain.unset = function(node){
 	  */
 
 
-	  Chat.prototype.getTheirMsgsLastSeenTime = function getTheirMsgsLastSeenTime(callback) {
+	  Chat.prototype.getTheirMsgsLastSeenTime = async function getTheirMsgsLastSeenTime(callback) {
 	    var _this2 = this;
 
 	    var keys = _Object$keys(this.secrets);
 
-	    var _loop2 = function _loop2(i) {
-	      _this2.gun.user(keys[i]).get('chat').get(_this2.key.pub).get('msgsLastSeenTime').on(async function (data) {
+	    var _loop2 = async function _loop2(i) {
+	      var theirSecretChatId = await _this2.getTheirSecretChatId(keys[i]);
+	      _this2.gun.user(keys[i]).get("chats").get(theirSecretChatId).get("msgsLastSeenTime").on(async function (data) {
 	        _this2.theirMsgsLastSeenTime = await Gun.SEA.decrypt(data, (await _this2.getSecret(keys[i])));
 	        if (callback) {
 	          callback(_this2.theirMsgsLastSeenTime, keys[i]);
@@ -92709,7 +92751,7 @@ Gun.chain.unset = function(node){
 	    };
 
 	    for (var i = 0; i < keys.length; i++) {
-	      _loop2(i);
+	      await _loop2(i);
 	    }
 	  };
 
@@ -92719,17 +92761,22 @@ Gun.chain.unset = function(node){
 	  */
 
 
-	  Chat.prototype.addPub = function addPub(pub) {
+	  Chat.prototype.addPub = async function addPub(pub) {
 	    var _this3 = this;
 
 	    this.secrets[pub] = null;
 	    this.getSecret(pub);
+	    // Save their public key in encrypted format, so in chat listing we know who we are chatting with
+	    var ourSecretChatId = await this.getOurSecretChatId(pub);
+	    var mySecret = await Gun.SEA.secret(this.key.epub, this.key);
+	    this.gun.user().get("chats").get(ourSecretChatId).get("pub").put((await Gun.SEA.encrypt(pub, mySecret)));
 	    // Subscribe to their messages
-	    this.gun.user(pub).get('chat').get(this.key.pub).map().once(function (data) {
+	    var theirSecretChatId = await this.getTheirSecretChatId(pub);
+	    this.gun.user(pub).get("chats").get(theirSecretChatId).get("msgs").map().once(function (data) {
 	      _this3.messageReceived(data, pub);
 	    });
 	    // Subscribe to our messages
-	    this.user.get('chat').get(pub).map().once(function (data) {
+	    this.user.get("chats").get(ourSecretChatId).get("msgs").map().once(function (data) {
 	      _this3.messageReceived(data, pub, true);
 	    });
 	  };
@@ -92741,10 +92788,10 @@ Gun.chain.unset = function(node){
 
 
 	  Chat.prototype.send = async function send(msg) {
-	    if (typeof msg === 'string') {
+	    if (typeof msg === "string") {
 	      msg = {
 	        time: new Date().toISOString(),
-	        author: 'anonymous',
+	        author: "anonymous",
 	        text: msg
 	      };
 	    }
@@ -92753,7 +92800,8 @@ Gun.chain.unset = function(node){
 	    var keys = _Object$keys(this.secrets);
 	    for (var i = 0; i < keys.length; i++) {
 	      var encrypted = await Gun.SEA.encrypt(_JSON$stringify(msg), (await this.getSecret(keys[i])));
-	      this.user.get('chat').get(keys[i]).get('' + msg.time).put(encrypted);
+	      var ourSecretChatId = await this.getOurSecretChatId(keys[i]);
+	      this.user.get("chats").get(ourSecretChatId).get("msgs").get("" + msg.time).put(encrypted);
 	    }
 	  };
 
@@ -92767,7 +92815,7 @@ Gun.chain.unset = function(node){
 	  Chat.setOnline = function setOnline(gun, isOnline) {
 	    if (isOnline) {
 	      var update = function update() {
-	        gun.user().get('lastActive').put(Math.round(Gun.state() / 1000));
+	        gun.user().get("lastActive").put(Math.round(Gun.state() / 1000));
 	      };
 	      update();
 	      gun.setOnlineInterval = setInterval(update, 3000);
@@ -92787,7 +92835,7 @@ Gun.chain.unset = function(node){
 
 	  Chat.getOnline = function getOnline(gun, pubKey, callback) {
 	    var timeout = void 0;
-	    gun.user(pubKey).get('lastActive').on(function (lastActive) {
+	    gun.user(pubKey).get("lastActive").on(function (lastActive) {
 	      clearTimeout(timeout);
 	      var now = Math.round(Gun.state() / 1000);
 	      var isOnline = lastActive > now - 10 && lastActive < now + 30;
@@ -93311,20 +93359,16 @@ Gun.chain.unset = function(node){
 	  */
 
 
-	  Index.prototype.getChats = function getChats(callback) {
+	  Index.prototype.getChats = async function getChats(callback) {
 	    var _this5 = this;
 
-	    this.gun.user().get('chat').map().on(function (value, key) {
+	    Chat.getChats(this.gun, this.options.keypair, callback);
+	    this.gun.get('trustedIndexes').map().on(async function (value, pub) {
 	      if (value) {
-	        callback(key);
-	      }
-	    });
-	    this.gun.get('trustedIndexes').map().on(function (value, key) {
-	      if (value) {
-	        console.log('trustedIndex', key);
-	        _this5.gun.user(key).get('chat').get(_this5.options.keypair.pub).on(function (v) {
+	        var theirSecretChatId = await Chat.getTheirSecretChatId(_this5.gun, pub, _this5.options.keypair);
+	        _this5.gun.user(pub).get('chats').get(theirSecretChatId).on(function (v) {
 	          if (v) {
-	            callback(key);
+	            callback(pub);
 	          }
 	        });
 	      }
@@ -94173,7 +94217,7 @@ Gun.chain.unset = function(node){
 	  return Index;
 	}();
 
-	var version$1 = "0.0.126";
+	var version$1 = "0.0.127";
 
 	/*eslint no-useless-escape: "off", camelcase: "off" */
 
