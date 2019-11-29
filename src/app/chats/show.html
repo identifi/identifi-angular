@@ -43,7 +43,7 @@
 
     <form class="form-inline mar-bot5" ng-submit="sendChatMessage(m);m = ''">
       <input ng-disabled="!authentication.user" class="form-control" type="text" ng-model="m" style="display:inline-block; width:80%">
-      <button ng-disabled="!authentication.user" class="btn btn-default" type="submit" style="display:inline-block"><i class="glyphicon glyphicon-send"></i></button>
+      <button ng-disabled="!(authentication.user && m.length)" class="btn btn-default" type="submit" style="display:inline-block"><i class="glyphicon glyphicon-send"></i></button>
     </form>
   </div>
 </div>

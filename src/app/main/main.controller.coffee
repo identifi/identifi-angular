@@ -36,6 +36,8 @@ angular.module('irisAngular').controller 'MainController', [
     $scope.openTime = new Date()
     $scope.notificationService = NotificationService
 
+    $scope.localSettings = localStorageService.get('localSettings') || {}
+
     $scope.trustDistanceComparator = (a, b) ->
       return 1 if a.type != 'number'
       return -1 if b.type != 'number'
@@ -179,7 +181,7 @@ angular.module('irisAngular').controller 'MainController', [
       return o
 
     setIndex = (i) ->
-      i.setOnline(true) if i.writable
+      i.setOnline(true) if (i.writable and not $scope.localSettings.publicOnlineStatusHidden)
       i.ready.then ->
         $scope.ids.list = []
         $scope.msgs.list = []
@@ -333,8 +335,6 @@ angular.module('irisAngular').controller 'MainController', [
       $window.ipfs = $scope.ipfs
       $scope.updateIpfsPeers()
       setInterval $scope.updateIpfsPeers, 5000
-
-    $scope.localSettings = localStorageService.get('localSettings') || {}
 
     $scope.saveLocalSetting = (key, value) ->
       $scope.localSettings[key] = value
@@ -818,6 +818,16 @@ angular.module('irisAngular').controller 'MainController', [
     $scope.notificationsPermitted = window.Notification and Notification.permission == 'granted'
     NotificationService.desktopNotificationsDisabled = $scope.localSettings.desktopNotificationsDisabled
     NotificationService.audioNotificationsDisabled = $scope.localSettings.audioNotificationsDisabled
+
+    $scope.setPublicOnlineStatusHidden = (hidden) ->
+      $scope.saveLocalSetting('publicOnlineStatusHidden', hidden)
+      if hidden
+        $scope.irisIndex.setOnline(false)
+      else
+        $scope.irisIndex.setOnline(true)
+
+    $scope.setAutoStartOnBootDisabled = (disabled) ->
+      $scope.saveLocalSetting('autoStartOnBootDisabled', disabled)
 
     $scope.setAudioNotificationsDisabled = (disabled) ->
       $scope.saveLocalSetting('audioNotificationsDisabled', disabled)

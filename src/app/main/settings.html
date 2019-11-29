@@ -63,6 +63,29 @@
           </p>
         </div>
       </div>
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          Other
+        </div>
+        <div class="panel-body">
+          <p>
+            <button ng-if="localSettings.publicOnlineStatusHidden" ng-click="setPublicOnlineStatusHidden(false)" class="btn btn-primary">
+              Show online status (public)
+            </button>
+            <button ng-if="!localSettings.publicOnlineStatusHidden" ng-click="setPublicOnlineStatusHidden(true)" class="btn btn-default">
+              Hide public online status
+            </button>
+          </p>
+          <p ng-if="isElectron">
+            <button ng-if="localSettings.autoStartOnBootDisabled" ng-click="setAutoStartOnBootDisabled(false)" class="btn btn-primary">
+              Enable autostart on boot
+            </button>
+            <button ng-if="!localSettings.autoStartOnBootDisabled" ng-click="setAutoStartOnBootDisabled(true)" class="btn btn-default">
+              Disable autostart on boot
+            </button>
+          </p>
+        </div>
+      </div>
     </div>
     <p><b>Geeky stuff</b></p>
     <div class="panel panel-default">
