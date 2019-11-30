@@ -781,7 +781,9 @@ angular.module('irisAngular').controller 'MainController', [
 
     $scope.dropdownSearchSelect = (item) ->
       $state.go('identities.show', { type: item.linkTo.type, value: item.linkTo.value })
-      $scope.query.term = ''
+
+    $transitions.onSuccess {}, ->
+      $scope.search '' unless $scope.searchKey == ''
 
     $scope.addGunPeer = (url) ->
       $scope.gun.opt({peers: [url]}); # TODO: validate url
