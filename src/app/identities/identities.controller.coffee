@@ -331,7 +331,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
           if msg.hash
             return if $scope.seenChatMessages[msg.hash]
             $scope.seenChatMessages[msg.hash] = true
-          msg.selfAuthored = info.selfAuthored
+          msg.selfAuthored = info and info.selfAuthored
           $scope.chatMessages.push(msg) if msg
           if $scope.idType == 'uuid'
             setUuidLastSeenTime()
