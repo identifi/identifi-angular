@@ -45,7 +45,10 @@ angular.module('irisAngular').controller 'MainController', [
 
     $scope.getIdUrl = (type, value, chat) ->
       if $window.location.hostname.indexOf('.') > -1 # differentiate between localhost / chrome plugin uri and DNS name
-        return $state.href('identities.show', {type, value}, {absolute: true})
+        if chat
+          return $state.href('chats.show', {type, value}, {absolute: true})
+        else
+          return $state.href('identities.show', {type, value}, {absolute: true})
       else
         if chat
           return 'https://iris.to/' + $state.href('chats.show', {type, value})

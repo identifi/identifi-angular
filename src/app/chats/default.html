@@ -1,9 +1,13 @@
-<p>Select a chat to start messaging</p>
+<div ng-include="'app/main/createuser.partial.html'"></div>
 
-<p>or share a link to people you want to chat with:</p>
+<div ng-if="authentication.user">
+  <p>Select a chat to start messaging</p>
 
-<p>
-<button class="btn btn-primary" ng-click="copyToClipboard(authentication.user.chatUrl, $event)">Copy "chat with me" link</button>
-</p>
+  <p>or share a link to people you want to chat with:</p>
 
-<div ng-include="'app/main/notificationsprompt.partial.html'"></div>
+  <p>
+  <button class="btn btn-primary" ng-click="copyToClipboard(authentication.user.chatUrl, $event)">Copy "chat with me" link</button>
+  </p>
+
+  <div ng-include="'app/main/notificationsprompt.partial.html'"></div>
+</div>
