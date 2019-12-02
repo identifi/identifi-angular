@@ -48,6 +48,17 @@
   </div>
 </div>
 
+<div ng-if="idType == 'keyID' && !(chat.repliedByThem || chat.theirMsgsLastSeenTime)" class="panel panel-info">
+  <div class="panel-heading">
+    <p>
+      To make sure your message gets noticed, you can share a link to this chat through some other channel:
+    </p>
+    <p>
+      <button class="btn btn-primary" ng-click="copyToClipboard(authentication.user.chatUrl, $event)">Copy "chat with me" link</button>
+    </p>
+  </div>
+</div>
+
 <div ng-if="idType == 'keyID'" class="message" ng-repeat="msg in chatMessages | orderBy:'-time'">
   <div class="panel msg">
     <div class="message-panel panel-body">
@@ -62,5 +73,3 @@
 <div ng-if="idType == 'uuid'">
   <message auth="authentication" ipfs="ipfs" ng-repeat="msg in chatMessages | orderBy:'-signedData.time' track by msg.hash" show-recipient="false" msg="msg"></message>
 </div>
-
-<div ng-include="'app/main/getstarted.partial.html'"></div>

@@ -326,7 +326,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
       setUuidLastSeenTime = () ->
         time = new Date().toISOString()
         $scope.irisIndex.gun.user().get('iris').get('chatMessagesByUuid').get($scope.idValue).get('msgsLastSeenTime').put(time)
-      onMessage = (msg) ->
+      onMessage = (msg, info) ->
         $scope.$apply ->
           if msg.hash
             return if $scope.seenChatMessages[msg.hash]
@@ -334,8 +334,11 @@ angular.module('irisAngular').controller 'IdentitiesController', [
           $scope.chatMessages.push(msg) if msg
           if $scope.idType == 'uuid'
             setUuidLastSeenTime()
-          if $scope.chat and (msg.time > $scope.chat.myMsgsLastSeenTime) and not $document.hidden
-            $scope.chat.setMyMsgsLastSeenTime()
+          if $scope.chat
+            if (msg.time > $scope.chat.myMsgsLastSeenTime) and not $document.hidden
+              $scope.chat.setMyMsgsLastSeenTime()
+            unless $scope.chat.repliedByThem or info.selfAuthored
+              $scope.chat.repliedByThem = true
       if $scope.idType == 'keyID'
         if $scope.authentication.user
           $scope.chat = new $window.irisLib.Chat

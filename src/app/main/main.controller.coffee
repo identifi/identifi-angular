@@ -43,11 +43,14 @@ angular.module('irisAngular').controller 'MainController', [
       return -1 if b.type != 'number'
       return a.value - b.value
 
-    $scope.getIdUrl = (type, value) ->
+    $scope.getIdUrl = (type, value, chat) ->
       if $window.location.hostname.indexOf('.') > -1 # differentiate between localhost / chrome plugin uri and DNS name
         return $state.href('identities.show', {type, value}, {absolute: true})
       else
-        return 'https://iris.to/' + $state.href('identities.show', {type, value})
+        if chat
+          return 'https://iris.to/' + $state.href('chats.show', {type, value})
+        else
+          return 'https://iris.to/' + $state.href('identities.show', {type, value})
 
     $scope.getIdKey = (id) ->
       return encodeURIComponent(id.type) + ':' + encodeURIComponent(id.value)
@@ -273,6 +276,7 @@ angular.module('irisAngular').controller 'MainController', [
         idType: 'keyID'
         idValue: $window.irisLib.Key.getId($scope.privateKey)
       $scope.authentication.user.url = $scope.getIdUrl 'keyID', $scope.authentication.user.idValue
+      $scope.authentication.user.chatUrl = $scope.getIdUrl 'keyID', $scope.authentication.user.idValue, true
       keyID = $window.irisLib.Key.getId($scope.privateKey)
       $scope.viewpoint = {type: 'keyID', value: keyID}
       $scope.ids.list = []
