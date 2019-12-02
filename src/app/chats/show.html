@@ -48,7 +48,7 @@
   </div>
 </div>
 
-<div ng-if="idType == 'keyID' && !(chat.repliedByThem || chat.theirMsgsLastSeenTime)" class="panel panel-info">
+<div ng-if="authentication.user && idType == 'keyID' && !(chat.repliedByThem || chat.theirMsgsLastSeenTime)" class="panel panel-info">
   <div class="panel-heading">
     <p>
       To make sure your message gets noticed, you can share a chat invitation through some other channel:
