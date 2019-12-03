@@ -28,7 +28,7 @@
             </span>
             </span>
           </span>
-          <span ng-bind="identity.primaryName"></span>
+          <span ng-bind="identity.primaryName || 'unknown'"></span>
         </span>
         <small class="positive mar-left15" ng-show="isOnline">online</small>
         <small class="mar-left15" ng-show="!isOnline && lastActive">
@@ -62,7 +62,7 @@
 <div ng-if="idType == 'keyID'" class="message" ng-repeat="msg in chatMessages | orderBy:'-time'">
   <div class="panel msg">
     <div class="message-panel panel-body">
-      <b ng-bind="msg.selfAuthored ? viewpoint.identity.primaryName : identity.primaryName"></b>
+      <b ng-bind="msg.selfAuthored ? viewpoint.identity.primaryName : (identity.primaryName || 'unknown')"></b>
       <small class="pull-right" ng-bind="msg.time | date : 'yyyy-M-d HH:mm'"></small>
       <br>
       <span ng-bind-html="msg.text|linky" ng-class="{big: msg.text.length<=2}"></span>

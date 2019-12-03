@@ -165,7 +165,7 @@ angular.module('irisAngular').controller 'MainController', [
           if shouldNotify()
             NotificationService.create
               type: 'chat'
-              from: if typeof msg.author == 'string' then msg.author else ''
+              from: chat.identity.primaryName || 'unknown'
               text: msg.text
               onClick: () ->
                 $state.go 'chats.show', { type: chat.idType, value: chat.idValue }
@@ -223,6 +223,7 @@ angular.module('irisAngular').controller 'MainController', [
               $scope.irisIndex.getChatMsgs(key, {callback: onMessage})
           timeout = 0
           $scope.irisIndex.getChats (key) ->
+            return unless key
             return if $scope.chatKeys['keyID' + key]
             $scope.chatKeys['keyID' + key] = true
             setTimeout ->
