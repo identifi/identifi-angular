@@ -77,6 +77,10 @@
             <span class="glyphicon glyphicon-facetime-video"></span>
           </button>
           <small class="positive mar-left15 visible-xs-inline-block visible-sm-inline-block" ng-show="isOnline">online</small>
+          <div ng-show="!loggingIn && authentication.user && !isCurrentUser" class="pull-right visible-xs-inline-block visible-sm-inline-block">
+            <button ng-if="!identity.data.trustDistance" class="btn btn-primary" ng-click="follow(idType, idValue)">Follow</button>
+            <button ng-if="identity.data.trustDistance > 0" class="btn btn-default" ng-click="unfollow(idType, idValue)">Unfollow</button>
+          </div>
           <span ng-if="identity.data.trustDistance === 0" class="label label-default pull-right">
             {{authentication.user ? 'you' : 'viewpoint'}}
           </span>

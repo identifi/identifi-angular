@@ -15,6 +15,10 @@
             <span class="glyphicon glyphicon-facetime-video mar-right5"></span> {{isCurrentUser ? 'Go live' : 'Video'}}
           </button>
           <small class="positive mar-left15" ng-show="isOnline">online</small>
+          <div ng-show="!loggingIn && authentication.user && !isCurrentUser" class="pull-right">
+            <button ng-if="!identity.data.trustDistance" ng-click="follow(idType, idValue)" class="btn btn-primary">Follow</button>
+            <button ng-if="identity.data.trustDistance > 0" class="btn btn-default" ng-click="unfollow(idType, idValue)">Unfollow</button>
+          </div>
         </h4>
         <h4 ng-hide="idType === 'keyID' || idType === 'uuid'">
           <span ng-bind="idValue" class="idValue"></span>
@@ -61,12 +65,6 @@
             <span class="visible-xs">Recv ({{0+identity.data.receivedPositive+identity.data.receivedNeutral+identity.data.receivedNegative}})</span>
           </uib-tab-heading>
           <div ng-if="isCurrentUser" ng-include="'app/main/getstarted.partial.html'"></div>
-          <div class="panel panel-info" ng-if="!isCurrentUser && authentication.user && authentication.identity.data && !authentication.identity.data.sentPositive">
-            <div class="panel-heading">
-              Trust this user? Upvote them to see their posts!
-            </div>
-          </div>
-          <div ng-include="'app/messages/create.rating.partial.html'" ng-show="!loggingIn && authentication.user && !isCurrentUser"></div>
           <div ng-include="'app/identities/show.received.html'"></div>
           <div ng-if="!isCurrentUser && receivedFiltered.length == 0" class="alert alert-info text-center">No messages yet</div>
         </uib-tab>

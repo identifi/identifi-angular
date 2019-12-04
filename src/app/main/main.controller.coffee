@@ -133,6 +133,22 @@ angular.module('irisAngular').controller 'MainController', [
           resolve($scope.ids.list)
         , 1000
 
+    follow_or_unfollow = (idType, idValue, follow = true, event) ->
+      recipient = {}
+      recipient[idType] = idValue
+      event.target.setAttribute 'disabled', true if event
+      $scope.createMessage undefined,
+        type: 'rating'
+        rating: if follow then 1 else 0
+        context: 'follow'
+        recipient: recipient
+
+    $scope.follow = (idType, idValue, event) ->
+      follow_or_unfollow idType, idValue, true, event
+
+    $scope.unfollow = (idType, idValue, event) ->
+      follow_or_unfollow idType, idValue, false, event
+
     $scope.onChatMessage = (msg, info = {}, chat) ->
       return unless msg
       chat.seen = {} unless chat.seen
@@ -568,13 +584,6 @@ angular.module('irisAngular').controller 'MainController', [
         $scope.loginWithKey($scope.privateKeySerialized, self)
       .then (msg) ->
         $scope.creatingUser = false
-        $scope.createMessage undefined,
-          type: 'rating'
-          rating: 1
-          text: 'Trusted by default as a web of trust entry point.'
-          recipient:
-            keyID: $scope.defaultIndexKeyID
-            name: 'Iris'
       .catch (e) ->
         console.error('failed to create user:', e)
         $scope.creatingUser = false
