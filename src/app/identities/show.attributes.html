@@ -7,8 +7,6 @@
           <div class="pull-left mar-right15">
             <a ng-hide="a.type === 'keyID' || a.type === 'uuid'" style="min-width:45px" class="btn btn-lg btn-social-icon" ng-class="a.btnStyle" ng-href="{{a.link}}">
               <span ng-class="a.iconStyle"></span>
-              <span ng-if="a.iconStyle&&!a.link" class="pull-left btn btn-lg btn-social-icon" ng-class="a.btnStyle" ng-href="{{a.link}}">
-              <span ng-class="a.iconStyle"></span>
             </a>
             <identicon identity="a.attr" ng-show="a.attr && (a.type === 'keyID' || a.type === 'uuid')" width="45"></identicon>
           </div>

@@ -131,7 +131,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
               a.link = 'mailto:' + a.value
               a.quickContact = true
             when 'bitcoin_address', 'bitcoin'
-              a.iconStyle = 'fa fa-bitcoin'
+              a.iconStyle = 'fab fa-bitcoin'
               a.btnStyle = 'btn-primary'
               a.link = 'https://blockchain.info/address/' + a.value
               a.quickContact = true

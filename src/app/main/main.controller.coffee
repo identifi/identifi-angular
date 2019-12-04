@@ -140,7 +140,7 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.createMessage undefined,
         type: 'rating'
         rating: if follow then 1 else 0
-        context: 'follow'
+        text: if follow then 'follow' else 'unfollow'
         recipient: recipient
 
     $scope.follow = (idType, idValue, event) ->
