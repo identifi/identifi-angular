@@ -199,7 +199,7 @@ angular.module('irisAngular').controller 'MainController', [
           resolve time if time
         setTimeout () ->
           resolve() unless resolved
-        , 10000
+        , 30000
       return o
 
     setIndex = (i) ->
