@@ -1,9 +1,9 @@
 <div ng-if="authentication.user && authentication.identity.data && !authentication.identity.data.sentPositive" class="alert alert-info text-center">
   <p class="h3" style="margin-bottom:15px">Welcome to social networking freedom!</p>
-  <p>Start by following your friends: ask for their profile links or scan their QR codes (<b><a ui-sref="identities.create">Add contact</a></b>). That makes their posts visible to you.</p>
+  <p>Start by following your friends: ask for their profile links or scan their QR codes (<b><a ui-sref="identities.create">Add contact</a></b>).</p>
   <p>Alternatively, you can follow the maintainer of this Iris distribution as a starting point.</p>
   <p>
-    <button ng-if="!identity.data.trustDistance" class="btn btn-primary" ng-click="follow(defaultIndexKeyID, $event)">Follow Iris</button>
+    <button ng-if="!identity.data.trustDistance" class="btn btn-primary" ng-click="follow('keyID', defaultIndexKeyID, $event)">Follow Iris</button>
   </p>
   <br>
 </div>
