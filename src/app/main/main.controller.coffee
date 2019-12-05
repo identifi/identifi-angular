@@ -316,7 +316,7 @@ angular.module('irisAngular').controller 'MainController', [
           return if m.pubKey == $scope.viewpoint.value
           console.log 'you got a msg'
           $window.irisLib.Message.fromSig(m).then (msg) ->
-            if new Date(msg.signedData.timestamp) > startAt
+            if new Date(msg.signedData.time||msg.signedData.timestamp) > startAt
               author = msg.getAuthor($scope.irisIndex)
               $scope.setIdentityNames(author).then (name) ->
                 NotificationService.create
@@ -548,7 +548,8 @@ angular.module('irisAngular').controller 'MainController', [
         found += 1
         $scope.loadingMsgs = false if found >= limit
         return if $scope.msgs.seen[msg.getHash()]
-        $scope.msgs.last = msg.signedData.timestamp if !$scope.msgs.last or msg.signedData.timestamp < $scope.msgs.last
+        time = msg.signedData.time || msg.signedData.timestamp
+        $scope.msgs.last = time if !$scope.msgs.last or time < $scope.msgs.last
         $scope.msgs.seen[msg.getHash()] = true
         $scope.processMessages [msg]
         $scope.$apply ->

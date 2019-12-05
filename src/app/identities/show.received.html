@@ -17,5 +17,5 @@
       </ul>
     </div>
   </div>
-  <message auth="authentication" ipfs="ipfs" msg-utils="msgUtils" msg="msg" page-info="identity" ng-repeat="msg in received.list | filter:msgFilter | orderBy:'signedData.timestamp' : true as receivedFiltered" ng-click="openMessage($event, msg)"></message>
+  <message auth="authentication" ipfs="ipfs" msg-utils="msgUtils" msg="msg" page-info="identity" ng-repeat="msg in received.list | filter:msgFilter | orderBy:'(signedData.timestamp||signedData.time)' : true as receivedFiltered" ng-click="openMessage($event, msg)"></message>
 </div>

@@ -48,7 +48,7 @@
                   <span ng-bind="msg.author_name||msg.signedData.author.type.value"></span>
                 </a>
               </strong>
-               - <span ng-bind="msg.signedData.timestamp|date:'mediumDate'" class="text-muted small" style="display:inline-block;"></span>
+               - <span ng-bind="(msg.signedData.time||msg.signedData.timestamp)|date:'mediumDate'" class="text-muted small" style="display:inline-block;"></span>
                <span ng-if="msg.signedData.comment"> - {{msg.signedData.comment|limitTo:250}}</span>
           </div>
         </div>
