@@ -483,8 +483,8 @@ angular.module('irisAngular').controller 'MainController', [
           if options.addTo and not options.addTo.seen[messages[0].getHash()]
             options.addTo.list.push messages[0]
             options.addTo.seen[messages[0].getHash()] = true
-          if $scope.filters.type not in [msg.type, null]
-            $scope.filters.type = msg.type
+          if msg.type == 'post' && $scope.filters.type not in ['post', null]
+            $scope.filters.type = 'post'
           $scope.resetMsg() # why not resetting uploaded files? D:
           options.files = [] if options.files
           $scope.addingMessage = false
