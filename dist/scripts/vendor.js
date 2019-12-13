@@ -81595,22 +81595,42 @@ Gun.chain.unset = function(node){
 		return module = { exports: {} }, fn(module, module.exports), module.exports;
 	}
 
-	var _core = createCommonjsModule(function (module) {
-	var core = module.exports = { version: '2.6.9' };
-	if (typeof __e == 'number') __e = core; // eslint-disable-line no-undef
-	});
-	var _core_1 = _core.version;
-
-	var $JSON = _core.JSON || (_core.JSON = { stringify: JSON.stringify });
-	var stringify = function stringify(it) { // eslint-disable-line no-unused-vars
-	  return $JSON.stringify.apply($JSON, arguments);
+	// 7.2.1 RequireObjectCoercible(argument)
+	var _defined = function (it) {
+	  if (it == undefined) throw TypeError("Can't call method on  " + it);
+	  return it;
 	};
 
-	var stringify$1 = createCommonjsModule(function (module) {
-	module.exports = { "default": stringify, __esModule: true };
-	});
+	// 7.1.13 ToObject(argument)
 
-	var _JSON$stringify = unwrapExports(stringify$1);
+	var _toObject = function (it) {
+	  return Object(_defined(it));
+	};
+
+	var hasOwnProperty = {}.hasOwnProperty;
+	var _has = function (it, key) {
+	  return hasOwnProperty.call(it, key);
+	};
+
+	var toString = {}.toString;
+
+	var _cof = function (it) {
+	  return toString.call(it).slice(8, -1);
+	};
+
+	// fallback for non-array-like ES3 and non-enumerable old V8 strings
+
+	// eslint-disable-next-line no-prototype-builtins
+	var _iobject = Object('z').propertyIsEnumerable(0) ? Object : function (it) {
+	  return _cof(it) == 'String' ? it.split('') : Object(it);
+	};
+
+	// to indexed object, toObject with fallback for non-array-like ES3 strings
+
+
+	var _toIobject = function (it) {
+	  return _iobject(_defined(it));
+	};
 
 	// 7.1.4 ToInteger
 	var ceil = Math.ceil;
@@ -81619,29 +81639,49 @@ Gun.chain.unset = function(node){
 	  return isNaN(it = +it) ? 0 : (it > 0 ? floor : ceil)(it);
 	};
 
-	// 7.2.1 RequireObjectCoercible(argument)
-	var _defined = function (it) {
-	  if (it == undefined) throw TypeError("Can't call method on  " + it);
-	  return it;
+	// 7.1.15 ToLength
+
+	var min = Math.min;
+	var _toLength = function (it) {
+	  return it > 0 ? min(_toInteger(it), 0x1fffffffffffff) : 0; // pow(2, 53) - 1 == 9007199254740991
 	};
 
-	// true  -> String#at
-	// false -> String#codePointAt
-	var _stringAt = function (TO_STRING) {
-	  return function (that, pos) {
-	    var s = String(_defined(that));
-	    var i = _toInteger(pos);
-	    var l = s.length;
-	    var a, b;
-	    if (i < 0 || i >= l) return TO_STRING ? '' : undefined;
-	    a = s.charCodeAt(i);
-	    return a < 0xd800 || a > 0xdbff || i + 1 === l || (b = s.charCodeAt(i + 1)) < 0xdc00 || b > 0xdfff
-	      ? TO_STRING ? s.charAt(i) : a
-	      : TO_STRING ? s.slice(i, i + 2) : (a - 0xd800 << 10) + (b - 0xdc00) + 0x10000;
+	var max = Math.max;
+	var min$1 = Math.min;
+	var _toAbsoluteIndex = function (index, length) {
+	  index = _toInteger(index);
+	  return index < 0 ? max(index + length, 0) : min$1(index, length);
+	};
+
+	// false -> Array#indexOf
+	// true  -> Array#includes
+
+
+
+	var _arrayIncludes = function (IS_INCLUDES) {
+	  return function ($this, el, fromIndex) {
+	    var O = _toIobject($this);
+	    var length = _toLength(O.length);
+	    var index = _toAbsoluteIndex(fromIndex, length);
+	    var value;
+	    // Array#includes uses SameValueZero equality algorithm
+	    // eslint-disable-next-line no-self-compare
+	    if (IS_INCLUDES && el != el) while (length > index) {
+	      value = O[index++];
+	      // eslint-disable-next-line no-self-compare
+	      if (value != value) return true;
+	    // Array#indexOf ignores holes, Array#includes - not
+	    } else for (;length > index; index++) if (IS_INCLUDES || index in O) {
+	      if (O[index] === el) return IS_INCLUDES || index || 0;
+	    } return !IS_INCLUDES && -1;
 	  };
 	};
 
-	var _library = true;
+	var _core = createCommonjsModule(function (module) {
+	var core = module.exports = { version: '2.6.9' };
+	if (typeof __e == 'number') __e = core; // eslint-disable-line no-undef
+	});
+	var _core_1 = _core.version;
 
 	var _global = createCommonjsModule(function (module) {
 	// https://github.com/zloirock/core-js/issues/86#issuecomment-115759028
@@ -81651,6 +81691,62 @@ Gun.chain.unset = function(node){
 	  : Function('return this')();
 	if (typeof __g == 'number') __g = global; // eslint-disable-line no-undef
 	});
+
+	var _library = true;
+
+	var _shared = createCommonjsModule(function (module) {
+	var SHARED = '__core-js_shared__';
+	var store = _global[SHARED] || (_global[SHARED] = {});
+
+	(module.exports = function (key, value) {
+	  return store[key] || (store[key] = value !== undefined ? value : {});
+	})('versions', []).push({
+	  version: _core.version,
+	  mode: 'pure',
+	  copyright: '© 2019 Denis Pushkarev (zloirock.ru)'
+	});
+	});
+
+	var id = 0;
+	var px = Math.random();
+	var _uid = function (key) {
+	  return 'Symbol('.concat(key === undefined ? '' : key, ')_', (++id + px).toString(36));
+	};
+
+	var shared = _shared('keys');
+
+	var _sharedKey = function (key) {
+	  return shared[key] || (shared[key] = _uid(key));
+	};
+
+	var arrayIndexOf = _arrayIncludes(false);
+	var IE_PROTO = _sharedKey('IE_PROTO');
+
+	var _objectKeysInternal = function (object, names) {
+	  var O = _toIobject(object);
+	  var i = 0;
+	  var result = [];
+	  var key;
+	  for (key in O) if (key != IE_PROTO) _has(O, key) && result.push(key);
+	  // Don't enum bug & hidden keys
+	  while (names.length > i) if (_has(O, key = names[i++])) {
+	    ~arrayIndexOf(result, key) || result.push(key);
+	  }
+	  return result;
+	};
+
+	// IE 8- don't enum bug keys
+	var _enumBugKeys = (
+	  'constructor,hasOwnProperty,isPrototypeOf,propertyIsEnumerable,toLocaleString,toString,valueOf'
+	).split(',');
+
+	// 19.1.2.14 / 15.2.3.14 Object.keys(O)
+
+
+
+	var _objectKeys = Object.keys || function keys(O) {
+	  return _objectKeysInternal(O, _enumBugKeys);
+	};
 
 	var _aFunction = function (it) {
 	  if (typeof it != 'function') throw TypeError(it + ' is not a function!');
@@ -81758,11 +81854,6 @@ Gun.chain.unset = function(node){
 	  return object;
 	};
 
-	var hasOwnProperty = {}.hasOwnProperty;
-	var _has = function (it, key) {
-	  return hasOwnProperty.call(it, key);
-	};
-
 	var PROTOTYPE = 'prototype';
 
 	var $export = function (type, name, source) {
@@ -81821,121 +81912,245 @@ Gun.chain.unset = function(node){
 	$export.R = 128; // real proto method for `library`
 	var _export = $export;
 
-	var _redefine = _hide;
+	// most Object methods by ES6 should accept primitives
 
-	var _iterators = {};
 
-	var toString = {}.toString;
 
-	var _cof = function (it) {
-	  return toString.call(it).slice(8, -1);
+	var _objectSap = function (KEY, exec) {
+	  var fn = (_core.Object || {})[KEY] || Object[KEY];
+	  var exp = {};
+	  exp[KEY] = exec(fn);
+	  _export(_export.S + _export.F * _fails(function () { fn(1); }), 'Object', exp);
 	};
 
-	// fallback for non-array-like ES3 and non-enumerable old V8 strings
+	// 19.1.2.14 Object.keys(O)
 
-	// eslint-disable-next-line no-prototype-builtins
-	var _iobject = Object('z').propertyIsEnumerable(0) ? Object : function (it) {
-	  return _cof(it) == 'String' ? it.split('') : Object(it);
+
+
+	_objectSap('keys', function () {
+	  return function keys(it) {
+	    return _objectKeys(_toObject(it));
+	  };
+	});
+
+	var keys = _core.Object.keys;
+
+	var keys$1 = createCommonjsModule(function (module) {
+	module.exports = { "default": keys, __esModule: true };
+	});
+
+	var _Object$keys = unwrapExports(keys$1);
+
+	var classCallCheck = createCommonjsModule(function (module, exports) {
+
+	exports.__esModule = true;
+
+	exports.default = function (instance, Constructor) {
+	  if (!(instance instanceof Constructor)) {
+	    throw new TypeError("Cannot call a class as a function");
+	  }
+	};
+	});
+
+	var _classCallCheck = unwrapExports(classCallCheck);
+
+	/**
+	* Gun object collection that provides tools for indexing and search. Decentralize everything!
+	*
+	* If opt.class is passed, object.serialize() and opt.class.deserialize() must be defined.
+	*
+	* Supports search from multiple indexes.
+	* For example, retrieve message feed from your own index and your friends' indexes.
+	*
+	* TODO: aggregation
+	* TODO: example
+	* TODO: scrollable and stretchable "search result window"
+	* @param {Object} opt {gun, class, indexes = [], askPeers = true, name = class.name}
+	*/
+
+	var Collection = function () {
+	  function Collection() {
+	    var opt = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+	    _classCallCheck(this, Collection);
+
+	    if (!opt.gun) {
+	      throw new Error('Missing opt.gun');
+	    }
+	    if (!(opt.class || opt.name)) {
+	      throw new Error('You must supply either opt.name or opt.class');
+	    }
+	    this.class = opt.class;
+	    if (this.class && !this.class.deserialize) {
+	      throw new Error('opt.class must have deserialize() method');
+	    }
+	    this.name = opt.name || opt.class.name;
+	    this.gun = opt.gun;
+	    this.indexes = opt.indexes || [];
+	    this.askPeers = typeof opt.askPeers === 'undefined' ? true : opt.askPeers;
+	  }
+
+	  /**
+	  * @return {String} id of added object, which can be used for collection.get(id)
+	  */
+
+
+	  Collection.prototype.put = function put(object) {
+	    var data = object;
+	    if (this.class) {
+	      data = object.serialize();
+	    }
+	    // TODO: optionally use gun hash table
+	    var node = void 0;
+	    if (data.id) {
+	      node = this.gun.get(this.name).get('id').get(data.id).put(data); // TODO: use .top()
+	    } else {
+	      node = this.gun.get(this.name).get('id').set(data);
+	    }
+	    this._addToIndexes(data, node);
+	    return data.id || Gun.node.soul(node) || node._.link;
+	  };
+
+	  Collection.prototype._addToIndexes = function _addToIndexes(serializedObject, node) {
+	    for (var i = 0; i < this.indexes.length; i++) {
+	      if (Object.prototype.hasOwnProperty.call(serializedObject, this.indexes[i])) {
+	        var indexName = this.indexes[i];
+	        this.gun.get(this.name).get(indexName).get(serializedObject[indexName]).put(node);
+	      }
+	    }
+	  };
+
+	  // TODO: method for terminating the query
+	  // TODO: query ttl. https://mongodb.github.io/node-mongodb-native/2.0/api/Collection.html
+	  /**
+	  * @param {Object} opt {callback, id, selector, limit, orderBy}
+	  */
+
+
+	  Collection.prototype.get = function get() {
+	    var _this = this;
+
+	    var opt = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+	    if (!opt.callback) {
+	      return;
+	    }
+	    var results = 0;
+	    var matcher = function matcher(data) {
+	      if (!data) {
+	        return;
+	      }
+	      if (opt.limit && results++ >= opt.limit) {
+	        return; // TODO: terminate query
+	      }
+	      if (opt.selector) {
+	        // TODO: deep compare selector object?
+	        var keys = _Object$keys(opt.selector);
+	        for (var i = 0; i < keys.length; i++) {
+	          var key = keys[i];
+	          if (!Object.prototype.hasOwnProperty.call(data, key)) {
+	            return;
+	          }
+	          var v1 = void 0,
+	              v2 = void 0;
+	          if (opt.caseSensitive === false) {
+	            v1 = data[key].toLowerCase();
+	            v2 = opt.selector[key].toLowerCase();
+	          } else {
+	            v1 = data[key];
+	            v2 = opt.selector[key];
+	          }
+	          if (v1 !== v2) {
+	            return;
+	          }
+	        }
+	      }
+	      if (opt.query) {
+	        // TODO: use gun.get() lt / gt operators
+	        var _keys = _Object$keys(opt.query);
+	        for (var _i = 0; _i < _keys.length; _i++) {
+	          var _key = _keys[_i];
+	          if (!Object.prototype.hasOwnProperty.call(data, _key)) {
+	            return;
+	          }
+	          var _v = void 0,
+	              _v2 = void 0;
+	          if (opt.caseSensitive === false) {
+	            _v = data[_key].toLowerCase();
+	            _v2 = opt.query[_key].toLowerCase();
+	          } else {
+	            _v = data[_key];
+	            _v2 = opt.query[_key];
+	          }
+	          if (_v.indexOf(_v2) !== 0) {
+	            return;
+	          }
+	        }
+	      }
+	      if (_this.class) {
+	        opt.callback(_this.class.deserialize(data));
+	      } else {
+	        opt.callback(data);
+	      }
+	    };
+
+	    if (opt.id) {
+	      opt.limit = 1;
+	      this.gun.get(this.name).get('id').get(opt.id).on(matcher);
+	      return;
+	    }
+
+	    var indexName = 'id';
+	    if (opt.orderBy && this.indexes.indexOf(opt.orderBy) > -1) {
+	      indexName = opt.orderBy;
+	    }
+
+	    // TODO: query from indexes
+	    this.gun.get(this.name).get(indexName).map().on(matcher); // TODO: limit .open recursion
+	    if (this.askPeers) {
+	      this.gun.get('trustedIndexes').on(function (val, key) {
+	        _this.gun.user(key).get(_this.name).get(indexName).map().on(matcher);
+	      });
+	    }
+	  };
+
+	  Collection.prototype.delete = function _delete() {
+	    // gun.unset()
+	  };
+
+	  return Collection;
+	}();
+
+	var $JSON = _core.JSON || (_core.JSON = { stringify: JSON.stringify });
+	var stringify = function stringify(it) { // eslint-disable-line no-unused-vars
+	  return $JSON.stringify.apply($JSON, arguments);
 	};
 
-	// to indexed object, toObject with fallback for non-array-like ES3 strings
+	var stringify$1 = createCommonjsModule(function (module) {
+	module.exports = { "default": stringify, __esModule: true };
+	});
 
+	var _JSON$stringify = unwrapExports(stringify$1);
 
-	var _toIobject = function (it) {
-	  return _iobject(_defined(it));
-	};
-
-	// 7.1.15 ToLength
-
-	var min = Math.min;
-	var _toLength = function (it) {
-	  return it > 0 ? min(_toInteger(it), 0x1fffffffffffff) : 0; // pow(2, 53) - 1 == 9007199254740991
-	};
-
-	var max = Math.max;
-	var min$1 = Math.min;
-	var _toAbsoluteIndex = function (index, length) {
-	  index = _toInteger(index);
-	  return index < 0 ? max(index + length, 0) : min$1(index, length);
-	};
-
-	// false -> Array#indexOf
-	// true  -> Array#includes
-
-
-
-	var _arrayIncludes = function (IS_INCLUDES) {
-	  return function ($this, el, fromIndex) {
-	    var O = _toIobject($this);
-	    var length = _toLength(O.length);
-	    var index = _toAbsoluteIndex(fromIndex, length);
-	    var value;
-	    // Array#includes uses SameValueZero equality algorithm
-	    // eslint-disable-next-line no-self-compare
-	    if (IS_INCLUDES && el != el) while (length > index) {
-	      value = O[index++];
-	      // eslint-disable-next-line no-self-compare
-	      if (value != value) return true;
-	    // Array#indexOf ignores holes, Array#includes - not
-	    } else for (;length > index; index++) if (IS_INCLUDES || index in O) {
-	      if (O[index] === el) return IS_INCLUDES || index || 0;
-	    } return !IS_INCLUDES && -1;
+	// true  -> String#at
+	// false -> String#codePointAt
+	var _stringAt = function (TO_STRING) {
+	  return function (that, pos) {
+	    var s = String(_defined(that));
+	    var i = _toInteger(pos);
+	    var l = s.length;
+	    var a, b;
+	    if (i < 0 || i >= l) return TO_STRING ? '' : undefined;
+	    a = s.charCodeAt(i);
+	    return a < 0xd800 || a > 0xdbff || i + 1 === l || (b = s.charCodeAt(i + 1)) < 0xdc00 || b > 0xdfff
+	      ? TO_STRING ? s.charAt(i) : a
+	      : TO_STRING ? s.slice(i, i + 2) : (a - 0xd800 << 10) + (b - 0xdc00) + 0x10000;
 	  };
 	};
 
-	var _shared = createCommonjsModule(function (module) {
-	var SHARED = '__core-js_shared__';
-	var store = _global[SHARED] || (_global[SHARED] = {});
+	var _redefine = _hide;
 
-	(module.exports = function (key, value) {
-	  return store[key] || (store[key] = value !== undefined ? value : {});
-	})('versions', []).push({
-	  version: _core.version,
-	  mode: 'pure',
-	  copyright: '© 2019 Denis Pushkarev (zloirock.ru)'
-	});
-	});
-
-	var id = 0;
-	var px = Math.random();
-	var _uid = function (key) {
-	  return 'Symbol('.concat(key === undefined ? '' : key, ')_', (++id + px).toString(36));
-	};
-
-	var shared = _shared('keys');
-
-	var _sharedKey = function (key) {
-	  return shared[key] || (shared[key] = _uid(key));
-	};
-
-	var arrayIndexOf = _arrayIncludes(false);
-	var IE_PROTO = _sharedKey('IE_PROTO');
-
-	var _objectKeysInternal = function (object, names) {
-	  var O = _toIobject(object);
-	  var i = 0;
-	  var result = [];
-	  var key;
-	  for (key in O) if (key != IE_PROTO) _has(O, key) && result.push(key);
-	  // Don't enum bug & hidden keys
-	  while (names.length > i) if (_has(O, key = names[i++])) {
-	    ~arrayIndexOf(result, key) || result.push(key);
-	  }
-	  return result;
-	};
-
-	// IE 8- don't enum bug keys
-	var _enumBugKeys = (
-	  'constructor,hasOwnProperty,isPrototypeOf,propertyIsEnumerable,toLocaleString,toString,valueOf'
-	).split(',');
-
-	// 19.1.2.14 / 15.2.3.14 Object.keys(O)
-
-
-
-	var _objectKeys = Object.keys || function keys(O) {
-	  return _objectKeysInternal(O, _enumBugKeys);
-	};
+	var _iterators = {};
 
 	var _objectDps = _descriptors ? Object.defineProperties : function defineProperties(O, Properties) {
 	  _anObject(O);
@@ -82022,12 +82237,6 @@ Gun.chain.unset = function(node){
 	var _iterCreate = function (Constructor, NAME, next) {
 	  Constructor.prototype = _objectCreate(IteratorPrototype, { next: _propertyDesc(1, next) });
 	  _setToStringTag(Constructor, NAME + ' Iterator');
-	};
-
-	// 7.1.13 ToObject(argument)
-
-	var _toObject = function (it) {
-	  return Object(_defined(it));
 	};
 
 	// 19.1.2.9 / 15.2.3.2 Object.getPrototypeOf(O)
@@ -82161,8 +82370,8 @@ Gun.chain.unset = function(node){
 
 	for (var i = 0; i < DOMIterables.length; i++) {
 	  var NAME = DOMIterables[i];
-	  var Collection = _global[NAME];
-	  var proto = Collection && Collection.prototype;
+	  var Collection$1 = _global[NAME];
+	  var proto = Collection$1 && Collection$1.prototype;
 	  if (proto && !proto[TO_STRING_TAG]) _hide(proto, TO_STRING_TAG, NAME);
 	  _iterators[NAME] = _iterators.Array;
 	}
@@ -84043,48 +84252,6 @@ Gun.chain.unset = function(node){
 
 	var regenerator = runtimeModule;
 
-	// most Object methods by ES6 should accept primitives
-
-
-
-	var _objectSap = function (KEY, exec) {
-	  var fn = (_core.Object || {})[KEY] || Object[KEY];
-	  var exp = {};
-	  exp[KEY] = exec(fn);
-	  _export(_export.S + _export.F * _fails(function () { fn(1); }), 'Object', exp);
-	};
-
-	// 19.1.2.14 Object.keys(O)
-
-
-
-	_objectSap('keys', function () {
-	  return function keys(it) {
-	    return _objectKeys(_toObject(it));
-	  };
-	});
-
-	var keys = _core.Object.keys;
-
-	var keys$1 = createCommonjsModule(function (module) {
-	module.exports = { "default": keys, __esModule: true };
-	});
-
-	var _Object$keys = unwrapExports(keys$1);
-
-	var classCallCheck = createCommonjsModule(function (module, exports) {
-
-	exports.__esModule = true;
-
-	exports.default = function (instance, Constructor) {
-	  if (!(instance instanceof Constructor)) {
-	    throw new TypeError("Cannot call a class as a function");
-	  }
-	};
-	});
-
-	var _classCallCheck = unwrapExports(classCallCheck);
-
 	var possibleConstructorReturn = createCommonjsModule(function (module, exports) {
 
 	exports.__esModule = true;
@@ -84198,6 +84365,43 @@ Gun.chain.unset = function(node){
 	var global$1 = (typeof global !== "undefined" ? global :
 	            typeof self !== "undefined" ? self :
 	            typeof window !== "undefined" ? window : {});
+
+	var isEnum$1 = _objectPie.f;
+	var _objectToArray = function (isEntries) {
+	  return function (it) {
+	    var O = _toIobject(it);
+	    var keys = _objectKeys(O);
+	    var length = keys.length;
+	    var i = 0;
+	    var result = [];
+	    var key;
+	    while (length > i) {
+	      key = keys[i++];
+	      if (!_descriptors || isEnum$1.call(O, key)) {
+	        result.push(isEntries ? [key, O[key]] : O[key]);
+	      }
+	    }
+	    return result;
+	  };
+	};
+
+	// https://github.com/tc39/proposal-object-values-entries
+
+	var $values = _objectToArray(false);
+
+	_export(_export.S, 'Object', {
+	  values: function values(it) {
+	    return $values(it);
+	  }
+	});
+
+	var values = _core.Object.values;
+
+	var values$1 = createCommonjsModule(function (module) {
+	module.exports = { "default": values, __esModule: true };
+	});
+
+	var _Object$values = unwrapExports(values$1);
 
 	var inherits_browser = createCommonjsModule(function (module) {
 	if (typeof Object.create === 'function') {
@@ -87059,7 +87263,7 @@ Gun.chain.unset = function(node){
 	var debugEnviron;
 	function debuglog(set) {
 	  if (isUndefined(debugEnviron))
-	    debugEnviron = '';
+	    debugEnviron = process$3.env.NODE_DEBUG || '';
 	  set = set.toUpperCase();
 	  if (!debugs[set]) {
 	    if (new RegExp('\\b' + set + '\\b', 'i').test(debugEnviron)) {
@@ -87414,6 +87618,10 @@ Gun.chain.unset = function(node){
 
 	function isNull(arg) {
 	  return arg === null;
+	}
+
+	function isNullOrUndefined(arg) {
+	  return arg == null;
 	}
 
 	function isNumber(arg) {
@@ -90689,6 +90897,1792 @@ Gun.chain.unset = function(node){
 	  return new Hash$1(sha_js(alg))
 	};
 
+	var hasFetch = isFunction$1(global$1.fetch) && isFunction$1(global$1.ReadableStream);
+
+	var _blobConstructor;
+	function blobConstructor() {
+	  if (typeof _blobConstructor !== 'undefined') {
+	    return _blobConstructor;
+	  }
+	  try {
+	    new global$1.Blob([new ArrayBuffer(1)]);
+	    _blobConstructor = true;
+	  } catch (e) {
+	    _blobConstructor = false;
+	  }
+	  return _blobConstructor
+	}
+	var xhr;
+
+	function checkTypeSupport(type) {
+	  if (!xhr) {
+	    xhr = new global$1.XMLHttpRequest();
+	    // If location.host is empty, e.g. if this page/worker was loaded
+	    // from a Blob, then use example.com to avoid an error
+	    xhr.open('GET', global$1.location.host ? '/' : 'https://example.com');
+	  }
+	  try {
+	    xhr.responseType = type;
+	    return xhr.responseType === type
+	  } catch (e) {
+	    return false
+	  }
+
+	}
+
+	// For some strange reason, Safari 7.0 reports typeof global.ArrayBuffer === 'object'.
+	// Safari 7.1 appears to have fixed this bug.
+	var haveArrayBuffer = typeof global$1.ArrayBuffer !== 'undefined';
+	var haveSlice = haveArrayBuffer && isFunction$1(global$1.ArrayBuffer.prototype.slice);
+
+	var arraybuffer = haveArrayBuffer && checkTypeSupport('arraybuffer');
+	  // These next two tests unavoidably show warnings in Chrome. Since fetch will always
+	  // be used if it's available, just return false for these to avoid the warnings.
+	var msstream = !hasFetch && haveSlice && checkTypeSupport('ms-stream');
+	var mozchunkedarraybuffer = !hasFetch && haveArrayBuffer &&
+	  checkTypeSupport('moz-chunked-arraybuffer');
+	var overrideMimeType = isFunction$1(xhr.overrideMimeType);
+	var vbArray = isFunction$1(global$1.VBArray);
+
+	function isFunction$1(value) {
+	  return typeof value === 'function'
+	}
+
+	xhr = null; // Help gc
+
+	var rStates = {
+	  UNSENT: 0,
+	  OPENED: 1,
+	  HEADERS_RECEIVED: 2,
+	  LOADING: 3,
+	  DONE: 4
+	};
+	function IncomingMessage(xhr, response, mode) {
+	  var self = this;
+	  Readable.call(self);
+
+	  self._mode = mode;
+	  self.headers = {};
+	  self.rawHeaders = [];
+	  self.trailers = {};
+	  self.rawTrailers = [];
+
+	  // Fake the 'close' event, but only once 'end' fires
+	  self.on('end', function() {
+	    // The nextTick is necessary to prevent the 'request' module from causing an infinite loop
+	    nextTick(function() {
+	      self.emit('close');
+	    });
+	  });
+	  var read;
+	  if (mode === 'fetch') {
+	    self._fetchResponse = response;
+
+	    self.url = response.url;
+	    self.statusCode = response.status;
+	    self.statusMessage = response.statusText;
+	      // backwards compatible version of for (<item> of <iterable>):
+	      // for (var <item>,_i,_it = <iterable>[Symbol.iterator](); <item> = (_i = _it.next()).value,!_i.done;)
+	    for (var header, _i, _it = response.headers[Symbol.iterator](); header = (_i = _it.next()).value, !_i.done;) {
+	      self.headers[header[0].toLowerCase()] = header[1];
+	      self.rawHeaders.push(header[0], header[1]);
+	    }
+
+	    // TODO: this doesn't respect backpressure. Once WritableStream is available, this can be fixed
+	    var reader = response.body.getReader();
+
+	    read = function () {
+	      reader.read().then(function(result) {
+	        if (self._destroyed)
+	          return
+	        if (result.done) {
+	          self.push(null);
+	          return
+	        }
+	        self.push(new Buffer(result.value));
+	        read();
+	      });
+	    };
+	    read();
+
+	  } else {
+	    self._xhr = xhr;
+	    self._pos = 0;
+
+	    self.url = xhr.responseURL;
+	    self.statusCode = xhr.status;
+	    self.statusMessage = xhr.statusText;
+	    var headers = xhr.getAllResponseHeaders().split(/\r?\n/);
+	    headers.forEach(function(header) {
+	      var matches = header.match(/^([^:]+):\s*(.*)/);
+	      if (matches) {
+	        var key = matches[1].toLowerCase();
+	        if (key === 'set-cookie') {
+	          if (self.headers[key] === undefined) {
+	            self.headers[key] = [];
+	          }
+	          self.headers[key].push(matches[2]);
+	        } else if (self.headers[key] !== undefined) {
+	          self.headers[key] += ', ' + matches[2];
+	        } else {
+	          self.headers[key] = matches[2];
+	        }
+	        self.rawHeaders.push(matches[1], matches[2]);
+	      }
+	    });
+
+	    self._charset = 'x-user-defined';
+	    if (!overrideMimeType) {
+	      var mimeType = self.rawHeaders['mime-type'];
+	      if (mimeType) {
+	        var charsetMatch = mimeType.match(/;\s*charset=([^;])(;|$)/);
+	        if (charsetMatch) {
+	          self._charset = charsetMatch[1].toLowerCase();
+	        }
+	      }
+	      if (!self._charset)
+	        self._charset = 'utf-8'; // best guess
+	    }
+	  }
+	}
+
+	inherits$2(IncomingMessage, Readable);
+
+	IncomingMessage.prototype._read = function() {};
+
+	IncomingMessage.prototype._onXHRProgress = function() {
+	  var self = this;
+
+	  var xhr = self._xhr;
+
+	  var response = null;
+	  switch (self._mode) {
+	  case 'text:vbarray': // For IE9
+	    if (xhr.readyState !== rStates.DONE)
+	      break
+	    try {
+	      // This fails in IE8
+	      response = new global$1.VBArray(xhr.responseBody).toArray();
+	    } catch (e) {
+	      // pass
+	    }
+	    if (response !== null) {
+	      self.push(new Buffer(response));
+	      break
+	    }
+	    // Falls through in IE8
+	  case 'text':
+	    try { // This will fail when readyState = 3 in IE9. Switch mode and wait for readyState = 4
+	      response = xhr.responseText;
+	    } catch (e) {
+	      self._mode = 'text:vbarray';
+	      break
+	    }
+	    if (response.length > self._pos) {
+	      var newData = response.substr(self._pos);
+	      if (self._charset === 'x-user-defined') {
+	        var buffer = new Buffer(newData.length);
+	        for (var i = 0; i < newData.length; i++)
+	          buffer[i] = newData.charCodeAt(i) & 0xff;
+
+	        self.push(buffer);
+	      } else {
+	        self.push(newData, self._charset);
+	      }
+	      self._pos = response.length;
+	    }
+	    break
+	  case 'arraybuffer':
+	    if (xhr.readyState !== rStates.DONE || !xhr.response)
+	      break
+	    response = xhr.response;
+	    self.push(new Buffer(new Uint8Array(response)));
+	    break
+	  case 'moz-chunked-arraybuffer': // take whole
+	    response = xhr.response;
+	    if (xhr.readyState !== rStates.LOADING || !response)
+	      break
+	    self.push(new Buffer(new Uint8Array(response)));
+	    break
+	  case 'ms-stream':
+	    response = xhr.response;
+	    if (xhr.readyState !== rStates.LOADING)
+	      break
+	    var reader = new global$1.MSStreamReader();
+	    reader.onprogress = function() {
+	      if (reader.result.byteLength > self._pos) {
+	        self.push(new Buffer(new Uint8Array(reader.result.slice(self._pos))));
+	        self._pos = reader.result.byteLength;
+	      }
+	    };
+	    reader.onload = function() {
+	      self.push(null);
+	    };
+	      // reader.onerror = ??? // TODO: this
+	    reader.readAsArrayBuffer(response);
+	    break
+	  }
+
+	  // The ms-stream case handles end separately in reader.onload()
+	  if (self._xhr.readyState === rStates.DONE && self._mode !== 'ms-stream') {
+	    self.push(null);
+	  }
+	};
+
+	// from https://github.com/jhiesey/to-arraybuffer/blob/6502d9850e70ba7935a7df4ad86b358fc216f9f0/index.js
+	function toArrayBuffer (buf) {
+	  // If the buffer is backed by a Uint8Array, a faster version will work
+	  if (buf instanceof Uint8Array) {
+	    // If the buffer isn't a subarray, return the underlying ArrayBuffer
+	    if (buf.byteOffset === 0 && buf.byteLength === buf.buffer.byteLength) {
+	      return buf.buffer
+	    } else if (typeof buf.buffer.slice === 'function') {
+	      // Otherwise we need to get a proper copy
+	      return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
+	    }
+	  }
+
+	  if (isBuffer(buf)) {
+	    // This is the slow version that will work with any Buffer
+	    // implementation (even in old browsers)
+	    var arrayCopy = new Uint8Array(buf.length);
+	    var len = buf.length;
+	    for (var i = 0; i < len; i++) {
+	      arrayCopy[i] = buf[i];
+	    }
+	    return arrayCopy.buffer
+	  } else {
+	    throw new Error('Argument must be a Buffer')
+	  }
+	}
+
+	function decideMode(preferBinary, useFetch) {
+	  if (hasFetch && useFetch) {
+	    return 'fetch'
+	  } else if (mozchunkedarraybuffer) {
+	    return 'moz-chunked-arraybuffer'
+	  } else if (msstream) {
+	    return 'ms-stream'
+	  } else if (arraybuffer && preferBinary) {
+	    return 'arraybuffer'
+	  } else if (vbArray && preferBinary) {
+	    return 'text:vbarray'
+	  } else {
+	    return 'text'
+	  }
+	}
+
+	function ClientRequest(opts) {
+	  var self = this;
+	  Writable.call(self);
+
+	  self._opts = opts;
+	  self._body = [];
+	  self._headers = {};
+	  if (opts.auth)
+	    self.setHeader('Authorization', 'Basic ' + new Buffer(opts.auth).toString('base64'));
+	  Object.keys(opts.headers).forEach(function(name) {
+	    self.setHeader(name, opts.headers[name]);
+	  });
+
+	  var preferBinary;
+	  var useFetch = true;
+	  if (opts.mode === 'disable-fetch') {
+	    // If the use of XHR should be preferred and includes preserving the 'content-type' header
+	    useFetch = false;
+	    preferBinary = true;
+	  } else if (opts.mode === 'prefer-streaming') {
+	    // If streaming is a high priority but binary compatibility and
+	    // the accuracy of the 'content-type' header aren't
+	    preferBinary = false;
+	  } else if (opts.mode === 'allow-wrong-content-type') {
+	    // If streaming is more important than preserving the 'content-type' header
+	    preferBinary = !overrideMimeType;
+	  } else if (!opts.mode || opts.mode === 'default' || opts.mode === 'prefer-fast') {
+	    // Use binary if text streaming may corrupt data or the content-type header, or for speed
+	    preferBinary = true;
+	  } else {
+	    throw new Error('Invalid value for opts.mode')
+	  }
+	  self._mode = decideMode(preferBinary, useFetch);
+
+	  self.on('finish', function() {
+	    self._onFinish();
+	  });
+	}
+
+	inherits$2(ClientRequest, Writable);
+	// Taken from http://www.w3.org/TR/XMLHttpRequest/#the-setrequestheader%28%29-method
+	var unsafeHeaders = [
+	  'accept-charset',
+	  'accept-encoding',
+	  'access-control-request-headers',
+	  'access-control-request-method',
+	  'connection',
+	  'content-length',
+	  'cookie',
+	  'cookie2',
+	  'date',
+	  'dnt',
+	  'expect',
+	  'host',
+	  'keep-alive',
+	  'origin',
+	  'referer',
+	  'te',
+	  'trailer',
+	  'transfer-encoding',
+	  'upgrade',
+	  'user-agent',
+	  'via'
+	];
+	ClientRequest.prototype.setHeader = function(name, value) {
+	  var self = this;
+	  var lowerName = name.toLowerCase();
+	    // This check is not necessary, but it prevents warnings from browsers about setting unsafe
+	    // headers. To be honest I'm not entirely sure hiding these warnings is a good thing, but
+	    // http-browserify did it, so I will too.
+	  if (unsafeHeaders.indexOf(lowerName) !== -1)
+	    return
+
+	  self._headers[lowerName] = {
+	    name: name,
+	    value: value
+	  };
+	};
+
+	ClientRequest.prototype.getHeader = function(name) {
+	  var self = this;
+	  return self._headers[name.toLowerCase()].value
+	};
+
+	ClientRequest.prototype.removeHeader = function(name) {
+	  var self = this;
+	  delete self._headers[name.toLowerCase()];
+	};
+
+	ClientRequest.prototype._onFinish = function() {
+	  var self = this;
+
+	  if (self._destroyed)
+	    return
+	  var opts = self._opts;
+
+	  var headersObj = self._headers;
+	  var body;
+	  if (opts.method === 'POST' || opts.method === 'PUT' || opts.method === 'PATCH') {
+	    if (blobConstructor()) {
+	      body = new global$1.Blob(self._body.map(function(buffer) {
+	        return toArrayBuffer(buffer)
+	      }), {
+	        type: (headersObj['content-type'] || {}).value || ''
+	      });
+	    } else {
+	      // get utf8 string
+	      body = Buffer.concat(self._body).toString();
+	    }
+	  }
+
+	  if (self._mode === 'fetch') {
+	    var headers = Object.keys(headersObj).map(function(name) {
+	      return [headersObj[name].name, headersObj[name].value]
+	    });
+
+	    global$1.fetch(self._opts.url, {
+	      method: self._opts.method,
+	      headers: headers,
+	      body: body,
+	      mode: 'cors',
+	      credentials: opts.withCredentials ? 'include' : 'same-origin'
+	    }).then(function(response) {
+	      self._fetchResponse = response;
+	      self._connect();
+	    }, function(reason) {
+	      self.emit('error', reason);
+	    });
+	  } else {
+	    var xhr = self._xhr = new global$1.XMLHttpRequest();
+	    try {
+	      xhr.open(self._opts.method, self._opts.url, true);
+	    } catch (err) {
+	      nextTick(function() {
+	        self.emit('error', err);
+	      });
+	      return
+	    }
+
+	    // Can't set responseType on really old browsers
+	    if ('responseType' in xhr)
+	      xhr.responseType = self._mode.split(':')[0];
+
+	    if ('withCredentials' in xhr)
+	      xhr.withCredentials = !!opts.withCredentials;
+
+	    if (self._mode === 'text' && 'overrideMimeType' in xhr)
+	      xhr.overrideMimeType('text/plain; charset=x-user-defined');
+
+	    Object.keys(headersObj).forEach(function(name) {
+	      xhr.setRequestHeader(headersObj[name].name, headersObj[name].value);
+	    });
+
+	    self._response = null;
+	    xhr.onreadystatechange = function() {
+	      switch (xhr.readyState) {
+	      case rStates.LOADING:
+	      case rStates.DONE:
+	        self._onXHRProgress();
+	        break
+	      }
+	    };
+	      // Necessary for streaming in Firefox, since xhr.response is ONLY defined
+	      // in onprogress, not in onreadystatechange with xhr.readyState = 3
+	    if (self._mode === 'moz-chunked-arraybuffer') {
+	      xhr.onprogress = function() {
+	        self._onXHRProgress();
+	      };
+	    }
+
+	    xhr.onerror = function() {
+	      if (self._destroyed)
+	        return
+	      self.emit('error', new Error('XHR error'));
+	    };
+
+	    try {
+	      xhr.send(body);
+	    } catch (err) {
+	      nextTick(function() {
+	        self.emit('error', err);
+	      });
+	      return
+	    }
+	  }
+	};
+
+	/**
+	 * Checks if xhr.status is readable and non-zero, indicating no error.
+	 * Even though the spec says it should be available in readyState 3,
+	 * accessing it throws an exception in IE8
+	 */
+	function statusValid(xhr) {
+	  try {
+	    var status = xhr.status;
+	    return (status !== null && status !== 0)
+	  } catch (e) {
+	    return false
+	  }
+	}
+
+	ClientRequest.prototype._onXHRProgress = function() {
+	  var self = this;
+
+	  if (!statusValid(self._xhr) || self._destroyed)
+	    return
+
+	  if (!self._response)
+	    self._connect();
+
+	  self._response._onXHRProgress();
+	};
+
+	ClientRequest.prototype._connect = function() {
+	  var self = this;
+
+	  if (self._destroyed)
+	    return
+
+	  self._response = new IncomingMessage(self._xhr, self._fetchResponse, self._mode);
+	  self.emit('response', self._response);
+	};
+
+	ClientRequest.prototype._write = function(chunk, encoding, cb) {
+	  var self = this;
+
+	  self._body.push(chunk);
+	  cb();
+	};
+
+	ClientRequest.prototype.abort = ClientRequest.prototype.destroy = function() {
+	  var self = this;
+	  self._destroyed = true;
+	  if (self._response)
+	    self._response._destroyed = true;
+	  if (self._xhr)
+	    self._xhr.abort();
+	    // Currently, there isn't a way to truly abort a fetch.
+	    // If you like bikeshedding, see https://github.com/whatwg/fetch/issues/27
+	};
+
+	ClientRequest.prototype.end = function(data, encoding, cb) {
+	  var self = this;
+	  if (typeof data === 'function') {
+	    cb = data;
+	    data = undefined;
+	  }
+
+	  Writable.prototype.end.call(self, data, encoding, cb);
+	};
+
+	ClientRequest.prototype.flushHeaders = function() {};
+	ClientRequest.prototype.setTimeout = function() {};
+	ClientRequest.prototype.setNoDelay = function() {};
+	ClientRequest.prototype.setSocketKeepAlive = function() {};
+
+	/*! https://mths.be/punycode v1.4.1 by @mathias */
+
+
+	/** Highest positive signed 32-bit float value */
+	var maxInt = 2147483647; // aka. 0x7FFFFFFF or 2^31-1
+
+	/** Bootstring parameters */
+	var base = 36;
+	var tMin = 1;
+	var tMax = 26;
+	var skew = 38;
+	var damp = 700;
+	var initialBias = 72;
+	var initialN = 128; // 0x80
+	var delimiter = '-'; // '\x2D'
+	var regexNonASCII = /[^\x20-\x7E]/; // unprintable ASCII chars + non-ASCII chars
+	var regexSeparators = /[\x2E\u3002\uFF0E\uFF61]/g; // RFC 3490 separators
+
+	/** Error messages */
+	var errors = {
+	  'overflow': 'Overflow: input needs wider integers to process',
+	  'not-basic': 'Illegal input >= 0x80 (not a basic code point)',
+	  'invalid-input': 'Invalid input'
+	};
+
+	/** Convenience shortcuts */
+	var baseMinusTMin = base - tMin;
+	var floor$1 = Math.floor;
+	var stringFromCharCode = String.fromCharCode;
+
+	/*--------------------------------------------------------------------------*/
+
+	/**
+	 * A generic error utility function.
+	 * @private
+	 * @param {String} type The error type.
+	 * @returns {Error} Throws a `RangeError` with the applicable error message.
+	 */
+	function error(type) {
+	  throw new RangeError(errors[type]);
+	}
+
+	/**
+	 * A generic `Array#map` utility function.
+	 * @private
+	 * @param {Array} array The array to iterate over.
+	 * @param {Function} callback The function that gets called for every array
+	 * item.
+	 * @returns {Array} A new array of values returned by the callback function.
+	 */
+	function map(array, fn) {
+	  var length = array.length;
+	  var result = [];
+	  while (length--) {
+	    result[length] = fn(array[length]);
+	  }
+	  return result;
+	}
+
+	/**
+	 * A simple `Array#map`-like wrapper to work with domain name strings or email
+	 * addresses.
+	 * @private
+	 * @param {String} domain The domain name or email address.
+	 * @param {Function} callback The function that gets called for every
+	 * character.
+	 * @returns {Array} A new string of characters returned by the callback
+	 * function.
+	 */
+	function mapDomain(string, fn) {
+	  var parts = string.split('@');
+	  var result = '';
+	  if (parts.length > 1) {
+	    // In email addresses, only the domain name should be punycoded. Leave
+	    // the local part (i.e. everything up to `@`) intact.
+	    result = parts[0] + '@';
+	    string = parts[1];
+	  }
+	  // Avoid `split(regex)` for IE8 compatibility. See #17.
+	  string = string.replace(regexSeparators, '\x2E');
+	  var labels = string.split('.');
+	  var encoded = map(labels, fn).join('.');
+	  return result + encoded;
+	}
+
+	/**
+	 * Creates an array containing the numeric code points of each Unicode
+	 * character in the string. While JavaScript uses UCS-2 internally,
+	 * this function will convert a pair of surrogate halves (each of which
+	 * UCS-2 exposes as separate characters) into a single code point,
+	 * matching UTF-16.
+	 * @see `punycode.ucs2.encode`
+	 * @see <https://mathiasbynens.be/notes/javascript-encoding>
+	 * @memberOf punycode.ucs2
+	 * @name decode
+	 * @param {String} string The Unicode input string (UCS-2).
+	 * @returns {Array} The new array of code points.
+	 */
+	function ucs2decode(string) {
+	  var output = [],
+	    counter = 0,
+	    length = string.length,
+	    value,
+	    extra;
+	  while (counter < length) {
+	    value = string.charCodeAt(counter++);
+	    if (value >= 0xD800 && value <= 0xDBFF && counter < length) {
+	      // high surrogate, and there is a next character
+	      extra = string.charCodeAt(counter++);
+	      if ((extra & 0xFC00) == 0xDC00) { // low surrogate
+	        output.push(((value & 0x3FF) << 10) + (extra & 0x3FF) + 0x10000);
+	      } else {
+	        // unmatched surrogate; only append this code unit, in case the next
+	        // code unit is the high surrogate of a surrogate pair
+	        output.push(value);
+	        counter--;
+	      }
+	    } else {
+	      output.push(value);
+	    }
+	  }
+	  return output;
+	}
+
+	/**
+	 * Converts a digit/integer into a basic code point.
+	 * @see `basicToDigit()`
+	 * @private
+	 * @param {Number} digit The numeric value of a basic code point.
+	 * @returns {Number} The basic code point whose value (when used for
+	 * representing integers) is `digit`, which needs to be in the range
+	 * `0` to `base - 1`. If `flag` is non-zero, the uppercase form is
+	 * used; else, the lowercase form is used. The behavior is undefined
+	 * if `flag` is non-zero and `digit` has no uppercase form.
+	 */
+	function digitToBasic(digit, flag) {
+	  //  0..25 map to ASCII a..z or A..Z
+	  // 26..35 map to ASCII 0..9
+	  return digit + 22 + 75 * (digit < 26) - ((flag != 0) << 5);
+	}
+
+	/**
+	 * Bias adaptation function as per section 3.4 of RFC 3492.
+	 * https://tools.ietf.org/html/rfc3492#section-3.4
+	 * @private
+	 */
+	function adapt(delta, numPoints, firstTime) {
+	  var k = 0;
+	  delta = firstTime ? floor$1(delta / damp) : delta >> 1;
+	  delta += floor$1(delta / numPoints);
+	  for ( /* no initialization */ ; delta > baseMinusTMin * tMax >> 1; k += base) {
+	    delta = floor$1(delta / baseMinusTMin);
+	  }
+	  return floor$1(k + (baseMinusTMin + 1) * delta / (delta + skew));
+	}
+
+	/**
+	 * Converts a string of Unicode symbols (e.g. a domain name label) to a
+	 * Punycode string of ASCII-only symbols.
+	 * @memberOf punycode
+	 * @param {String} input The string of Unicode symbols.
+	 * @returns {String} The resulting Punycode string of ASCII-only symbols.
+	 */
+	function encode(input) {
+	  var n,
+	    delta,
+	    handledCPCount,
+	    basicLength,
+	    bias,
+	    j,
+	    m,
+	    q,
+	    k,
+	    t,
+	    currentValue,
+	    output = [],
+	    /** `inputLength` will hold the number of code points in `input`. */
+	    inputLength,
+	    /** Cached calculation results */
+	    handledCPCountPlusOne,
+	    baseMinusT,
+	    qMinusT;
+
+	  // Convert the input in UCS-2 to Unicode
+	  input = ucs2decode(input);
+
+	  // Cache the length
+	  inputLength = input.length;
+
+	  // Initialize the state
+	  n = initialN;
+	  delta = 0;
+	  bias = initialBias;
+
+	  // Handle the basic code points
+	  for (j = 0; j < inputLength; ++j) {
+	    currentValue = input[j];
+	    if (currentValue < 0x80) {
+	      output.push(stringFromCharCode(currentValue));
+	    }
+	  }
+
+	  handledCPCount = basicLength = output.length;
+
+	  // `handledCPCount` is the number of code points that have been handled;
+	  // `basicLength` is the number of basic code points.
+
+	  // Finish the basic string - if it is not empty - with a delimiter
+	  if (basicLength) {
+	    output.push(delimiter);
+	  }
+
+	  // Main encoding loop:
+	  while (handledCPCount < inputLength) {
+
+	    // All non-basic code points < n have been handled already. Find the next
+	    // larger one:
+	    for (m = maxInt, j = 0; j < inputLength; ++j) {
+	      currentValue = input[j];
+	      if (currentValue >= n && currentValue < m) {
+	        m = currentValue;
+	      }
+	    }
+
+	    // Increase `delta` enough to advance the decoder's <n,i> state to <m,0>,
+	    // but guard against overflow
+	    handledCPCountPlusOne = handledCPCount + 1;
+	    if (m - n > floor$1((maxInt - delta) / handledCPCountPlusOne)) {
+	      error('overflow');
+	    }
+
+	    delta += (m - n) * handledCPCountPlusOne;
+	    n = m;
+
+	    for (j = 0; j < inputLength; ++j) {
+	      currentValue = input[j];
+
+	      if (currentValue < n && ++delta > maxInt) {
+	        error('overflow');
+	      }
+
+	      if (currentValue == n) {
+	        // Represent delta as a generalized variable-length integer
+	        for (q = delta, k = base; /* no condition */ ; k += base) {
+	          t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
+	          if (q < t) {
+	            break;
+	          }
+	          qMinusT = q - t;
+	          baseMinusT = base - t;
+	          output.push(
+	            stringFromCharCode(digitToBasic(t + qMinusT % baseMinusT, 0))
+	          );
+	          q = floor$1(qMinusT / baseMinusT);
+	        }
+
+	        output.push(stringFromCharCode(digitToBasic(q, 0)));
+	        bias = adapt(delta, handledCPCountPlusOne, handledCPCount == basicLength);
+	        delta = 0;
+	        ++handledCPCount;
+	      }
+	    }
+
+	    ++delta;
+	    ++n;
+
+	  }
+	  return output.join('');
+	}
+
+	/**
+	 * Converts a Unicode string representing a domain name or an email address to
+	 * Punycode. Only the non-ASCII parts of the domain name will be converted,
+	 * i.e. it doesn't matter if you call it with a domain that's already in
+	 * ASCII.
+	 * @memberOf punycode
+	 * @param {String} input The domain name or email address to convert, as a
+	 * Unicode string.
+	 * @returns {String} The Punycode representation of the given domain name or
+	 * email address.
+	 */
+	function toASCII(input) {
+	  return mapDomain(input, function(string) {
+	    return regexNonASCII.test(string) ?
+	      'xn--' + encode(string) :
+	      string;
+	  });
+	}
+
+	// Copyright Joyent, Inc. and other Node contributors.
+	//
+	// Permission is hereby granted, free of charge, to any person obtaining a
+	// copy of this software and associated documentation files (the
+	// "Software"), to deal in the Software without restriction, including
+	// without limitation the rights to use, copy, modify, merge, publish,
+	// distribute, sublicense, and/or sell copies of the Software, and to permit
+	// persons to whom the Software is furnished to do so, subject to the
+	// following conditions:
+	//
+	// The above copyright notice and this permission notice shall be included
+	// in all copies or substantial portions of the Software.
+	//
+	// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+	// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+	// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+	// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+	// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+	// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+	// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+	// If obj.hasOwnProperty has been overridden, then calling
+	// obj.hasOwnProperty(prop) will break.
+	// See: https://github.com/joyent/node/issues/1707
+	function hasOwnProperty$2(obj, prop) {
+	  return Object.prototype.hasOwnProperty.call(obj, prop);
+	}
+	var isArray$2 = Array.isArray || function (xs) {
+	  return Object.prototype.toString.call(xs) === '[object Array]';
+	};
+	function stringifyPrimitive(v) {
+	  switch (typeof v) {
+	    case 'string':
+	      return v;
+
+	    case 'boolean':
+	      return v ? 'true' : 'false';
+
+	    case 'number':
+	      return isFinite(v) ? v : '';
+
+	    default:
+	      return '';
+	  }
+	}
+
+	function stringify$2 (obj, sep, eq, name) {
+	  sep = sep || '&';
+	  eq = eq || '=';
+	  if (obj === null) {
+	    obj = undefined;
+	  }
+
+	  if (typeof obj === 'object') {
+	    return map$1(objectKeys(obj), function(k) {
+	      var ks = encodeURIComponent(stringifyPrimitive(k)) + eq;
+	      if (isArray$2(obj[k])) {
+	        return map$1(obj[k], function(v) {
+	          return ks + encodeURIComponent(stringifyPrimitive(v));
+	        }).join(sep);
+	      } else {
+	        return ks + encodeURIComponent(stringifyPrimitive(obj[k]));
+	      }
+	    }).join(sep);
+
+	  }
+
+	  if (!name) return '';
+	  return encodeURIComponent(stringifyPrimitive(name)) + eq +
+	         encodeURIComponent(stringifyPrimitive(obj));
+	}
+	function map$1 (xs, f) {
+	  if (xs.map) return xs.map(f);
+	  var res = [];
+	  for (var i = 0; i < xs.length; i++) {
+	    res.push(f(xs[i], i));
+	  }
+	  return res;
+	}
+
+	var objectKeys = Object.keys || function (obj) {
+	  var res = [];
+	  for (var key in obj) {
+	    if (Object.prototype.hasOwnProperty.call(obj, key)) res.push(key);
+	  }
+	  return res;
+	};
+
+	function parse(qs, sep, eq, options) {
+	  sep = sep || '&';
+	  eq = eq || '=';
+	  var obj = {};
+
+	  if (typeof qs !== 'string' || qs.length === 0) {
+	    return obj;
+	  }
+
+	  var regexp = /\+/g;
+	  qs = qs.split(sep);
+
+	  var maxKeys = 1000;
+	  if (options && typeof options.maxKeys === 'number') {
+	    maxKeys = options.maxKeys;
+	  }
+
+	  var len = qs.length;
+	  // maxKeys <= 0 means that we should not limit keys count
+	  if (maxKeys > 0 && len > maxKeys) {
+	    len = maxKeys;
+	  }
+
+	  for (var i = 0; i < len; ++i) {
+	    var x = qs[i].replace(regexp, '%20'),
+	        idx = x.indexOf(eq),
+	        kstr, vstr, k, v;
+
+	    if (idx >= 0) {
+	      kstr = x.substr(0, idx);
+	      vstr = x.substr(idx + 1);
+	    } else {
+	      kstr = x;
+	      vstr = '';
+	    }
+
+	    k = decodeURIComponent(kstr);
+	    v = decodeURIComponent(vstr);
+
+	    if (!hasOwnProperty$2(obj, k)) {
+	      obj[k] = v;
+	    } else if (isArray$2(obj[k])) {
+	      obj[k].push(v);
+	    } else {
+	      obj[k] = [obj[k], v];
+	    }
+	  }
+
+	  return obj;
+	}
+
+	// Copyright Joyent, Inc. and other Node contributors.
+	function Url() {
+	  this.protocol = null;
+	  this.slashes = null;
+	  this.auth = null;
+	  this.host = null;
+	  this.port = null;
+	  this.hostname = null;
+	  this.hash = null;
+	  this.search = null;
+	  this.query = null;
+	  this.pathname = null;
+	  this.path = null;
+	  this.href = null;
+	}
+
+	// Reference: RFC 3986, RFC 1808, RFC 2396
+
+	// define these here so at least they only have to be
+	// compiled once on the first module load.
+	var protocolPattern = /^([a-z0-9.+-]+:)/i,
+	  portPattern = /:[0-9]*$/,
+
+	  // Special case for a simple path URL
+	  simplePathPattern = /^(\/\/?(?!\/)[^\?\s]*)(\?[^\s]*)?$/,
+
+	  // RFC 2396: characters reserved for delimiting URLs.
+	  // We actually just auto-escape these.
+	  delims = ['<', '>', '"', '`', ' ', '\r', '\n', '\t'],
+
+	  // RFC 2396: characters not allowed for various reasons.
+	  unwise = ['{', '}', '|', '\\', '^', '`'].concat(delims),
+
+	  // Allowed by RFCs, but cause of XSS attacks.  Always escape these.
+	  autoEscape = ['\''].concat(unwise),
+	  // Characters that are never ever allowed in a hostname.
+	  // Note that any invalid chars are also handled, but these
+	  // are the ones that are *expected* to be seen, so we fast-path
+	  // them.
+	  nonHostChars = ['%', '/', '?', ';', '#'].concat(autoEscape),
+	  hostEndingChars = ['/', '?', '#'],
+	  hostnameMaxLen = 255,
+	  hostnamePartPattern = /^[+a-z0-9A-Z_-]{0,63}$/,
+	  hostnamePartStart = /^([+a-z0-9A-Z_-]{0,63})(.*)$/,
+	  // protocols that can allow "unsafe" and "unwise" chars.
+	  unsafeProtocol = {
+	    'javascript': true,
+	    'javascript:': true
+	  },
+	  // protocols that never have a hostname.
+	  hostlessProtocol = {
+	    'javascript': true,
+	    'javascript:': true
+	  },
+	  // protocols that always contain a // bit.
+	  slashedProtocol = {
+	    'http': true,
+	    'https': true,
+	    'ftp': true,
+	    'gopher': true,
+	    'file': true,
+	    'http:': true,
+	    'https:': true,
+	    'ftp:': true,
+	    'gopher:': true,
+	    'file:': true
+	  };
+
+	function urlParse(url, parseQueryString, slashesDenoteHost) {
+	  if (url && isObject(url) && url instanceof Url) return url;
+
+	  var u = new Url;
+	  u.parse(url, parseQueryString, slashesDenoteHost);
+	  return u;
+	}
+	Url.prototype.parse = function(url, parseQueryString, slashesDenoteHost) {
+	  return parse$1(this, url, parseQueryString, slashesDenoteHost);
+	};
+
+	function parse$1(self, url, parseQueryString, slashesDenoteHost) {
+	  if (!isString(url)) {
+	    throw new TypeError('Parameter \'url\' must be a string, not ' + typeof url);
+	  }
+
+	  // Copy chrome, IE, opera backslash-handling behavior.
+	  // Back slashes before the query string get converted to forward slashes
+	  // See: https://code.google.com/p/chromium/issues/detail?id=25916
+	  var queryIndex = url.indexOf('?'),
+	    splitter =
+	    (queryIndex !== -1 && queryIndex < url.indexOf('#')) ? '?' : '#',
+	    uSplit = url.split(splitter),
+	    slashRegex = /\\/g;
+	  uSplit[0] = uSplit[0].replace(slashRegex, '/');
+	  url = uSplit.join(splitter);
+
+	  var rest = url;
+
+	  // trim before proceeding.
+	  // This is to support parse stuff like "  http://foo.com  \n"
+	  rest = rest.trim();
+
+	  if (!slashesDenoteHost && url.split('#').length === 1) {
+	    // Try fast path regexp
+	    var simplePath = simplePathPattern.exec(rest);
+	    if (simplePath) {
+	      self.path = rest;
+	      self.href = rest;
+	      self.pathname = simplePath[1];
+	      if (simplePath[2]) {
+	        self.search = simplePath[2];
+	        if (parseQueryString) {
+	          self.query = parse(self.search.substr(1));
+	        } else {
+	          self.query = self.search.substr(1);
+	        }
+	      } else if (parseQueryString) {
+	        self.search = '';
+	        self.query = {};
+	      }
+	      return self;
+	    }
+	  }
+
+	  var proto = protocolPattern.exec(rest);
+	  if (proto) {
+	    proto = proto[0];
+	    var lowerProto = proto.toLowerCase();
+	    self.protocol = lowerProto;
+	    rest = rest.substr(proto.length);
+	  }
+
+	  // figure out if it's got a host
+	  // user@server is *always* interpreted as a hostname, and url
+	  // resolution will treat //foo/bar as host=foo,path=bar because that's
+	  // how the browser resolves relative URLs.
+	  if (slashesDenoteHost || proto || rest.match(/^\/\/[^@\/]+@[^@\/]+/)) {
+	    var slashes = rest.substr(0, 2) === '//';
+	    if (slashes && !(proto && hostlessProtocol[proto])) {
+	      rest = rest.substr(2);
+	      self.slashes = true;
+	    }
+	  }
+	  var i, hec, l, p;
+	  if (!hostlessProtocol[proto] &&
+	    (slashes || (proto && !slashedProtocol[proto]))) {
+
+	    // there's a hostname.
+	    // the first instance of /, ?, ;, or # ends the host.
+	    //
+	    // If there is an @ in the hostname, then non-host chars *are* allowed
+	    // to the left of the last @ sign, unless some host-ending character
+	    // comes *before* the @-sign.
+	    // URLs are obnoxious.
+	    //
+	    // ex:
+	    // http://a@b@c/ => user:a@b host:c
+	    // http://a@b?@c => user:a host:c path:/?@c
+
+	    // v0.12 TODO(isaacs): This is not quite how Chrome does things.
+	    // Review our test case against browsers more comprehensively.
+
+	    // find the first instance of any hostEndingChars
+	    var hostEnd = -1;
+	    for (i = 0; i < hostEndingChars.length; i++) {
+	      hec = rest.indexOf(hostEndingChars[i]);
+	      if (hec !== -1 && (hostEnd === -1 || hec < hostEnd))
+	        hostEnd = hec;
+	    }
+
+	    // at this point, either we have an explicit point where the
+	    // auth portion cannot go past, or the last @ char is the decider.
+	    var auth, atSign;
+	    if (hostEnd === -1) {
+	      // atSign can be anywhere.
+	      atSign = rest.lastIndexOf('@');
+	    } else {
+	      // atSign must be in auth portion.
+	      // http://a@b/c@d => host:b auth:a path:/c@d
+	      atSign = rest.lastIndexOf('@', hostEnd);
+	    }
+
+	    // Now we have a portion which is definitely the auth.
+	    // Pull that off.
+	    if (atSign !== -1) {
+	      auth = rest.slice(0, atSign);
+	      rest = rest.slice(atSign + 1);
+	      self.auth = decodeURIComponent(auth);
+	    }
+
+	    // the host is the remaining to the left of the first non-host char
+	    hostEnd = -1;
+	    for (i = 0; i < nonHostChars.length; i++) {
+	      hec = rest.indexOf(nonHostChars[i]);
+	      if (hec !== -1 && (hostEnd === -1 || hec < hostEnd))
+	        hostEnd = hec;
+	    }
+	    // if we still have not hit it, then the entire thing is a host.
+	    if (hostEnd === -1)
+	      hostEnd = rest.length;
+
+	    self.host = rest.slice(0, hostEnd);
+	    rest = rest.slice(hostEnd);
+
+	    // pull out port.
+	    parseHost(self);
+
+	    // we've indicated that there is a hostname,
+	    // so even if it's empty, it has to be present.
+	    self.hostname = self.hostname || '';
+
+	    // if hostname begins with [ and ends with ]
+	    // assume that it's an IPv6 address.
+	    var ipv6Hostname = self.hostname[0] === '[' &&
+	      self.hostname[self.hostname.length - 1] === ']';
+
+	    // validate a little.
+	    if (!ipv6Hostname) {
+	      var hostparts = self.hostname.split(/\./);
+	      for (i = 0, l = hostparts.length; i < l; i++) {
+	        var part = hostparts[i];
+	        if (!part) continue;
+	        if (!part.match(hostnamePartPattern)) {
+	          var newpart = '';
+	          for (var j = 0, k = part.length; j < k; j++) {
+	            if (part.charCodeAt(j) > 127) {
+	              // we replace non-ASCII char with a temporary placeholder
+	              // we need this to make sure size of hostname is not
+	              // broken by replacing non-ASCII by nothing
+	              newpart += 'x';
+	            } else {
+	              newpart += part[j];
+	            }
+	          }
+	          // we test again with ASCII char only
+	          if (!newpart.match(hostnamePartPattern)) {
+	            var validParts = hostparts.slice(0, i);
+	            var notHost = hostparts.slice(i + 1);
+	            var bit = part.match(hostnamePartStart);
+	            if (bit) {
+	              validParts.push(bit[1]);
+	              notHost.unshift(bit[2]);
+	            }
+	            if (notHost.length) {
+	              rest = '/' + notHost.join('.') + rest;
+	            }
+	            self.hostname = validParts.join('.');
+	            break;
+	          }
+	        }
+	      }
+	    }
+
+	    if (self.hostname.length > hostnameMaxLen) {
+	      self.hostname = '';
+	    } else {
+	      // hostnames are always lower case.
+	      self.hostname = self.hostname.toLowerCase();
+	    }
+
+	    if (!ipv6Hostname) {
+	      // IDNA Support: Returns a punycoded representation of "domain".
+	      // It only converts parts of the domain name that
+	      // have non-ASCII characters, i.e. it doesn't matter if
+	      // you call it with a domain that already is ASCII-only.
+	      self.hostname = toASCII(self.hostname);
+	    }
+
+	    p = self.port ? ':' + self.port : '';
+	    var h = self.hostname || '';
+	    self.host = h + p;
+	    self.href += self.host;
+
+	    // strip [ and ] from the hostname
+	    // the host field still retains them, though
+	    if (ipv6Hostname) {
+	      self.hostname = self.hostname.substr(1, self.hostname.length - 2);
+	      if (rest[0] !== '/') {
+	        rest = '/' + rest;
+	      }
+	    }
+	  }
+
+	  // now rest is set to the post-host stuff.
+	  // chop off any delim chars.
+	  if (!unsafeProtocol[lowerProto]) {
+
+	    // First, make 100% sure that any "autoEscape" chars get
+	    // escaped, even if encodeURIComponent doesn't think they
+	    // need to be.
+	    for (i = 0, l = autoEscape.length; i < l; i++) {
+	      var ae = autoEscape[i];
+	      if (rest.indexOf(ae) === -1)
+	        continue;
+	      var esc = encodeURIComponent(ae);
+	      if (esc === ae) {
+	        esc = escape(ae);
+	      }
+	      rest = rest.split(ae).join(esc);
+	    }
+	  }
+
+
+	  // chop off from the tail first.
+	  var hash = rest.indexOf('#');
+	  if (hash !== -1) {
+	    // got a fragment string.
+	    self.hash = rest.substr(hash);
+	    rest = rest.slice(0, hash);
+	  }
+	  var qm = rest.indexOf('?');
+	  if (qm !== -1) {
+	    self.search = rest.substr(qm);
+	    self.query = rest.substr(qm + 1);
+	    if (parseQueryString) {
+	      self.query = parse(self.query);
+	    }
+	    rest = rest.slice(0, qm);
+	  } else if (parseQueryString) {
+	    // no query string, but parseQueryString still requested
+	    self.search = '';
+	    self.query = {};
+	  }
+	  if (rest) self.pathname = rest;
+	  if (slashedProtocol[lowerProto] &&
+	    self.hostname && !self.pathname) {
+	    self.pathname = '/';
+	  }
+
+	  //to support http.request
+	  if (self.pathname || self.search) {
+	    p = self.pathname || '';
+	    var s = self.search || '';
+	    self.path = p + s;
+	  }
+
+	  // finally, reconstruct the href based on what has been validated.
+	  self.href = format$1(self);
+	  return self;
+	}
+
+	function format$1(self) {
+	  var auth = self.auth || '';
+	  if (auth) {
+	    auth = encodeURIComponent(auth);
+	    auth = auth.replace(/%3A/i, ':');
+	    auth += '@';
+	  }
+
+	  var protocol = self.protocol || '',
+	    pathname = self.pathname || '',
+	    hash = self.hash || '',
+	    host = false,
+	    query = '';
+
+	  if (self.host) {
+	    host = auth + self.host;
+	  } else if (self.hostname) {
+	    host = auth + (self.hostname.indexOf(':') === -1 ?
+	      self.hostname :
+	      '[' + this.hostname + ']');
+	    if (self.port) {
+	      host += ':' + self.port;
+	    }
+	  }
+
+	  if (self.query &&
+	    isObject(self.query) &&
+	    Object.keys(self.query).length) {
+	    query = stringify$2(self.query);
+	  }
+
+	  var search = self.search || (query && ('?' + query)) || '';
+
+	  if (protocol && protocol.substr(-1) !== ':') protocol += ':';
+
+	  // only the slashedProtocols get the //.  Not mailto:, xmpp:, etc.
+	  // unless they had them to begin with.
+	  if (self.slashes ||
+	    (!protocol || slashedProtocol[protocol]) && host !== false) {
+	    host = '//' + (host || '');
+	    if (pathname && pathname.charAt(0) !== '/') pathname = '/' + pathname;
+	  } else if (!host) {
+	    host = '';
+	  }
+
+	  if (hash && hash.charAt(0) !== '#') hash = '#' + hash;
+	  if (search && search.charAt(0) !== '?') search = '?' + search;
+
+	  pathname = pathname.replace(/[?#]/g, function(match) {
+	    return encodeURIComponent(match);
+	  });
+	  search = search.replace('#', '%23');
+
+	  return protocol + host + pathname + search + hash;
+	}
+
+	Url.prototype.format = function() {
+	  return format$1(this);
+	};
+
+	Url.prototype.resolve = function(relative) {
+	  return this.resolveObject(urlParse(relative, false, true)).format();
+	};
+
+	Url.prototype.resolveObject = function(relative) {
+	  if (isString(relative)) {
+	    var rel = new Url();
+	    rel.parse(relative, false, true);
+	    relative = rel;
+	  }
+
+	  var result = new Url();
+	  var tkeys = Object.keys(this);
+	  for (var tk = 0; tk < tkeys.length; tk++) {
+	    var tkey = tkeys[tk];
+	    result[tkey] = this[tkey];
+	  }
+
+	  // hash is always overridden, no matter what.
+	  // even href="" will remove it.
+	  result.hash = relative.hash;
+
+	  // if the relative url is empty, then there's nothing left to do here.
+	  if (relative.href === '') {
+	    result.href = result.format();
+	    return result;
+	  }
+
+	  // hrefs like //foo/bar always cut to the protocol.
+	  if (relative.slashes && !relative.protocol) {
+	    // take everything except the protocol from relative
+	    var rkeys = Object.keys(relative);
+	    for (var rk = 0; rk < rkeys.length; rk++) {
+	      var rkey = rkeys[rk];
+	      if (rkey !== 'protocol')
+	        result[rkey] = relative[rkey];
+	    }
+
+	    //urlParse appends trailing / to urls like http://www.example.com
+	    if (slashedProtocol[result.protocol] &&
+	      result.hostname && !result.pathname) {
+	      result.path = result.pathname = '/';
+	    }
+
+	    result.href = result.format();
+	    return result;
+	  }
+	  var relPath;
+	  if (relative.protocol && relative.protocol !== result.protocol) {
+	    // if it's a known url protocol, then changing
+	    // the protocol does weird things
+	    // first, if it's not file:, then we MUST have a host,
+	    // and if there was a path
+	    // to begin with, then we MUST have a path.
+	    // if it is file:, then the host is dropped,
+	    // because that's known to be hostless.
+	    // anything else is assumed to be absolute.
+	    if (!slashedProtocol[relative.protocol]) {
+	      var keys = Object.keys(relative);
+	      for (var v = 0; v < keys.length; v++) {
+	        var k = keys[v];
+	        result[k] = relative[k];
+	      }
+	      result.href = result.format();
+	      return result;
+	    }
+
+	    result.protocol = relative.protocol;
+	    if (!relative.host && !hostlessProtocol[relative.protocol]) {
+	      relPath = (relative.pathname || '').split('/');
+	      while (relPath.length && !(relative.host = relPath.shift()));
+	      if (!relative.host) relative.host = '';
+	      if (!relative.hostname) relative.hostname = '';
+	      if (relPath[0] !== '') relPath.unshift('');
+	      if (relPath.length < 2) relPath.unshift('');
+	      result.pathname = relPath.join('/');
+	    } else {
+	      result.pathname = relative.pathname;
+	    }
+	    result.search = relative.search;
+	    result.query = relative.query;
+	    result.host = relative.host || '';
+	    result.auth = relative.auth;
+	    result.hostname = relative.hostname || relative.host;
+	    result.port = relative.port;
+	    // to support http.request
+	    if (result.pathname || result.search) {
+	      var p = result.pathname || '';
+	      var s = result.search || '';
+	      result.path = p + s;
+	    }
+	    result.slashes = result.slashes || relative.slashes;
+	    result.href = result.format();
+	    return result;
+	  }
+
+	  var isSourceAbs = (result.pathname && result.pathname.charAt(0) === '/'),
+	    isRelAbs = (
+	      relative.host ||
+	      relative.pathname && relative.pathname.charAt(0) === '/'
+	    ),
+	    mustEndAbs = (isRelAbs || isSourceAbs ||
+	      (result.host && relative.pathname)),
+	    removeAllDots = mustEndAbs,
+	    srcPath = result.pathname && result.pathname.split('/') || [],
+	    psychotic = result.protocol && !slashedProtocol[result.protocol];
+	  relPath = relative.pathname && relative.pathname.split('/') || [];
+	  // if the url is a non-slashed url, then relative
+	  // links like ../.. should be able
+	  // to crawl up to the hostname, as well.  This is strange.
+	  // result.protocol has already been set by now.
+	  // Later on, put the first path part into the host field.
+	  if (psychotic) {
+	    result.hostname = '';
+	    result.port = null;
+	    if (result.host) {
+	      if (srcPath[0] === '') srcPath[0] = result.host;
+	      else srcPath.unshift(result.host);
+	    }
+	    result.host = '';
+	    if (relative.protocol) {
+	      relative.hostname = null;
+	      relative.port = null;
+	      if (relative.host) {
+	        if (relPath[0] === '') relPath[0] = relative.host;
+	        else relPath.unshift(relative.host);
+	      }
+	      relative.host = null;
+	    }
+	    mustEndAbs = mustEndAbs && (relPath[0] === '' || srcPath[0] === '');
+	  }
+	  var authInHost;
+	  if (isRelAbs) {
+	    // it's absolute.
+	    result.host = (relative.host || relative.host === '') ?
+	      relative.host : result.host;
+	    result.hostname = (relative.hostname || relative.hostname === '') ?
+	      relative.hostname : result.hostname;
+	    result.search = relative.search;
+	    result.query = relative.query;
+	    srcPath = relPath;
+	    // fall through to the dot-handling below.
+	  } else if (relPath.length) {
+	    // it's relative
+	    // throw away the existing file, and take the new path instead.
+	    if (!srcPath) srcPath = [];
+	    srcPath.pop();
+	    srcPath = srcPath.concat(relPath);
+	    result.search = relative.search;
+	    result.query = relative.query;
+	  } else if (!isNullOrUndefined(relative.search)) {
+	    // just pull out the search.
+	    // like href='?foo'.
+	    // Put this after the other two cases because it simplifies the booleans
+	    if (psychotic) {
+	      result.hostname = result.host = srcPath.shift();
+	      //occationaly the auth can get stuck only in host
+	      //this especially happens in cases like
+	      //url.resolveObject('mailto:local1@domain1', 'local2@domain2')
+	      authInHost = result.host && result.host.indexOf('@') > 0 ?
+	        result.host.split('@') : false;
+	      if (authInHost) {
+	        result.auth = authInHost.shift();
+	        result.host = result.hostname = authInHost.shift();
+	      }
+	    }
+	    result.search = relative.search;
+	    result.query = relative.query;
+	    //to support http.request
+	    if (!isNull(result.pathname) || !isNull(result.search)) {
+	      result.path = (result.pathname ? result.pathname : '') +
+	        (result.search ? result.search : '');
+	    }
+	    result.href = result.format();
+	    return result;
+	  }
+
+	  if (!srcPath.length) {
+	    // no path at all.  easy.
+	    // we've already handled the other stuff above.
+	    result.pathname = null;
+	    //to support http.request
+	    if (result.search) {
+	      result.path = '/' + result.search;
+	    } else {
+	      result.path = null;
+	    }
+	    result.href = result.format();
+	    return result;
+	  }
+
+	  // if a url ENDs in . or .., then it must get a trailing slash.
+	  // however, if it ends in anything else non-slashy,
+	  // then it must NOT get a trailing slash.
+	  var last = srcPath.slice(-1)[0];
+	  var hasTrailingSlash = (
+	    (result.host || relative.host || srcPath.length > 1) &&
+	    (last === '.' || last === '..') || last === '');
+
+	  // strip single dots, resolve double dots to parent dir
+	  // if the path tries to go above the root, `up` ends up > 0
+	  var up = 0;
+	  for (var i = srcPath.length; i >= 0; i--) {
+	    last = srcPath[i];
+	    if (last === '.') {
+	      srcPath.splice(i, 1);
+	    } else if (last === '..') {
+	      srcPath.splice(i, 1);
+	      up++;
+	    } else if (up) {
+	      srcPath.splice(i, 1);
+	      up--;
+	    }
+	  }
+
+	  // if the path is allowed to go above the root, restore leading ..s
+	  if (!mustEndAbs && !removeAllDots) {
+	    for (; up--; up) {
+	      srcPath.unshift('..');
+	    }
+	  }
+
+	  if (mustEndAbs && srcPath[0] !== '' &&
+	    (!srcPath[0] || srcPath[0].charAt(0) !== '/')) {
+	    srcPath.unshift('');
+	  }
+
+	  if (hasTrailingSlash && (srcPath.join('/').substr(-1) !== '/')) {
+	    srcPath.push('');
+	  }
+
+	  var isAbsolute = srcPath[0] === '' ||
+	    (srcPath[0] && srcPath[0].charAt(0) === '/');
+
+	  // put the host back
+	  if (psychotic) {
+	    result.hostname = result.host = isAbsolute ? '' :
+	      srcPath.length ? srcPath.shift() : '';
+	    //occationaly the auth can get stuck only in host
+	    //this especially happens in cases like
+	    //url.resolveObject('mailto:local1@domain1', 'local2@domain2')
+	    authInHost = result.host && result.host.indexOf('@') > 0 ?
+	      result.host.split('@') : false;
+	    if (authInHost) {
+	      result.auth = authInHost.shift();
+	      result.host = result.hostname = authInHost.shift();
+	    }
+	  }
+
+	  mustEndAbs = mustEndAbs || (result.host && srcPath.length);
+
+	  if (mustEndAbs && !isAbsolute) {
+	    srcPath.unshift('');
+	  }
+
+	  if (!srcPath.length) {
+	    result.pathname = null;
+	    result.path = null;
+	  } else {
+	    result.pathname = srcPath.join('/');
+	  }
+
+	  //to support request.http
+	  if (!isNull(result.pathname) || !isNull(result.search)) {
+	    result.path = (result.pathname ? result.pathname : '') +
+	      (result.search ? result.search : '');
+	  }
+	  result.auth = relative.auth || result.auth;
+	  result.slashes = result.slashes || relative.slashes;
+	  result.href = result.format();
+	  return result;
+	};
+
+	Url.prototype.parseHost = function() {
+	  return parseHost(this);
+	};
+
+	function parseHost(self) {
+	  var host = self.host;
+	  var port = portPattern.exec(host);
+	  if (port) {
+	    port = port[0];
+	    if (port !== ':') {
+	      self.port = port.substr(1);
+	    }
+	    host = host.substr(0, host.length - port.length);
+	  }
+	  if (host) self.hostname = host;
+	}
+
+	function request(opts, cb) {
+	  if (typeof opts === 'string')
+	    opts = urlParse(opts);
+
+
+	  // Normally, the page is loaded from http or https, so not specifying a protocol
+	  // will result in a (valid) protocol-relative url. However, this won't work if
+	  // the protocol is something else, like 'file:'
+	  var defaultProtocol = global$1.location.protocol.search(/^https?:$/) === -1 ? 'http:' : '';
+
+	  var protocol = opts.protocol || defaultProtocol;
+	  var host = opts.hostname || opts.host;
+	  var port = opts.port;
+	  var path = opts.path || '/';
+
+	  // Necessary for IPv6 addresses
+	  if (host && host.indexOf(':') !== -1)
+	    host = '[' + host + ']';
+
+	  // This may be a relative url. The browser should always be able to interpret it correctly.
+	  opts.url = (host ? (protocol + '//' + host) : '') + (port ? ':' + port : '') + path;
+	  opts.method = (opts.method || 'GET').toUpperCase();
+	  opts.headers = opts.headers || {};
+
+	  // Also valid opts.auth, opts.mode
+
+	  var req = new ClientRequest(opts);
+	  if (cb)
+	    req.on('response', cb);
+	  return req
+	}
+
+	function get(opts, cb) {
+	  var req = request(opts, cb);
+	  req.end();
+	  return req
+	}
+
+	function Agent() {}
+	Agent.defaultMaxSockets = 4;
+
+	var METHODS = [
+	  'CHECKOUT',
+	  'CONNECT',
+	  'COPY',
+	  'DELETE',
+	  'GET',
+	  'HEAD',
+	  'LOCK',
+	  'M-SEARCH',
+	  'MERGE',
+	  'MKACTIVITY',
+	  'MKCOL',
+	  'MOVE',
+	  'NOTIFY',
+	  'OPTIONS',
+	  'PATCH',
+	  'POST',
+	  'PROPFIND',
+	  'PROPPATCH',
+	  'PURGE',
+	  'PUT',
+	  'REPORT',
+	  'SEARCH',
+	  'SUBSCRIBE',
+	  'TRACE',
+	  'UNLOCK',
+	  'UNSUBSCRIBE'
+	];
+	var STATUS_CODES = {
+	  100: 'Continue',
+	  101: 'Switching Protocols',
+	  102: 'Processing', // RFC 2518, obsoleted by RFC 4918
+	  200: 'OK',
+	  201: 'Created',
+	  202: 'Accepted',
+	  203: 'Non-Authoritative Information',
+	  204: 'No Content',
+	  205: 'Reset Content',
+	  206: 'Partial Content',
+	  207: 'Multi-Status', // RFC 4918
+	  300: 'Multiple Choices',
+	  301: 'Moved Permanently',
+	  302: 'Moved Temporarily',
+	  303: 'See Other',
+	  304: 'Not Modified',
+	  305: 'Use Proxy',
+	  307: 'Temporary Redirect',
+	  400: 'Bad Request',
+	  401: 'Unauthorized',
+	  402: 'Payment Required',
+	  403: 'Forbidden',
+	  404: 'Not Found',
+	  405: 'Method Not Allowed',
+	  406: 'Not Acceptable',
+	  407: 'Proxy Authentication Required',
+	  408: 'Request Time-out',
+	  409: 'Conflict',
+	  410: 'Gone',
+	  411: 'Length Required',
+	  412: 'Precondition Failed',
+	  413: 'Request Entity Too Large',
+	  414: 'Request-URI Too Large',
+	  415: 'Unsupported Media Type',
+	  416: 'Requested Range Not Satisfiable',
+	  417: 'Expectation Failed',
+	  418: 'I\'m a teapot', // RFC 2324
+	  422: 'Unprocessable Entity', // RFC 4918
+	  423: 'Locked', // RFC 4918
+	  424: 'Failed Dependency', // RFC 4918
+	  425: 'Unordered Collection', // RFC 4918
+	  426: 'Upgrade Required', // RFC 2817
+	  428: 'Precondition Required', // RFC 6585
+	  429: 'Too Many Requests', // RFC 6585
+	  431: 'Request Header Fields Too Large', // RFC 6585
+	  500: 'Internal Server Error',
+	  501: 'Not Implemented',
+	  502: 'Bad Gateway',
+	  503: 'Service Unavailable',
+	  504: 'Gateway Time-out',
+	  505: 'HTTP Version Not Supported',
+	  506: 'Variant Also Negotiates', // RFC 2295
+	  507: 'Insufficient Storage', // RFC 4918
+	  509: 'Bandwidth Limit Exceeded',
+	  510: 'Not Extended', // RFC 2774
+	  511: 'Network Authentication Required' // RFC 6585
+	};
+
+	var http = {
+	  request,
+	  get,
+	  Agent,
+	  METHODS,
+	  STATUS_CODES
+	};
+
 	var isNode$2 = false;
 	try {
 	  isNode$2 = Object.prototype.toString.call(global$1.process) === '[object process]';
@@ -90734,8 +92728,220 @@ Gun.chain.unset = function(node){
 	  });
 	}
 
+	/*
+	 * Helper for managing pools of Gun nodes. Primarily meant to simplify toplogy tracking in Iris tests.
+	 * For reference, here's a run-through by example. Under each call, is  an explanation of what happens.
+	 *
+	 * Instances can be identified by the port they're listening on, which is saved under .netPort for reference.
+	 *
+	 * const nets = GunNets();
+	 *
+	 * nets.spawnNodes(2):   * net ID: 1, A root, B points to A
+	 *   - returns [A, B]
+	 *   - B peers with A
+	 *   - netId is 1 for both
+	 *
+	 * nets.spawnNodes(1):
+	 *   - returns [C]
+	 *   - C has no peers
+	 *   - netId is 2
+	 *
+	 * nets.spawnNodes(2, C.netId)
+	 *   - returns  [D, E]
+	 *   - D, E both peer with C
+	 *   - netId is 2
+	 *
+	 * nets.spawnNodes(1, E.netId)
+	 *   - returns [F]
+	 *   - F peers with C
+	 *   - netId is 2
+	 *
+	 * nets.spawnNodes(2, 'test')
+	 *   - returns [G, H]
+	 *   - H peers with G
+	 *   - netId is 'test'
+	 *
+	 * nets.joinNets(B, H)
+	 *   - A peers with G (and B by proxy), G is root, so peering goes like:
+	 *      B -> A -> G
+	 *      H -> G
+	 *   - All nodes now have G.netID, so 'test' as .netID
+	 *
+	 * nets.joinNets(D, H)
+	 *   - D,E,F still point to C, which now peers with G, meaning:
+	 *     B -> A -> G
+	 *     H -> G
+	 *     D,E,F -> C -> G
+	 *   - All share netId 'test'
+	 *
+	 * @param fromPort
+	 * @param ip
+	 * @constructor
+	 */
+	function GunNets() {
+	  var _this = this;
+
+	  var fromPort = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 12500;
+	  var ip = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '127.0.0.1';
+
+	  var gunNets = {};
+	  var nextNetId = 1;
+	  var nextPort = fromPort;
+
+	  // Small internal helper function. Just adds a new peer to the given gun instance.
+	  function addPeer(gun, ip, port) {
+	    //const oldPeers = gun.opt()['_'].opt.peers;
+	    return gun.opt({ peers: ['http: *' + ip + ':' + port + '/gun'] }); // Should these be linked both ways?
+	  }
+
+	  async function dropPeer(gun, peerUrl) {
+	    // If peerUrl not specified -> drop all
+	    if (!peerUrl) {
+	      return await _Promise.all(_Object$keys(gun._.opt.peers).map(function (key) {
+	        return dropPeer(gun, key);
+	      }));
+	    }
+
+	    var peer = gun._.opt.peers[peerUrl];
+	    if (peer.wire) {
+	      peer.url = peer.id = null; // Prevent reconnecting to URL
+	      if (peer.wire) {
+	        await peer.wire.close(); // Websocket, if open
+	      }
+	    }
+
+	    delete gun._.opt.peers[peerUrl];
+	  }
+
+	  /*
+	   * When called, creates a number of Gun nodes, all having the root node as their peer. If netId is not given,
+	   * next sequential number is used. If netId of an existing net is provided, will use its root node as the
+	   * target and add new nodes to the same net.
+	   *
+	   * Returns the list of newly created nodes.
+	   *
+	   * @param number
+	   * @param netId
+	   *
+	   */
+	  this.spawnNodes = function () {
+	    var number = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
+	    var netId = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+
+	    if (!netId) {
+	      netId = nextNetId++;
+	    }
+
+	    var ports = [];
+	    for (var i = 0; i < number; ++i) {
+	      ports.push(nextPort++);
+	    }
+
+	    // Spawn guns, connect them to each other
+	    var newGuns = ports.map(function (port) {
+	      var server = http.createServer(Gun.serve).listen(port, ip);
+	      var g = new Gun({
+	        radisk: false,
+	        port: port,
+	        multicast: false,
+	        peers: {},
+	        // file: `${configDir}/${gunDBName}.${port}`,
+	        web: server
+	      });
+	      g.netPort = port;
+	      g.netId = netId;
+	      return g;
+	    });
+
+	    // Connect root node to other peers, if applicable
+	    var root = gunNets[netId] || newGuns[0];
+	    newGuns.forEach(function (gun) {
+	      // Don't connect to itself, if root is newGuns[0]
+	      if (gun.netPort === root.netPort) {
+	        return;
+	      }
+	      addPeer(gun, ip, root.netPort);
+	      addPeer(root, ip, gun.netPort);
+	    });
+
+	    // Store in gunNets
+	    if (!gunNets[netId]) {
+	      gunNets[netId] = newGuns;
+	    } else {
+	      var _gunNets$netId;
+
+	      (_gunNets$netId = gunNets[netId]).push.apply(_gunNets$netId, newGuns);
+	    }
+
+	    return newGuns;
+	  };
+
+	  /*
+	   * Peer-connects childMember's root node to parentMember's root.
+	   *
+	   * All childMember's nodes are re-tagged with parentMember's netId and the old child netId ceases to exist.
+	   * If netId was already the same between groups, nothing happens.
+	   *
+	   * @param parentMember
+	   * @param childMember
+	   * @returns {*}
+	   */
+	  this.joinNets = function (childMember, parentMember) {
+	    var _gunNets$root$netId;
+
+	    // If already in the same net, just return the full list of nodes
+	    if (parentMember.netId === childMember.netId) {
+	      return gunNets[parentMember.netId];
+	    }
+
+	    // Move child net under parent
+	    var root = gunNets[parentMember.netId][0];
+	    var subChain = gunNets[childMember.netId];
+	    if (!root || !subChain) {
+	      throw new Error('What are you feeding me??? Either of the gun instances does not seem to be known to us!');
+	    }
+
+	    delete gunNets[childMember.netId];
+	    addPeer(subChain[0], ip, root.netPort);
+	    subChain.forEach(function (gun) {
+	      gun.netId = root.netId;
+	    });
+
+	    (_gunNets$root$netId = gunNets[root.netId]).push.apply(_gunNets$root$netId, subChain);
+
+	    return gunNets[root.netId];
+	  };
+
+	  this.describe = function () {
+	    var mapping = _Object$keys(gunNets).map(function (key) {
+	      var rows = gunNets[key].map(function (gun) {
+	        var peers = _Object$keys(gun._.opt.peers).filter(function (key) {
+	          return key.length > 2;
+	        }).join(' ');
+	        return '  :' + gun.netPort + ' ' + peers;
+	      }).join('\n');
+	      return key + ' ->\n' + rows;
+	    }).join('\n');
+	    return '== Net mapping / <NetId> -> [:<port> [<peers>, ...], ...] ==\n' + mapping;
+	  };
+
+	  this.close = function () {
+	    _this.nets = null;
+	    return _Promise.all(_Object$values(gunNets).map(function (net) {
+	      return _Promise.all(net.map(async function (gun) {
+	        await dropPeer(gun); // Drops all peers
+	        await gun._.opt.web.close(); // And closes the web instance
+	      }));
+	    }));
+	  };
+
+	  this.nets = gunNets; // Purely for convenience
+	}
+
 	var util$1 = {
 	  loadGunDepth: loadGunDepth,
+
+	  GunNets: GunNets,
 
 	  getHash: function getHash(str) {
 	    var format = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'base64';
@@ -91521,9 +93727,11 @@ Gun.chain.unset = function(node){
 	}(Error);
 
 	/**
-	* Messages are objects containing fields signedData, signer (public key) and signature. Message identifier is the base64 sha256 hash derived from its canonical utf8 string representation.
+	* Signed message object.
 	*
-	* signedData has an author, recipient, signer, type, time and optionally other fields.
+	* Fields: signedData, signer (public key) and signature.
+	*
+	* signedData has an author, signer, type, time and optionally other fields.
 	*
 	* signature covers the utf8 string representation of signedData. Since messages are digitally signed, users only need to care about the message signer and not who relayed it or whose index it was found from.
 	*
@@ -91531,12 +93739,14 @@ Gun.chain.unset = function(node){
 	*
 	* For example, a crawler can import and sign other people's messages from Twitter. Only the users who trust the crawler will see the messages.
 	*
-	* "Rating" type messages, when added to an Index, can add or remove Identities from the web of trust. Verification/unverification messages can add or remove Attributes from an Identity. Other types of messages such as social media "post" are just indexed by their author, recipient and time.
+	* "Rating" type messages, when added to an SocialNetwork, can add or remove Identities from the web of trust. Verification/unverification messages can add or remove Attributes from an Contact. Other types of messages such as social media "post" are just indexed by their author, recipient and time.
 	*
 	* Constructor: creates a message from the param obj.signedData that must contain at least the mandatory fields: author, recipient, type and time. You can use createRating() and createVerification() to automatically populate some of these fields and optionally sign the message.
 	* @param obj
 	*
 	* @example
+	* https://github.com/irislib/iris-lib/blob/master/__tests__/message.js
+	*
 	* Rating message:
 	* {
 	*   signedData: {
@@ -91926,7 +94136,7 @@ Gun.chain.unset = function(node){
 
 	  /**
 	  * @param {Index} index index to look up the message author from
-	  * @returns {Identity} message author identity
+	  * @returns {Contact} message author identity
 	  */
 
 
@@ -91946,14 +94156,14 @@ Gun.chain.unset = function(node){
 	      var a = _ref2;
 
 	      if (a.isUniqueType()) {
-	        return index.get(a);
+	        return index.getContacts(a);
 	      }
 	    }
 	  };
 
 	  /**
 	  * @param {Index} index index to look up the message recipient from
-	  * @returns {Identity} message recipient identity or undefined
+	  * @returns {Contact} message recipient identity or undefined
 	  */
 
 
@@ -91976,13 +94186,13 @@ Gun.chain.unset = function(node){
 	      var a = _ref3;
 
 	      if (a.isUniqueType()) {
-	        return index.get(a);
+	        return index.getContacts(a);
 	      }
 	    }
 	  };
 
 	  /**
-	  * @returns {string} base64 hash of message
+	  * @returns {string} base64 sha256 hash of message
 	  */
 
 
@@ -92066,8 +94276,12 @@ Gun.chain.unset = function(node){
 	  */
 
 
+	  Message.prototype.serialize = function serialize() {
+	    return { sig: this.sig, pubKey: this.pubKey };
+	  };
+
 	  Message.prototype.toString = function toString() {
-	    return _JSON$stringify({ sig: this.sig, pubKey: this.pubKey });
+	    return _JSON$stringify(this.serialize());
 	  };
 
 	  /**
@@ -92075,8 +94289,24 @@ Gun.chain.unset = function(node){
 	  */
 
 
+	  Message.deserialize = async function deserialize(s) {
+	    return Message.fromSig(s);
+	  };
+
 	  Message.fromString = async function fromString(s) {
 	    return Message.fromSig(JSON.parse(s));
+	  };
+
+	  /**
+	  *
+	  */
+
+
+	  Message.setReaction = function setReaction(gun, msg, reaction) {
+	    gun.get('reactions').get(msg.getHash()).put(reaction);
+	    gun.get('reactions').get(msg.getHash()).put(reaction);
+	    gun.get('messagesByHash').get(msg.getHash()).get('reactions').get(this.rootContact.value).put(reaction);
+	    gun.get('messagesByHash').get(msg.getHash()).get('reactions').get(this.rootContact.value).put(reaction);
 	  };
 
 	  return Message;
@@ -92134,23 +94364,25 @@ Gun.chain.unset = function(node){
 	var _Object$assign = unwrapExports(assign$1);
 
 	/**
-	* An Iris identity profile (also known as "contact"). Usually you don't create them yourself, but get them
-	* from Index methods such as get() and search().
+	* An Iris Contact, such as person, organization or group. More abstractly speaking: an Identity.
+	*
+	* Usually you don't create Contacts yourself, but get them
+	* from SocialNetwork methods such as get() and search().
 	*/
 
-	var Identity = function () {
+	var Contact = function () {
 	  /**
-	  * @param {Object} gun node where the Identity data lives
+	  * @param {Object} gun node where the Contact data lives
 	  */
-	  function Identity(gun, linkTo, index) {
-	    _classCallCheck(this, Identity);
+	  function Contact(gun, linkTo, index) {
+	    _classCallCheck(this, Contact);
 
 	    this.gun = gun;
 	    this.linkTo = linkTo;
 	    this.index = index;
 	  }
 
-	  Identity.create = function create(gun, data, index) {
+	  Contact.create = function create(gun, data, index) {
 	    if (!data.linkTo && !data.attrs) {
 	      throw new Error('You must specify either data.linkTo or data.attrs');
 	    }
@@ -92161,19 +94393,18 @@ Gun.chain.unset = function(node){
 	        data.attrs[linkTo.uri()] = linkTo;
 	      }
 	    } else {
-	      data.linkTo = Identity.getLinkTo(data.attrs);
+	      data.linkTo = Contact.getLinkTo(data.attrs);
 	    }
 	    var uri = data.linkTo.uri();
-	    console.log('uri', uri);
 	    var attrs = gun.top(uri + '/attrs').put(data.attrs);
 	    delete data['attrs'];
 	    gun.put(data);
 	    gun.get('attrs').put(attrs);
-	    return new Identity(gun, uri, index);
+	    return new Contact(gun, uri, index);
 	  };
 
-	  Identity.getLinkTo = function getLinkTo(attrs) {
-	    var mva = Identity.getMostVerifiedAttributes(attrs);
+	  Contact.getLinkTo = function getLinkTo(attrs) {
+	    var mva = Contact.getMostVerifiedAttributes(attrs);
 	    var keys = _Object$keys(mva);
 	    var linkTo = void 0;
 	    for (var i = 0; i < keys.length; i++) {
@@ -92187,7 +94418,7 @@ Gun.chain.unset = function(node){
 	    return linkTo;
 	  };
 
-	  Identity.getMostVerifiedAttributes = function getMostVerifiedAttributes(attrs) {
+	  Contact.getMostVerifiedAttributes = function getMostVerifiedAttributes(attrs) {
 	    var mostVerifiedAttributes = {};
 	    _Object$keys(attrs).forEach(function (k) {
 	      var a = attrs[k];
@@ -92207,7 +94438,7 @@ Gun.chain.unset = function(node){
 	    return mostVerifiedAttributes;
 	  };
 
-	  Identity.getAttrs = async function getAttrs(identity) {
+	  Contact.getAttrs = async function getAttrs(identity) {
 	    var attrs = await util$1.loadGunDepth(identity.get('attrs'), 2);
 	    if (attrs && attrs['_'] !== undefined) {
 	      delete attrs['_'];
@@ -92221,7 +94452,7 @@ Gun.chain.unset = function(node){
 	  */
 
 
-	  Identity.prototype.sent = function sent(options) {
+	  Contact.prototype.sent = function sent(options) {
 	    this.index._getSentMsgs(this, options);
 	  };
 
@@ -92231,7 +94462,7 @@ Gun.chain.unset = function(node){
 	  */
 
 
-	  Identity.prototype.received = function received(options) {
+	  Contact.prototype.received = function received(options) {
 	    this.index._getReceivedMsgs(this, options);
 	  };
 
@@ -92241,9 +94472,9 @@ Gun.chain.unset = function(node){
 	  */
 
 
-	  Identity.prototype.verified = async function verified(attribute) {
-	    var attrs = await Identity.getAttrs(this.gun).then();
-	    var mva = Identity.getMostVerifiedAttributes(attrs);
+	  Contact.prototype.verified = async function verified(attribute) {
+	    var attrs = await Contact.getAttrs(this.gun).then();
+	    var mva = Contact.getMostVerifiedAttributes(attrs);
 	    return Object.prototype.hasOwnProperty.call(mva, attribute) ? mva[attribute].attribute.value : undefined;
 	  };
 
@@ -92253,7 +94484,7 @@ Gun.chain.unset = function(node){
 	  */
 
 
-	  Identity.prototype.profileCard = function profileCard(ipfs) {
+	  Contact.prototype.profileCard = function profileCard(ipfs) {
 	    var _this = this;
 
 	    var card = document.createElement('div');
@@ -92280,10 +94511,10 @@ Gun.chain.unset = function(node){
 	      if (!data) {
 	        return;
 	      }
-	      var attrs = await Identity.getAttrs(_this.gun);
+	      var attrs = await Contact.getAttrs(_this.gun);
 	      var linkTo = await _this.gun.get('linkTo').then();
 	      var link = 'https://iris.to/#/identities/' + linkTo.type + '/' + linkTo.value;
-	      var mva = Identity.getMostVerifiedAttributes(attrs);
+	      var mva = Contact.getMostVerifiedAttributes(attrs);
 	      linkEl.innerHTML = '<a href="' + link + '">' + (mva.type && mva.type.attribute.value || mva.nickname && mva.nickname.attribute.value || linkTo.type + ':' + linkTo.value) + '</a><br>';
 	      linkEl.innerHTML += '<small>Received: <span class="iris-pos">+' + (data.receivedPositive || 0) + '</span> / <span class="iris-neg">-' + (data.receivedNegative || 0) + '</span></small><br>';
 	      links.innerHTML = '';
@@ -92300,7 +94531,7 @@ Gun.chain.unset = function(node){
 	    <tr ng-repeat="result in ids.list" id="result{$index}" ng-hide="!result.linkTo" ui-sref="identities.show({ type: result.linkTo.type, value: result.linkTo.value })" class="search-result-row" ng-class="{active: result.active}">
 	      <td class="gravatar-col"><identicon id="result" border="3" width="46" positive-score="result.pos" negative-score="result.neg"></identicon></td>
 	      <td>
-	        <span ng-if="result.distance == 0" class="label label-default pull-right">viewpoint</span>
+	        <span ng-if="result.distance == 0" class="label label-default pull-right">rootContact</span>
 	        <span ng-if="result.distance > 0" ng-bind="result.distance | ordinal" class="label label-default pull-right"></span>
 	        <a ng-bind-html="result.name|highlight:query.term" ui-sref="identities.show({ type: result.linkTo.type, value: result.linkTo.value })"></a>
 	        <small ng-if="!result.name" class="list-group-item-text">
@@ -92337,7 +94568,7 @@ Gun.chain.unset = function(node){
 	  */
 
 
-	  Identity.appendSearchWidget = function appendSearchWidget(parentElement, index) {
+	  Contact.appendSearchWidget = function appendSearchWidget(parentElement, index) {
 	    var form = document.createElement('form');
 
 	    var input = document.createElement('input');
@@ -92365,7 +94596,7 @@ Gun.chain.unset = function(node){
 	    return form;
 	  };
 
-	  Identity._ordinal = function _ordinal(n) {
+	  Contact._ordinal = function _ordinal(n) {
 	    if (n === 0) {
 	      return '';
 	    }
@@ -92380,7 +94611,7 @@ Gun.chain.unset = function(node){
 	  */
 
 
-	  Identity.prototype.identicon = function identicon$$1() {
+	  Contact.prototype.identicon = function identicon$$1() {
 	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
 	    options = _Object$assign({
@@ -92451,7 +94682,7 @@ Gun.chain.unset = function(node){
 	      pie.style.opacity = (data.receivedPositive + data.receivedNegative) / 10 * 0.5 + 0.35;
 
 	      if (options.showDistance) {
-	        distance.textContent = typeof data.trustDistance === 'number' ? Identity._ordinal(data.trustDistance) : '\u2715';
+	        distance.textContent = typeof data.trustDistance === 'number' ? Contact._ordinal(data.trustDistance) : '\u2715';
 	      }
 	    }
 
@@ -92470,8 +94701,8 @@ Gun.chain.unset = function(node){
 	    this.gun.on(setPie);
 
 	    if (options.ipfs) {
-	      Identity.getAttrs(this.gun).then(function (attrs) {
-	        var mva = Identity.getMostVerifiedAttributes(attrs);
+	      Contact.getAttrs(this.gun).then(function (attrs) {
+	        var mva = Contact.getMostVerifiedAttributes(attrs);
 	        if (mva.profilePhoto) {
 	          var go = function go() {
 	            options.ipfs.cat(mva.profilePhoto.attribute.value).then(function (file) {
@@ -92487,45 +94718,8 @@ Gun.chain.unset = function(node){
 	    return identicon$$1;
 	  };
 
-	  return Identity;
+	  return Contact;
 	}();
-
-	var isEnum$1 = _objectPie.f;
-	var _objectToArray = function (isEntries) {
-	  return function (it) {
-	    var O = _toIobject(it);
-	    var keys = _objectKeys(O);
-	    var length = keys.length;
-	    var i = 0;
-	    var result = [];
-	    var key;
-	    while (length > i) {
-	      key = keys[i++];
-	      if (!_descriptors || isEnum$1.call(O, key)) {
-	        result.push(isEntries ? [key, O[key]] : O[key]);
-	      }
-	    }
-	    return result;
-	  };
-	};
-
-	// https://github.com/tc39/proposal-object-values-entries
-
-	var $values = _objectToArray(false);
-
-	_export(_export.S, 'Object', {
-	  values: function values(it) {
-	    return $values(it);
-	  }
-	});
-
-	var values = _core.Object.values;
-
-	var values$1 = createCommonjsModule(function (module) {
-	module.exports = { "default": values, __esModule: true };
-	});
-
-	var _Object$values = unwrapExports(values$1);
 
 	// 20.1.2.4 Number.isNaN(number)
 
@@ -92604,6 +94798,7 @@ Gun.chain.unset = function(node){
 	* who are communicating with each other by looking at Gun timestamps and subscriptions.
 	*
 	* @param {Object} options {key, gun, onMessage, participants}
+	* @example https://github.com/irislib/iris-lib/blob/master/__tests__/chat.js
 	*/
 
 	var Chat = function () {
@@ -92620,14 +94815,14 @@ Gun.chain.unset = function(node){
 	    this.theirSecretChatIds = {}; // maps participant public key to their secret chat id
 	    this.onMessage = options.onMessage;
 
-	    if (typeof options.participants === "string") {
+	    if (typeof options.participants === 'string') {
 	      this.addPub(options.participants);
 	    } else if (Array.isArray(options.participants)) {
 	      for (var i = 0; i < options.participants.length; i++) {
-	        if (typeof options.participants[i] === "string") {
+	        if (typeof options.participants[i] === 'string') {
 	          this.addPub(options.participants[i]);
 	        } else {
-	          console.log("participant public key must be string, got", _typeof(options.participants[i]), options.participants[i]);
+	          console.log('participant public key must be string, got', _typeof(options.participants[i]), options.participants[i]);
 	        }
 	      }
 	    }
@@ -92635,7 +94830,7 @@ Gun.chain.unset = function(node){
 
 	  Chat.prototype.getSecret = async function getSecret(pub) {
 	    if (!this.secrets[pub]) {
-	      var epub = await this.gun.user(pub).get("epub").once().then();
+	      var epub = await this.gun.user(pub).get('epub').once().then();
 	      this.secrets[pub] = await Gun.SEA.secret(epub, this.key);
 	    }
 	    return this.secrets[pub];
@@ -92647,9 +94842,9 @@ Gun.chain.unset = function(node){
 
 
 	  Chat.getOurSecretChatId = async function getOurSecretChatId(gun, pub, pair) {
-	    var epub = await gun.user(pub).get("epub").once().then();
+	    var epub = await gun.user(pub).get('epub').once().then();
 	    var secret = await Gun.SEA.secret(epub, pair);
-	    return Gun.SEA.work(secret + pub, null, null, { name: "SHA-256" });
+	    return Gun.SEA.work(secret + pub, null, null, { name: 'SHA-256' });
 	  };
 
 	  /**
@@ -92658,15 +94853,15 @@ Gun.chain.unset = function(node){
 
 
 	  Chat.getTheirSecretChatId = async function getTheirSecretChatId(gun, pub, pair) {
-	    var epub = await gun.user(pub).get("epub").once().then();
+	    var epub = await gun.user(pub).get('epub').once().then();
 	    var secret = await Gun.SEA.secret(epub, pair);
-	    return Gun.SEA.work(secret + pair.pub, null, null, { name: "SHA-256" });
+	    return Gun.SEA.work(secret + pair.pub, null, null, { name: 'SHA-256' });
 	  };
 
 	  /**
 	  * Return a list of public keys that you have initiated a chat with or replied to.
 	  * (Chats that are initiated by others and unreplied by you don't show up, because
-	  * this method doesn't know where to look for them. Use index.getChats() to listen to new chats from friends.)
+	  * this method doesn't know where to look for them. Use socialNetwork.getChats() to listen to new chats from friends.)
 	  * @param {Object} gun user.authed gun instance
 	  * @param {Object} keypair SEA keypair that the gun instance is authenticated with
 	  * @param callback callback function that is called for each public key you have a chat with
@@ -92675,9 +94870,9 @@ Gun.chain.unset = function(node){
 
 	  Chat.getChats = async function getChats(gun, keypair, callback) {
 	    var mySecret = await Gun.SEA.secret(keypair.epub, keypair);
-	    gun.user().get("chats").map().on(async function (value, ourSecretChatId) {
+	    gun.user().get('chats').map().on(async function (value, ourSecretChatId) {
 	      if (value) {
-	        gun.user().get("chats").get(ourSecretChatId).get("pub").once(async function (encryptedPub) {
+	        gun.user().get('chats').get(ourSecretChatId).get('pub').once(async function (encryptedPub) {
 	          var pub = await Gun.SEA.decrypt(encryptedPub, mySecret);
 	          callback(pub);
 	        });
@@ -92688,7 +94883,7 @@ Gun.chain.unset = function(node){
 	  Chat.prototype.getOurSecretChatId = async function getOurSecretChatId(pub) {
 	    if (!this.ourSecretChatIds[pub]) {
 	      var secret = await this.getSecret(pub);
-	      this.ourSecretChatIds[pub] = await Gun.SEA.work(secret + pub, null, null, { name: "SHA-256" });
+	      this.ourSecretChatIds[pub] = await Gun.SEA.work(secret + pub, null, null, { name: 'SHA-256' });
 	    }
 	    return this.ourSecretChatIds[pub];
 	  };
@@ -92696,7 +94891,7 @@ Gun.chain.unset = function(node){
 	  Chat.prototype.getTheirSecretChatId = async function getTheirSecretChatId(pub) {
 	    if (!this.theirSecretChatIds[pub]) {
 	      var secret = await this.getSecret(pub);
-	      this.theirSecretChatIds[pub] = await Gun.SEA.work(secret + this.key.pub, null, null, { name: "SHA-256" });
+	      this.theirSecretChatIds[pub] = await Gun.SEA.work(secret + this.key.pub, null, null, { name: 'SHA-256' });
 	    }
 	    return this.theirSecretChatIds[pub];
 	  };
@@ -92704,7 +94899,7 @@ Gun.chain.unset = function(node){
 	  Chat.prototype.messageReceived = async function messageReceived(data, pub, selfAuthored) {
 	    if (this.onMessage) {
 	      var decrypted = await Gun.SEA.decrypt(data, (await this.getSecret(pub)));
-	      if (typeof decrypted !== "object") {
+	      if (typeof decrypted !== 'object') {
 	        // console.log(`chat data received`, decrypted);
 	        return;
 	      }
@@ -92724,13 +94919,13 @@ Gun.chain.unset = function(node){
 
 	    var _loop = async function _loop(i) {
 	      var ourSecretChatId = await _this.getOurSecretChatId(keys[i]);
-	      _this.user.get("chats").get(ourSecretChatId).get("latestMsg").on(async function (data) {
+	      _this.user.get('chats').get(ourSecretChatId).get('latestMsg').on(async function (data) {
 	        var decrypted = await Gun.SEA.decrypt(data, (await _this.getSecret(keys[i])));
-	        if (typeof decrypted !== "object") {
+	        if (typeof decrypted !== 'object') {
 	          // console.log(`chat data received`, decrypted);
 	          return;
 	        }
-	        callback(decrypted, { selfAuthored: selfAuthored });
+	        callback(decrypted, {});
 	      });
 	    };
 
@@ -92751,7 +94946,7 @@ Gun.chain.unset = function(node){
 	    for (var i = 0; i < keys.length; i++) {
 	      var encrypted = await Gun.SEA.encrypt(time, (await this.getSecret(keys[i])));
 	      var ourSecretChatId = await this.getOurSecretChatId(keys[i]);
-	      this.user.get("chats").get(ourSecretChatId).get("msgsLastSeenTime").put(encrypted);
+	      this.user.get('chats').get(ourSecretChatId).get('msgsLastSeenTime').put(encrypted);
 	    }
 	  };
 
@@ -92767,7 +94962,7 @@ Gun.chain.unset = function(node){
 
 	    var _loop2 = async function _loop2(i) {
 	      var ourSecretChatId = await _this2.getOurSecretChatId(keys[i]);
-	      _this2.gun.user().get("chats").get(ourSecretChatId).get("msgsLastSeenTime").on(async function (data) {
+	      _this2.gun.user().get('chats').get(ourSecretChatId).get('msgsLastSeenTime').on(async function (data) {
 	        _this2.myMsgsLastSeenTime = await Gun.SEA.decrypt(data, (await _this2.getSecret(keys[i])));
 	        if (callback) {
 	          callback(_this2.myMsgsLastSeenTime);
@@ -92792,7 +94987,7 @@ Gun.chain.unset = function(node){
 
 	    var _loop3 = async function _loop3(i) {
 	      var theirSecretChatId = await _this3.getTheirSecretChatId(keys[i]);
-	      _this3.gun.user(keys[i]).get("chats").get(theirSecretChatId).get("msgsLastSeenTime").on(async function (data) {
+	      _this3.gun.user(keys[i]).get('chats').get(theirSecretChatId).get('msgsLastSeenTime').on(async function (data) {
 	        _this3.theirMsgsLastSeenTime = await Gun.SEA.decrypt(data, (await _this3.getSecret(keys[i])));
 	        if (callback) {
 	          callback(_this3.theirMsgsLastSeenTime, keys[i]);
@@ -92819,14 +95014,14 @@ Gun.chain.unset = function(node){
 	    // Save their public key in encrypted format, so in chat listing we know who we are chatting with
 	    var ourSecretChatId = await this.getOurSecretChatId(pub);
 	    var mySecret = await Gun.SEA.secret(this.key.epub, this.key);
-	    this.gun.user().get("chats").get(ourSecretChatId).get("pub").put((await Gun.SEA.encrypt(pub, mySecret)));
+	    this.gun.user().get('chats').get(ourSecretChatId).get('pub').put((await Gun.SEA.encrypt(pub, mySecret)));
 	    // Subscribe to their messages
 	    var theirSecretChatId = await this.getTheirSecretChatId(pub);
-	    this.gun.user(pub).get("chats").get(theirSecretChatId).get("msgs").map().once(function (data) {
+	    this.gun.user(pub).get('chats').get(theirSecretChatId).get('msgs').map().once(function (data) {
 	      _this4.messageReceived(data, pub);
 	    });
 	    // Subscribe to our messages
-	    this.user.get("chats").get(ourSecretChatId).get("msgs").map().once(function (data) {
+	    this.user.get('chats').get(ourSecretChatId).get('msgs').map().once(function (data) {
 	      _this4.messageReceived(data, pub, true);
 	    });
 	  };
@@ -92838,10 +95033,10 @@ Gun.chain.unset = function(node){
 
 
 	  Chat.prototype.send = async function send(msg) {
-	    if (typeof msg === "string") {
+	    if (typeof msg === 'string') {
 	      msg = {
 	        time: new Date().toISOString(),
-	        author: "anonymous",
+	        author: 'anonymous',
 	        text: msg
 	      };
 	    }
@@ -92851,8 +95046,8 @@ Gun.chain.unset = function(node){
 	    for (var i = 0; i < keys.length; i++) {
 	      var encrypted = await Gun.SEA.encrypt(_JSON$stringify(msg), (await this.getSecret(keys[i])));
 	      var ourSecretChatId = await this.getOurSecretChatId(keys[i]);
-	      this.user.get("chats").get(ourSecretChatId).get("msgs").get("" + msg.time).put(encrypted);
-	      this.user.get("chats").get(ourSecretChatId).get("latestMsg").put(encrypted);
+	      this.user.get('chats').get(ourSecretChatId).get('msgs').get('' + msg.time).put(encrypted);
+	      this.user.get('chats').get(ourSecretChatId).get('latestMsg').put(encrypted);
 	    }
 	  };
 
@@ -92866,7 +95061,7 @@ Gun.chain.unset = function(node){
 	  Chat.setOnline = function setOnline(gun, isOnline) {
 	    if (isOnline) {
 	      var update = function update() {
-	        gun.user().get("lastActive").put(Math.round(Gun.state() / 1000));
+	        gun.user().get('lastActive').put(Math.round(Gun.state() / 1000));
 	      };
 	      update();
 	      gun.setOnlineInterval = setInterval(update, 3000);
@@ -92886,7 +95081,7 @@ Gun.chain.unset = function(node){
 
 	  Chat.getOnline = function getOnline(gun, pubKey, callback) {
 	    var timeout = void 0;
-	    gun.user(pubKey).get("lastActive").on(function (lastActive) {
+	    gun.user(pubKey).get('lastActive').on(function (lastActive) {
 	      clearTimeout(timeout);
 	      var now = Math.round(Gun.state() / 1000);
 	      var isOnline = lastActive > now - 10 && lastActive < now + 30;
@@ -92940,13 +95135,15 @@ Gun.chain.unset = function(node){
 
 	// TODO: flush onto IPFS
 	/**
-	* A database of Messages and Identities within the indexer's web of trust.
+	* The essence of Iris: A database of Contacts and Messages within your web of trust.
+	*
+	* NOTE: these docs reflect the latest commit at https://github.com/irislib/iris-lib
 	*
 	* To use someone else's index (read-only): set options.pubKey
 	*
 	* To use your own index: set options.keypair or omit it to use Key.getDefaultKey().
 	*
-	* Each added Message updates the Message and Identity indexes and web of trust accordingly.
+	* Each added Message updates the Message and Contacts indexes and web of trust accordingly.
 	*
 	* You can pass options.gun to use custom gun storages and networking settings.
 	*
@@ -92955,6 +95152,8 @@ Gun.chain.unset = function(node){
 	* Wait for index.ready promise to resolve before calling instance methods.
 	* @param {Object} options see default options in example
 	* @example
+	* https://github.com/irislib/iris-lib/blob/master/__tests__/socialNetwork.js
+	*
 	* Default options:
 	*{
 	*  ipfs: undefined,
@@ -92984,14 +95183,14 @@ Gun.chain.unset = function(node){
 	*    debug: false
 	*  }
 	*}
-	* @returns {Index}  index object
+	* @returns {SocialNetwork}  index object
 	*/
 
-	var Index = function () {
-	  function Index(options) {
+	var SocialNetwork = function () {
+	  function SocialNetwork(options) {
 	    var _this = this;
 
-	    _classCallCheck(this, Index);
+	    _classCallCheck(this, SocialNetwork);
 
 	    this.options = _Object$assign({
 	      ipfs: undefined,
@@ -93026,7 +95225,7 @@ Gun.chain.unset = function(node){
 	      var gun = options.gun || new Gun();
 	      var user = gun.user(options.pubKey);
 	      this.gun = user.get('iris');
-	      this.viewpoint = new Attribute({ type: 'keyID', value: options.pubKey });
+	      this.rootContact = new Attribute({ type: 'keyID', value: options.pubKey });
 	      this.ready = _Promise.resolve();
 	    } else {
 	      // our own index
@@ -93037,7 +95236,7 @@ Gun.chain.unset = function(node){
 	    });
 	  }
 
-	  Index.prototype._init = async function _init() {
+	  SocialNetwork.prototype._init = async function _init() {
 	    var _this2 = this;
 
 	    var keypair = this.options.keypair;
@@ -93048,7 +95247,7 @@ Gun.chain.unset = function(node){
 	    var user = gun.user();
 	    user.auth(keypair);
 	    this.writable = true;
-	    this.viewpoint = new Attribute('keyID', Key.getId(keypair));
+	    this.rootContact = new Attribute('keyID', Key.getId(keypair));
 	    user.get('epub').put(keypair.epub);
 	    // Initialize indexes with deterministic gun souls (.top)
 	    this.gun = user.get('iris').put(user.top('iris'));
@@ -93059,11 +95258,14 @@ Gun.chain.unset = function(node){
 	    this.gun.get('messagesByHash').put(user.top('messagesByHash'));
 	    this.gun.get('messagesByDistance').put(user.top('messagesByDistance'));
 
-	    var uri = this.viewpoint.uri();
+	    this.messages = new Collection({ gun: this.gun, class: Message });
+	    this.contacts = new Collection({ gun: this.gun, class: Contact });
+
+	    var uri = this.rootContact.uri();
 	    var g = user.top(uri);
 	    this.gun.get('identitiesBySearchKey').get(uri).put(g);
 	    var attrs = {};
-	    attrs[uri] = this.viewpoint;
+	    attrs[uri] = this.rootContact;
 	    if (this.options.self) {
 	      var keys = _Object$keys(this.options.self);
 	      for (var i = 0; i < keys.length; i++) {
@@ -93071,44 +95273,17 @@ Gun.chain.unset = function(node){
 	        attrs[a.uri()] = a;
 	      }
 	    }
-	    var id = Identity.create(g, { trustDistance: 0, linkTo: this.viewpoint, attrs: attrs }, this);
-	    await this._addIdentityToIndexes(id.gun);
+	    var id = Contact.create(g, { trustDistance: 0, linkTo: this.rootContact, attrs: attrs }, this);
+	    await this._addContactToIndexes(id.gun);
 	    if (this.options.self) {
-	      var recipient = _Object$assign(this.options.self, { keyID: this.viewpoint.value });
+	      var recipient = _Object$assign(this.options.self, { keyID: this.rootContact.value });
 	      Message.createVerification({ recipient: recipient }, keypair).then(function (msg) {
 	        _this2.addMessage(msg);
 	      });
 	    }
 	  };
 
-	  /**
-	  * Set the user's online status
-	  *
-	  * @param {boolean} isOnline true: update the user's lastActive time every 3 seconds, false: stop updating
-	  */
-
-
-	  Index.prototype.setOnline = function setOnline(isOnline) {
-	    if (!this.writable) {
-	      console.error('setOnline can\'t be called on a non-writable index');
-	      return;
-	    }
-	    Chat.setOnline(this.gun, isOnline);
-	  };
-
-	  /**
-	  * Get the online status of a user.
-	  *
-	  * @param {string} pubKey public key of the user
-	  * @param {boolean} callback receives a boolean each time the user's online status changes
-	  */
-
-
-	  Index.prototype.getOnline = function getOnline(pubKey, callback) {
-	    Chat.getOnline(this.gun, pubKey, callback);
-	  };
-
-	  Index.prototype._subscribeToTrustedIndexes = function _subscribeToTrustedIndexes() {
+	  SocialNetwork.prototype._subscribeToTrustedIndexes = function _subscribeToTrustedIndexes() {
 	    var _this3 = this;
 
 	    if (this.writable && this.options.indexSync.subscribe.enabled) {
@@ -93136,14 +95311,14 @@ Gun.chain.unset = function(node){
 	    }
 	  };
 
-	  Index.prototype.debug = function debug() {
+	  SocialNetwork.prototype.debug = function debug() {
 	    var d = util$1.isNode && process$3.env.DEBUG ? process$3.env.DEBUG === 'true' : this.options.debug;
 	    if (d) {
 	      console.log.apply(console, arguments);
 	    }
 	  };
 
-	  Index.getMsgIndexKey = function getMsgIndexKey(msg) {
+	  SocialNetwork.getMsgIndexKey = function getMsgIndexKey(msg) {
 	    var distance = parseInt(msg.distance);
 	    distance = _Number$isNaN(distance) ? 99 : distance;
 	    distance = ('00' + distance).substring(distance.toString().length); // pad with zeros
@@ -93154,7 +95329,7 @@ Gun.chain.unset = function(node){
 	  // TODO: GUN indexing module that does this automatically
 
 
-	  Index.getMsgIndexKeys = function getMsgIndexKeys(msg) {
+	  SocialNetwork.getMsgIndexKeys = function getMsgIndexKeys(msg) {
 	    var keys = {};
 	    var distance = parseInt(msg.distance);
 	    distance = _Number$isNaN(distance) ? 99 : distance;
@@ -93224,14 +95399,14 @@ Gun.chain.unset = function(node){
 	    return keys;
 	  };
 
-	  Index.prototype.getIdentityIndexKeys = async function getIdentityIndexKeys(identity, hash) {
+	  SocialNetwork.prototype.getContactIndexKeys = async function getContactIndexKeys(contact, hash) {
 	    var indexKeys = { identitiesByTrustDistance: [], identitiesBySearchKey: [] };
 	    var d = void 0;
-	    if (identity.linkTo && this.viewpoint.equals(identity.linkTo)) {
-	      // TODO: identity is a gun instance, no linkTo
+	    if (contact.keyID && this.rootContact.equals(contact.linkTo)) {
+	      // TODO: contact is a gun instance, no linkTo
 	      d = 0;
 	    } else {
-	      d = await identity.get('trustDistance').then();
+	      d = await contact.get('trustDistance').then();
 	    }
 
 	    function addIndexKey(a) {
@@ -93278,41 +95453,50 @@ Gun.chain.unset = function(node){
 	      }
 	    }
 
-	    if (this.viewpoint.equals(identity.linkTo)) {
-	      addIndexKey(identity.linkTo);
+	    if (this.rootContact.equals(contact.keyID)) {
+	      addIndexKey(contact.keyID);
 	    }
 
-	    var attrs = await Identity.getAttrs(identity);
+	    var attrs = await Contact.getAttrs(contact);
 	    _Object$values(attrs).map(addIndexKey);
 
 	    return indexKeys;
 	  };
 
 	  /**
-	  * @returns {Identity} viewpoint identity (trustDistance == 0) of the index
+	  *
 	  */
 
 
-	  Index.prototype.getViewpoint = function getViewpoint() {
-	    return new Identity(this.gun.get('identitiesBySearchKey').get(this.viewpoint.uri()), undefined, this);
+	  SocialNetwork.prototype.addContact = async function addContact(attributes) {
+	    var follow = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+
+	    // TODO: add uuid to attributes
+	    var msg = void 0;
+	    if (follow) {
+	      msg = await Message.createRating({ recipient: attributes, rating: 1 });
+	    } else {
+	      msg = await Message.createVerification({ recipient: attributes });
+	    }
+	    return this.addMessage(msg);
 	  };
 
-	  /**
-	  * Get an identity referenced by an identifier.
+	  /*
+	  * Get an contact referenced by an identifier.
 	  * get(type, value)
 	  * get(Attribute)
 	  * get(value) - guesses the type or throws an error
-	  * @returns {Identity} identity that is connected to the identifier param
+	  * @returns {Contact} contact that is connected to the identifier param
 	  */
 
 
-	  Index.prototype.get = function get(a, b) {
+	  SocialNetwork.prototype.getContact = function getContact(a, b) {
 	    var _this4 = this;
 
 	    var reload = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
 
 	    if (!a) {
-	      throw new Error('get failed: param must be a string, received ' + (typeof a === 'undefined' ? 'undefined' : _typeof(a)) + ' ' + a);
+	      throw new Error('getContact failed: first param must be defined');
 	    }
 	    var attr = a;
 	    if (a.constructor.name !== 'Attribute') {
@@ -93332,7 +95516,7 @@ Gun.chain.unset = function(node){
 	      // 2) recurse
 	      // 3) get messages received by this list of attributes
 	      // 4) calculate stats
-	      // 5) update identity index entry
+	      // 5) update contact index entry
 	      var o = {
 	        attributes: {},
 	        sent: {},
@@ -93345,14 +95529,14 @@ Gun.chain.unset = function(node){
 	        sentNegative: 0
 	      };
 	      var node = this.gun.get('identities').set(o);
-	      var updateIdentityByLinkedAttribute = function updateIdentityByLinkedAttribute(attribute) {
+	      var updateContactByLinkedAttribute = function updateContactByLinkedAttribute(attribute) {
 	        _this4.gun.get('verificationsByRecipient').get(attribute.uri()).map().once(function (val) {
 	          var m = Message.fromSig(val);
 	          var recipients = m.getRecipientArray();
 	          for (var i = 0; i < recipients.length; i++) {
 	            var a2 = recipients[i];
 	            if (!Object.prototype.hasOwnProperty.call(o.attributes), a2.uri()) {
-	              // TODO remove attribute from identity if not enough verifications / too many unverifications
+	              // TODO remove attribute from contact if not enough verifications / too many unverifications
 	              o.attributes[a2.uri()] = a2;
 	              _this4.gun.get('messagesByRecipient').get(a2.uri()).map().once(function (val) {
 	                var m2 = Message.fromSig(val);
@@ -93390,34 +95574,117 @@ Gun.chain.unset = function(node){
 	                  node.put(o);
 	                }
 	              });
-	              updateIdentityByLinkedAttribute(a2);
+	              updateContactByLinkedAttribute(a2);
 	            }
 	          }
 	        });
 	      };
-	      updateIdentityByLinkedAttribute(attr);
+	      updateContactByLinkedAttribute(attr);
 	      if (this.writable) {
-	        this._addIdentityToIndexes(node);
+	        this._addContactToIndexes(node);
 	      }
-	      return new Identity(node, attr, this);
+	      return new Contact(node, attr, this);
 	    } else {
-	      return new Identity(this.gun.get('identitiesBySearchKey').get(attr.uri()), attr, this);
+	      return new Contact(this.gun.get('identitiesBySearchKey').get(attr.uri()), attr, this);
 	    }
 	  };
 
 	  /**
-	  * Return existing chats and listen to new chats initiated by friends.
+	  *
 	  */
 
 
-	  Index.prototype.getChats = async function getChats(callback) {
+	  SocialNetwork.prototype.getContacts = function getContacts() {
 	    var _this5 = this;
+
+	    var opts = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+	    // cursor // TODO: param 'exact', type param
+	    if (opts.value) {
+	      if (opts.type) {
+	        return this.getContact(opts.type, opts.value, opts.reload);
+	      } else {
+	        return this.getContact(opts.value);
+	      }
+	    }
+	    opts.query = opts.query || '';
+	    var seen = {};
+	    function searchTermCheck(key) {
+	      var arr = key.split(':');
+	      if (arr.length < 2) {
+	        return false;
+	      }
+	      var keyValue = arr[0];
+	      var keyType = arr[1];
+	      if (keyValue.indexOf(encodeURIComponent(opts.query)) !== 0) {
+	        return false;
+	      }
+	      if (opts.type && keyType !== opts.type) {
+	        return false;
+	      }
+	      return true;
+	    }
+	    var node = this.gun.get('identitiesBySearchKey');
+	    node.map().on(function (id, key) {
+	      if (_Object$keys(seen).length >= opts.limit) {
+	        // TODO: turn off .map cb
+	        return;
+	      }
+	      if (!searchTermCheck(key)) {
+	        return;
+	      }
+	      var soul = Gun.node.soul(id);
+	      if (soul && !Object.prototype.hasOwnProperty.call(seen, soul)) {
+	        seen[soul] = true;
+	        var contact = new Contact(node.get(key), undefined, _this5);
+	        contact.cursor = key;
+	        opts.callback(contact);
+	      }
+	    });
+	    if (this.options.indexSync.query.enabled) {
+	      this.gun.get('trustedIndexes').map().once(function (val, key) {
+	        if (val) {
+	          _this5.gun.user(key).get('iris').get('identitiesBySearchKey').map().on(function (id, k) {
+	            if (_Object$keys(seen).length >= opts.limit) {
+	              // TODO: turn off .map cb
+	              return;
+	            }
+	            if (!searchTermCheck(key)) {
+	              return;
+	            }
+	            var soul = Gun.node.soul(id);
+	            if (soul && !Object.prototype.hasOwnProperty.call(seen, soul)) {
+	              seen[soul] = true;
+	              opts.callback(new Contact(_this5.gun.user(key).get('iris').get('identitiesBySearchKey').get(k), undefined, _this5));
+	            }
+	          });
+	        }
+	      });
+	    }
+	  };
+
+	  /**
+	  * @returns {Contact} root contact (center of the social graph, trustDistance == 0)
+	  */
+
+
+	  SocialNetwork.prototype.getRootContact = function getRootContact() {
+	    return new Contact(this.gun.get('identitiesBySearchKey').get(this.rootContact.uri()), undefined, this);
+	  };
+
+	  /**
+	  * Return existing chats and listen to new chats initiated by friends.
+	  * Like Chat.getChats(), but also listens to chats initiated by friends.
+	  */
+
+
+	  SocialNetwork.prototype.getChats = async function getChats(callback) {
+	    var _this6 = this;
 
 	    Chat.getChats(this.gun, this.options.keypair, callback);
 	    this.gun.get('trustedIndexes').map().on(async function (value, pub) {
 	      if (value && pub) {
-	        var theirSecretChatId = await Chat.getTheirSecretChatId(_this5.gun, pub, _this5.options.keypair);
-	        _this5.gun.user(pub).get('chats').get(theirSecretChatId).on(function (v) {
+	        var theirSecretChatId = await Chat.getTheirSecretChatId(_this6.gun, pub, _this6.options.keypair);
+	        _this6.gun.user(pub).get('chats').get(theirSecretChatId).on(function (v) {
 	          if (v) {
 	            callback(pub);
 	          }
@@ -93426,7 +95693,7 @@ Gun.chain.unset = function(node){
 	    });
 	  };
 
-	  Index.prototype._getMsgs = async function _getMsgs(msgIndex, callback, limit, cursor, desc, filter) {
+	  SocialNetwork.prototype._getMsgs = async function _getMsgs(msgIndex, callback, limit, cursor, desc, filter) {
 	    var results = 0;
 	    async function resultFound(result) {
 	      if (results >= limit) {
@@ -93447,14 +95714,14 @@ Gun.chain.unset = function(node){
 	    searchText(msgIndex, resultFound, '', undefined, cursor, desc);
 	  };
 
-	  Index.prototype._addIdentityToIndexes = async function _addIdentityToIndexes(id) {
+	  SocialNetwork.prototype._addContactToIndexes = async function _addContactToIndexes(id) {
 	    if (typeof id === 'undefined') {
 	      var e = new Error('id is undefined');
 	      console.error(e.stack);
 	      throw e;
 	    }
 	    var hash = Gun.node.soul(id) || id._ && id._.link || 'todo';
-	    var indexKeys = await this.getIdentityIndexKeys(id, hash.substr(0, 6));
+	    var indexKeys = await this.getContactIndexKeys(id, hash.substr(0, 6));
 
 	    var indexes = _Object$keys(indexKeys);
 	    for (var i = 0; i < indexes.length; i++) {
@@ -93467,60 +95734,60 @@ Gun.chain.unset = function(node){
 	    }
 	  };
 
-	  Index.prototype._getSentMsgs = async function _getSentMsgs(identity, options) {
-	    var _this6 = this;
-
-	    this._getMsgs(identity.gun.get('sent'), options.callback, options.limit, options.cursor, true, options.filter);
-	    if (this.options.indexSync.query.enabled) {
-	      this.gun.get('trustedIndexes').map().once(function (val, key) {
-	        if (val) {
-	          var n = _this6.gun.user(key).get('iris').get('messagesByAuthor').get(identity.linkTo.uri());
-	          _this6._getMsgs(n, options.callback, options.limit, options.cursor, false, options.filter);
-	        }
-	      });
-	    }
-	  };
-
-	  Index.prototype._getReceivedMsgs = async function _getReceivedMsgs(identity, options) {
+	  SocialNetwork.prototype._getSentMsgs = async function _getSentMsgs(contact, options) {
 	    var _this7 = this;
 
-	    this._getMsgs(identity.gun.get('received'), options.callback, options.limit, options.cursor, true, options.filter);
+	    this._getMsgs(contact.gun.get('sent'), options.callback, options.limit, options.cursor, true, options.filter);
 	    if (this.options.indexSync.query.enabled) {
 	      this.gun.get('trustedIndexes').map().once(function (val, key) {
 	        if (val) {
-	          var n = _this7.gun.user(key).get('iris').get('messagesByRecipient').get(identity.linkTo.uri());
+	          var n = _this7.gun.user(key).get('iris').get('messagesByAuthor').get(contact.linkTo.uri());
 	          _this7._getMsgs(n, options.callback, options.limit, options.cursor, false, options.filter);
 	        }
 	      });
 	    }
 	  };
 
-	  Index.prototype.getChatMsgs = async function getChatMsgs(uuid, options) {
+	  SocialNetwork.prototype._getReceivedMsgs = async function _getReceivedMsgs(contact, options) {
 	    var _this8 = this;
+
+	    this._getMsgs(contact.gun.get('received'), options.callback, options.limit, options.cursor, true, options.filter);
+	    if (this.options.indexSync.query.enabled) {
+	      this.gun.get('trustedIndexes').map().once(function (val, key) {
+	        if (val) {
+	          var n = _this8.gun.user(key).get('iris').get('messagesByRecipient').get(contact.linkTo.uri());
+	          _this8._getMsgs(n, options.callback, options.limit, options.cursor, false, options.filter);
+	        }
+	      });
+	    }
+	  };
+
+	  SocialNetwork.prototype.getChatMsgs = async function getChatMsgs(uuid, options) {
+	    var _this9 = this;
 
 	    this._getMsgs(this.gun.get('chatMessagesByUuid').get(uuid), options.callback, options.limit, options.cursor, true, options.filter);
 	    var callback = function callback(msg) {
 	      if (options.callback) {
 	        options.callback(msg);
 	      }
-	      _this8.addMessage(msg, { checkIfExists: true });
+	      _this9.addMessage(msg, { checkIfExists: true });
 	    };
 	    this.gun.get('trustedIndexes').map().once(function (val, key) {
 	      if (val) {
-	        var n = _this8.gun.user(key).get('iris').get('chatMessagesByUuid').get(uuid);
-	        _this8._getMsgs(n, callback, options.limit, options.cursor, false, options.filter);
+	        var n = _this9.gun.user(key).get('iris').get('chatMessagesByUuid').get(uuid);
+	        _this9._getMsgs(n, callback, options.limit, options.cursor, false, options.filter);
 	      }
 	    });
 	  };
 
-	  Index.prototype._getAttributeTrustDistance = async function _getAttributeTrustDistance(a) {
+	  SocialNetwork.prototype._getAttributeTrustDistance = async function _getAttributeTrustDistance(a) {
 	    if (!Attribute.isUniqueType(a.type)) {
 	      return;
 	    }
-	    if (this.viewpoint.equals(a)) {
+	    if (this.rootContact.equals(a)) {
 	      return 0;
 	    }
-	    var id = this.get(a);
+	    var id = this.getContact(a);
 	    var d = await id.gun.get('trustDistance').then();
 	    if (isNaN(d)) {
 	      d = Infinity;
@@ -93528,11 +95795,11 @@ Gun.chain.unset = function(node){
 	    return d;
 	  };
 
-	  Index.prototype._getMsgTrustDistance = async function _getMsgTrustDistance(msg) {
+	  SocialNetwork.prototype._getMsgTrustDistance = async function _getMsgTrustDistance(msg) {
 	    var shortestDistance = Infinity;
 	    var signerAttr = new Attribute('keyID', msg.getSignerKeyID());
-	    if (!signerAttr.equals(this.viewpoint)) {
-	      var signer = this.get(signerAttr);
+	    if (!signerAttr.equals(this.rootContact)) {
+	      var signer = this.getContact(signerAttr);
 	      var d = await signer.gun.get('trustDistance').then();
 	      if (isNaN(d)) {
 	        return;
@@ -93560,10 +95827,10 @@ Gun.chain.unset = function(node){
 	    return shortestDistance < Infinity ? shortestDistance : undefined;
 	  };
 
-	  Index.prototype._updateMsgRecipientIdentity = async function _updateMsgRecipientIdentity(msg, msgIndexKey, recipient) {
+	  SocialNetwork.prototype._updateMsgRecipientContact = async function _updateMsgRecipientContact(msg, msgIndexKey, recipient) {
 	    var hash = recipient._ && recipient._.link || 'todo';
-	    var identityIndexKeysBefore = await this.getIdentityIndexKeys(recipient, hash.substr(0, 6));
-	    var attrs = await Identity.getAttrs(recipient);
+	    var contactIndexKeysBefore = await this.getContactIndexKeys(recipient, hash.substr(0, 6));
+	    var attrs = await Contact.getAttrs(recipient);
 	    if (['verification', 'unverification'].indexOf(msg.signedData.type) > -1) {
 	      var isVerification = msg.signedData.type === 'verification';
 
@@ -93612,7 +95879,7 @@ Gun.chain.unset = function(node){
 
 	        if (_ret === 'break') break;
 	      }
-	      var mva = Identity.getMostVerifiedAttributes(attrs);
+	      var mva = Contact.getMostVerifiedAttributes(attrs);
 	      recipient.get('mostVerifiedAttributes').put(mva); // TODO: why this needs to be done twice to register?
 	      recipient.get('mostVerifiedAttributes').put(mva);
 	      var k = mva.keyID && mva.keyID.attribute.value || mva.uuid && mva.uuid.attribute.value || hash;
@@ -93633,7 +95900,7 @@ Gun.chain.unset = function(node){
 	        id.receivedPositive++;
 	      } else {
 	        if (msg.distance < id.trustDistance) {
-	          recipient.get('trustDistance').put(false); // TODO: this should take into account the aggregate score of the identity
+	          recipient.get('trustDistance').put(false); // TODO: this should take into account the aggregate score of the contact
 	        }
 	        if (msg.isNegative()) {
 	          id.receivedNegative++;
@@ -93668,20 +95935,20 @@ Gun.chain.unset = function(node){
 	    recipient.get('received').get(msgIndexKey).put(obj);
 	    recipient.get('received').get(msgIndexKey).put(obj);
 
-	    var identityIndexKeysAfter = await this.getIdentityIndexKeys(recipient, hash.substr(0, 6));
-	    var indexesBefore = _Object$keys(identityIndexKeysBefore);
+	    var contactIndexKeysAfter = await this.getContactIndexKeys(recipient, hash.substr(0, 6));
+	    var indexesBefore = _Object$keys(contactIndexKeysBefore);
 	    for (var i = 0; i < indexesBefore.length; i++) {
 	      var index = indexesBefore[i];
-	      for (var j = 0; j < identityIndexKeysBefore[index].length; j++) {
-	        var key = identityIndexKeysBefore[index][j];
-	        if (!identityIndexKeysAfter[index] || identityIndexKeysAfter[index].indexOf(key) === -1) {
+	      for (var j = 0; j < contactIndexKeysBefore[index].length; j++) {
+	        var key = contactIndexKeysBefore[index][j];
+	        if (!contactIndexKeysAfter[index] || contactIndexKeysAfter[index].indexOf(key) === -1) {
 	          this.gun.get(index).get(key).put(null);
 	        }
 	      }
 	    }
 	  };
 
-	  Index.prototype._updateMsgAuthorIdentity = async function _updateMsgAuthorIdentity(msg, msgIndexKey, author) {
+	  SocialNetwork.prototype._updateMsgAuthorContact = async function _updateMsgAuthorContact(msg, msgIndexKey, author) {
 	    if (msg.signedData.type === 'rating') {
 	      var id = await author.then();
 	      id.sentPositive = id.sentPositive || 0;
@@ -93707,40 +95974,40 @@ Gun.chain.unset = function(node){
 	    return;
 	  };
 
-	  Index.prototype._updateIdentityProfilesByMsg = async function _updateIdentityProfilesByMsg(msg, authorIdentities, recipientIdentities) {
+	  SocialNetwork.prototype._updateContactProfilesByMsg = async function _updateContactProfilesByMsg(msg, authorIdentities, recipientIdentities) {
 	    var start = void 0;
-	    var msgIndexKey = Index.getMsgIndexKey(msg);
+	    var msgIndexKey = SocialNetwork.getMsgIndexKey(msg);
 	    msgIndexKey = msgIndexKey.substr(msgIndexKey.indexOf(':') + 1);
 	    var ids = _Object$values(_Object$assign({}, authorIdentities, recipientIdentities));
 	    for (var i = 0; i < ids.length; i++) {
-	      // add new identifiers to identity
+	      // add new identifiers to contact
 	      if (Object.prototype.hasOwnProperty.call(recipientIdentities, ids[i].gun['_'].link)) {
 	        start = new Date();
-	        await this._updateMsgRecipientIdentity(msg, msgIndexKey, ids[i].gun);
-	        this.debug(new Date() - start, 'ms _updateMsgRecipientIdentity');
+	        await this._updateMsgRecipientContact(msg, msgIndexKey, ids[i].gun);
+	        this.debug(new Date() - start, 'ms _updateMsgRecipientContact');
 	      }
 	      if (Object.prototype.hasOwnProperty.call(authorIdentities, ids[i].gun['_'].link)) {
 	        start = new Date();
-	        await this._updateMsgAuthorIdentity(msg, msgIndexKey, ids[i].gun);
-	        this.debug(new Date() - start, 'ms _updateMsgAuthorIdentity');
+	        await this._updateMsgAuthorContact(msg, msgIndexKey, ids[i].gun);
+	        this.debug(new Date() - start, 'ms _updateMsgAuthorContact');
 	      }
 	      start = new Date();
-	      await this._addIdentityToIndexes(ids[i].gun);
-	      this.debug(new Date() - start, 'ms _addIdentityToIndexes');
+	      await this._addContactToIndexes(ids[i].gun);
+	      this.debug(new Date() - start, 'ms _addContactToIndexes');
 	    }
 	  };
 
-	  Index.prototype.removeTrustedIndex = async function removeTrustedIndex(gunUri) {
+	  SocialNetwork.prototype.removeTrustedIndex = async function removeTrustedIndex(gunUri) {
 	    this.gun.get('trustedIndexes').get(gunUri).put(null);
 	  };
 
-	  Index.prototype.addTrustedIndex = async function addTrustedIndex(gunUri) {
-	    var _this9 = this;
+	  SocialNetwork.prototype.addTrustedIndex = async function addTrustedIndex(gunUri) {
+	    var _this10 = this;
 
 	    var maxMsgsToCrawl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.options.indexSync.importOnAdd.maxMsgCount;
 	    var maxMsgDistance = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : this.options.indexSync.importOnAdd.maxMsgDistance;
 
-	    if (gunUri === this.viewpoint.value) {
+	    if (gunUri === this.rootContact.value) {
 	      return;
 	    }
 	    var exists = await this.gun.get('trustedIndexes').get(gunUri).then();
@@ -93751,7 +96018,7 @@ Gun.chain.unset = function(node){
 	    var msgs = [];
 	    if (this.options.indexSync.importOnAdd.enabled) {
 	      await util$1.timeoutPromise(new _Promise(function (resolve) {
-	        _this9.gun.user(gunUri).get('iris').get('messagesByDistance').map(function (val, key) {
+	        _this10.gun.user(gunUri).get('iris').get('messagesByDistance').map(function (val, key) {
 	          var d = _Number$parseInt(key.split(':')[0]);
 	          if (!isNaN(d) && d <= maxMsgDistance) {
 	            Message.fromSig(val).then(function (msg) {
@@ -93768,7 +96035,7 @@ Gun.chain.unset = function(node){
 	    }
 	  };
 
-	  Index.prototype._updateIdentityIndexesByMsg = async function _updateIdentityIndexesByMsg(msg) {
+	  SocialNetwork.prototype._updateContactIndexesByMsg = async function _updateContactIndexesByMsg(msg) {
 	    var recipientIdentities = {};
 	    var authorIdentities = {};
 	    var selfAuthored = false;
@@ -93788,7 +96055,7 @@ Gun.chain.unset = function(node){
 
 	      var _a3 = _ref3;
 
-	      var _id = this.get(_a3);
+	      var _id = this.getContact(_a3);
 	      var start2 = new Date();
 	      var td = await _id.gun.get('trustDistance').then();
 	      this.debug(new Date() - start2, 'ms get trustDistance');
@@ -93824,13 +96091,13 @@ Gun.chain.unset = function(node){
 
 	      var _a4 = _ref4;
 
-	      var _id2 = this.get(_a4);
+	      var _id2 = this.getContact(_a4);
 	      var _td = await _id2.gun.get('trustDistance').then();
 
 	      if (!isNaN(_td)) {
 	        recipientIdentities[_id2.gun['_'].link] = _id2;
 	      }
-	      if (selfAuthored && _a4.type === 'keyID' && _a4.value !== this.viewpoint.value) {
+	      if (selfAuthored && _a4.type === 'keyID' && _a4.value !== this.rootContact.value) {
 	        // TODO: not if already added - causes infinite loop?
 	        if (msg.isPositive()) {
 	          this.addTrustedIndex(_a4.value);
@@ -93867,27 +96134,124 @@ Gun.chain.unset = function(node){
 	          u = _a2;
 	        }
 	      }
-	      var linkTo = Identity.getLinkTo(attrs);
+	      var linkTo = Contact.getLinkTo(attrs);
 	      var trustDistance = msg.isPositive() && typeof msg.distance === 'number' ? msg.distance + 1 : false;
 	      var _start = new Date();
 	      var node = this.gun.get('identitiesBySearchKey').get(u.uri());
 	      node.put({ a: 1 }); // {a:1} because inserting {} causes a "no signature on data" error from gun
-	      var id = Identity.create(node, { attrs: attrs, linkTo: linkTo, trustDistance: trustDistance }, this);
-	      this.debug(new Date() - _start, 'ms identity.create');
+	      var id = Contact.create(node, { attrs: attrs, linkTo: linkTo, trustDistance: trustDistance }, this);
+	      this.debug(new Date() - _start, 'ms contact.create');
 
 	      // TODO: take msg author trust into account
 	      recipientIdentities[id.gun['_'].link] = id;
 	    }
 
-	    return this._updateIdentityProfilesByMsg(msg, authorIdentities, recipientIdentities);
+	    return this._updateContactProfilesByMsg(msg, authorIdentities, recipientIdentities);
 	  };
 
 	  /**
+	  * Add a message to messagesByTimestamp and other relevant indexes. Update identities in the web of trust according to message data.
+	  *
+	  * @param msg Message (or an array of messages) to add to the index
+	  */
+
+
+	  SocialNetwork.prototype.addMessage = async function addMessage(msg) {
+	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
+	    if (!this.writable) {
+	      throw new Error('Cannot write to a read-only index (initialized with options.pubKey)');
+	    }
+	    if (Array.isArray(msg)) {
+	      return this.addMessages(msg, options);
+	    }
+	    var start = void 0;
+	    if (msg.constructor.name !== 'Message') {
+	      throw new Error('addMessage failed: param must be a Message, received ' + msg.constructor.name);
+	    }
+	    var hash = msg.getHash();
+	    if (true === options.checkIfExists) {
+	      var exists = await this.gun.get('messagesByHash').get(hash).then();
+	      if (exists) {
+	        return;
+	      }
+	    }
+	    var obj = { sig: msg.sig, pubKey: msg.pubKey };
+	    //const node = this.gun.get(`messagesByHash`).get(hash).put(obj);
+	    var node = this.gun.back(-1).get('messagesByHash').get(hash).put(obj); // TODO: needs fix to https://github.com/amark/gun/issues/719
+	    start = new Date();
+	    var d = await this._getMsgTrustDistance(msg);
+	    msg.distance = Object.prototype.hasOwnProperty.call(msg, 'distance') ? msg.distance : d; // eslint-disable-line require-atomic-updates
+	    this.debug('----');
+	    this.debug(new Date() - start, 'ms _getMsgTrustDistance');
+	    if (msg.distance === undefined) {
+	      return false; // do not save messages from untrusted author
+	    }
+	    if (msg.signedData.replyTo) {
+	      this.gun.back(-1).get('messagesByHash').get(msg.signedData.replyTo).get('replies').get(hash).put(node);
+	      this.gun.back(-1).get('messagesByHash').get(msg.signedData.replyTo).get('replies').get(hash).put(node);
+	    }
+	    if (msg.signedData.sharedMsg) {
+	      this.gun.back(-1).get('messagesByHash').get(msg.signedData.sharedMsg).get('shares').get(hash).put(node);
+	      this.gun.back(-1).get('messagesByHash').get(msg.signedData.sharedMsg).get('shares').get(hash).put(node);
+	    }
+	    start = new Date();
+	    var indexKeys = SocialNetwork.getMsgIndexKeys(msg);
+	    this.debug(new Date() - start, 'ms getMsgIndexKeys');
+	    for (var index in indexKeys) {
+	      if (Array.isArray(indexKeys[index])) {
+	        for (var i = 0; i < indexKeys[index].length; i++) {
+	          var key = indexKeys[index][i];
+	          // this.debug(`adding to index ${index} key ${key}`);
+	          this.gun.get(index).get(key).put(node);
+	          this.gun.get(index).get(key).put(node); // umm, what? doesn't work unless I write it twice
+	        }
+	      } else if (typeof indexKeys[index] === 'object') {
+	        for (var _key in indexKeys[index]) {
+	          this.gun.get(index).get(_key).get(indexKeys[index][_key]).put(node);
+	          this.gun.get(index).get(_key).get(indexKeys[index][_key]).put(node);
+	        }
+	      }
+	    }
+	    if (this.options.ipfs) {
+	      try {
+	        var ipfsUri = await msg.saveToIpfs(this.options.ipfs);
+	        this.gun.get('messagesByHash').get(ipfsUri).put(node);
+	        this.gun.get('messagesByHash').get(ipfsUri).put(node);
+	        this.gun.get('messagesByHash').get(ipfsUri).put({ ipfsUri: ipfsUri });
+	      } catch (e) {
+	        console.error('adding msg ' + msg + ' to ipfs failed: ' + e);
+	      }
+	    }
+	    if (msg.signedData.type !== 'chat') {
+	      start = new Date();
+	      await this._updateContactIndexesByMsg(msg);
+	      this.debug(new Date() - start, 'ms _updateContactIndexesByMsg');
+	    }
+	    return true;
+	  };
+
+	  /**
+	  * @param {Object} opts {hash, orderBy, callback, limit, cursor, desc, filter}
+	  */
+
+
+	  SocialNetwork.prototype.getMessages = async function getMessages(opts) {
+	    if (opts.hash) {
+	      return this.getMessageByHash(opts.hash);
+	    }
+	    if (opts.orderBy && opts.orderBy === 'trustDistance') {
+	      return this.getMessagesByDistance(opts.callback, opts.limit, opts.cursor, opts.desc, opts.filter);
+	    }
+	    return this.getMessagesByTimestamp(opts.callback, opts.limit, opts.cursor, opts.desc || true, opts.filter);
+	  };
+
+	  /*
 	  * Add a list of messages to the index.
 	  * Useful for example when adding a new WoT dataset that contains previously
 	  * unknown authors.
 	  *
-	  * Iteratively performs sorted merge joins on [previously known identities] and
+	  * Iteratively performs sorted merge joins on [previously known contacts] and
 	  * [new msgs authors], until all messages from within the WoT have been added.
 	  *
 	  * @param {Array} msgs an array of messages.
@@ -93895,8 +96259,8 @@ Gun.chain.unset = function(node){
 	  */
 
 
-	  Index.prototype.addMessages = async function addMessages(msgs) {
-	    var _this10 = this;
+	  SocialNetwork.prototype.addMessages = async function addMessages(msgs) {
+	    var _this11 = this;
 
 	    if (!this.writable) {
 	      throw new Error('Cannot write to a read-only index (initialized with options.pubKey)');
@@ -93961,23 +96325,23 @@ Gun.chain.unset = function(node){
 	      });
 	      var i = 0;
 	      var author = msgAuthors[i];
-	      var knownIdentity = knownIdentities.shift();
+	      var knownContact = knownIdentities.shift();
 	      initialMsgCount = msgAuthors.length;
 	      // sort-merge join identitiesBySearchKey and msgsByAuthor
-	      while (author && knownIdentity) {
-	        if (author.indexOf(knownIdentity.key) === 0) {
+	      while (author && knownContact) {
+	        if (author.indexOf(knownContact.key) === 0) {
 	          try {
-	            await util$1.timeoutPromise(_this10.addMessage(msgsByAuthor[author], { checkIfExists: true }), 10000);
+	            await util$1.timeoutPromise(_this11.addMessage(msgsByAuthor[author], { checkIfExists: true }), 10000);
 	          } catch (e) {
-	            _this10.debug('adding failed:', e, _JSON$stringify(msgsByAuthor[author], null, 2));
+	            _this11.debug('adding failed:', e, _JSON$stringify(msgsByAuthor[author], null, 2));
 	          }
 	          msgAuthors.splice(i, 1);
 	          author = i < msgAuthors.length ? msgAuthors[i] : undefined;
-	          //knownIdentity = knownIdentities.shift();
-	        } else if (author < knownIdentity.key) {
+	          //knownContact = knownIdentities.shift();
+	        } else if (author < knownContact.key) {
 	          author = i < msgAuthors.length ? msgAuthors[++i] : undefined;
 	        } else {
-	          knownIdentity = knownIdentities.shift();
+	          knownContact = knownIdentities.shift();
 	        }
 	      }
 	      msgCountAfterwards = msgAuthors.length;
@@ -93989,162 +96353,12 @@ Gun.chain.unset = function(node){
 	    return true;
 	  };
 
-	  /**
-	  * Add a message to messagesByTimestamp and other relevant indexes. Update identities in the web of trust according to message data.
-	  *
-	  * @param msg Message to add to the index
-	  */
-
-
-	  Index.prototype.addMessage = async function addMessage(msg) {
-	    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
-	    if (!this.writable) {
-	      throw new Error('Cannot write to a read-only index (initialized with options.pubKey)');
-	    }
-	    var start = void 0;
-	    if (msg.constructor.name !== 'Message') {
-	      throw new Error('addMessage failed: param must be a Message, received ' + msg.constructor.name);
-	    }
-	    var hash = msg.getHash();
-	    if (true === options.checkIfExists) {
-	      var exists = await this.gun.get('messagesByHash').get(hash).then();
-	      if (exists) {
-	        return;
-	      }
-	    }
-	    var obj = { sig: msg.sig, pubKey: msg.pubKey };
-	    //const node = this.gun.get(`messagesByHash`).get(hash).put(obj);
-	    var node = this.gun.back(-1).get('messagesByHash').get(hash).put(obj); // TODO: needs fix to https://github.com/amark/gun/issues/719
-	    start = new Date();
-	    var d = await this._getMsgTrustDistance(msg);
-	    msg.distance = Object.prototype.hasOwnProperty.call(msg, 'distance') ? msg.distance : d; // eslint-disable-line require-atomic-updates
-	    this.debug('----');
-	    this.debug(new Date() - start, 'ms _getMsgTrustDistance');
-	    if (msg.distance === undefined) {
-	      return false; // do not save messages from untrusted author
-	    }
-	    if (msg.signedData.replyTo) {
-	      this.gun.back(-1).get('messagesByHash').get(msg.signedData.replyTo).get('replies').get(hash).put(node);
-	      this.gun.back(-1).get('messagesByHash').get(msg.signedData.replyTo).get('replies').get(hash).put(node);
-	    }
-	    if (msg.signedData.sharedMsg) {
-	      this.gun.back(-1).get('messagesByHash').get(msg.signedData.sharedMsg).get('shares').get(hash).put(node);
-	      this.gun.back(-1).get('messagesByHash').get(msg.signedData.sharedMsg).get('shares').get(hash).put(node);
-	    }
-	    start = new Date();
-	    var indexKeys = Index.getMsgIndexKeys(msg);
-	    this.debug(new Date() - start, 'ms getMsgIndexKeys');
-	    for (var index in indexKeys) {
-	      if (Array.isArray(indexKeys[index])) {
-	        for (var i = 0; i < indexKeys[index].length; i++) {
-	          var key = indexKeys[index][i];
-	          // this.debug(`adding to index ${index} key ${key}`);
-	          this.gun.get(index).get(key).put(node);
-	          this.gun.get(index).get(key).put(node); // umm, what? doesn't work unless I write it twice
-	        }
-	      } else if (typeof indexKeys[index] === 'object') {
-	        for (var _key in indexKeys[index]) {
-	          this.gun.get(index).get(_key).get(indexKeys[index][_key]).put(node);
-	          this.gun.get(index).get(_key).get(indexKeys[index][_key]).put(node);
-	        }
-	      }
-	    }
-	    if (this.options.ipfs) {
-	      try {
-	        var ipfsUri = await msg.saveToIpfs(this.options.ipfs);
-	        this.gun.get('messagesByHash').get(ipfsUri).put(node);
-	        this.gun.get('messagesByHash').get(ipfsUri).put(node);
-	        this.gun.get('messagesByHash').get(ipfsUri).put({ ipfsUri: ipfsUri });
-	      } catch (e) {
-	        console.error('adding msg ' + msg + ' to ipfs failed: ' + e);
-	      }
-	    }
-	    if (msg.signedData.type !== 'chat') {
-	      start = new Date();
-	      await this._updateIdentityIndexesByMsg(msg);
-	      this.debug(new Date() - start, 'ms _updateIdentityIndexesByMsg');
-	    }
-	    return true;
-	  };
-
-	  /**
-	  * @param {string} value search string
-	  * @param {string} type (optional) type of searched value
-	  * @returns {Array} list of matching identities
-	  */
-
-
-	  Index.prototype.search = async function search() {
-	    var value = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
-	    var type = arguments[1];
-
-	    var _this11 = this;
-
-	    var callback = arguments[2];
-	    var limit = arguments[3];
-	    // cursor // TODO: param 'exact', type param
-	    var seen = {};
-	    function searchTermCheck(key) {
-	      var arr = key.split(':');
-	      if (arr.length < 2) {
-	        return false;
-	      }
-	      var keyValue = arr[0];
-	      var keyType = arr[1];
-	      if (keyValue.indexOf(encodeURIComponent(value)) !== 0) {
-	        return false;
-	      }
-	      if (type && keyType !== type) {
-	        return false;
-	      }
-	      return true;
-	    }
-	    var node = this.gun.get('identitiesBySearchKey');
-	    node.map().on(function (id, key) {
-	      if (_Object$keys(seen).length >= limit) {
-	        // TODO: turn off .map cb
-	        return;
-	      }
-	      if (!searchTermCheck(key)) {
-	        return;
-	      }
-	      var soul = Gun.node.soul(id);
-	      if (soul && !Object.prototype.hasOwnProperty.call(seen, soul)) {
-	        seen[soul] = true;
-	        var identity = new Identity(node.get(key), undefined, _this11);
-	        identity.cursor = key;
-	        callback(identity);
-	      }
-	    });
-	    if (this.options.indexSync.query.enabled) {
-	      this.gun.get('trustedIndexes').map().once(function (val, key) {
-	        if (val) {
-	          _this11.gun.user(key).get('iris').get('identitiesBySearchKey').map().on(function (id, k) {
-	            if (_Object$keys(seen).length >= limit) {
-	              // TODO: turn off .map cb
-	              return;
-	            }
-	            if (!searchTermCheck(key)) {
-	              return;
-	            }
-	            var soul = Gun.node.soul(id);
-	            if (soul && !Object.prototype.hasOwnProperty.call(seen, soul)) {
-	              seen[soul] = true;
-	              callback(new Identity(_this11.gun.user(key).get('iris').get('identitiesBySearchKey').get(k), undefined, _this11));
-	            }
-	          });
-	        }
-	      });
-	    }
-	  };
-
-	  /**
+	  /*
 	  * @returns {Object} message matching the hash
 	  */
 
 
-	  Index.prototype.getMessageByHash = function getMessageByHash(hash) {
+	  SocialNetwork.prototype.getMessageByHash = function getMessageByHash(hash) {
 	    var _this12 = this;
 
 	    var isIpfsUri = hash.indexOf('Qm') === 0;
@@ -94200,12 +96414,12 @@ Gun.chain.unset = function(node){
 	    });
 	  };
 
-	  /**
+	  /*
 	  * @returns {Array} list of messages
 	  */
 
 
-	  Index.prototype.getMessagesByTimestamp = function getMessagesByTimestamp(callback, limit, cursor) {
+	  SocialNetwork.prototype.getMessagesByTimestamp = function getMessagesByTimestamp(callback, limit, cursor) {
 	    var _this13 = this;
 
 	    var desc = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
@@ -94230,12 +96444,12 @@ Gun.chain.unset = function(node){
 	    }
 	  };
 
-	  /**
+	  /*
 	  * @returns {Array} list of messages
 	  */
 
 
-	  Index.prototype.getMessagesByDistance = function getMessagesByDistance(callback, limit, cursor, desc, filter) {
+	  SocialNetwork.prototype.getMessagesByDistance = function getMessagesByDistance(callback, limit, cursor, desc, filter) {
 	    var _this14 = this;
 
 	    var seen = {};
@@ -94258,49 +96472,20 @@ Gun.chain.unset = function(node){
 	    }
 	  };
 
-	  /**
-	  *
-	  */
-
-
-	  Index.prototype.setReaction = function setReaction(msg, reaction) {
-	    this.gun.get('reactions').get(msg.getHash()).put(reaction);
-	    this.gun.get('reactions').get(msg.getHash()).put(reaction);
-	    this.gun.get('messagesByHash').get(msg.getHash()).get('reactions').get(this.viewpoint.value).put(reaction);
-	    this.gun.get('messagesByHash').get(msg.getHash()).get('reactions').get(this.viewpoint.value).put(reaction);
-	  };
-
-	  /**
-	  *
-	  */
-
-
-	  Index.prototype.addContact = async function addContact(attributes) {
-	    var follow = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-
-	    // TODO: add uuid to attributes
-	    var msg = void 0;
-	    if (follow) {
-	      msg = await Message.createRating({ recipient: attributes, rating: 1 });
-	    } else {
-	      msg = await Message.createVerification({ recipient: attributes });
-	    }
-	    return this.addMessage(msg);
-	  };
-
-	  return Index;
+	  return SocialNetwork;
 	}();
 
-	var version$1 = "0.0.128";
+	var version$2 = "0.0.131";
 
 	/*eslint no-useless-escape: "off", camelcase: "off" */
 
 	var index = {
-	  VERSION: version$1,
+	  VERSION: version$2,
+	  Collection: Collection,
 	  Message: Message,
-	  Identity: Identity,
+	  Contact: Contact,
 	  Attribute: Attribute,
-	  Index: Index,
+	  SocialNetwork: SocialNetwork,
 	  Key: Key,
 	  Chat: Chat,
 	  util: util$1

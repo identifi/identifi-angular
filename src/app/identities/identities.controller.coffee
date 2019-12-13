@@ -79,7 +79,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
     $scope.createChat = (chatName) ->
       return unless chatName and chatName.length > 0
       uuid = $window.irisLib.Attribute.getUuid().value
-      $scope.irisIndex.gun.user().get('iris').get('chatMessagesByUuid').get(uuid).put({})
+      $scope.irisSocialNetwork.gun.user().get('iris').get('chatMessagesByUuid').get(uuid).put({})
       msg =
         type: 'verification'
         recipient:
@@ -103,7 +103,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
         recipient = {name}
         recipient[$scope.idType] = $scope.idValue
         $window.irisLib.Message.createVerification({recipient}, $scope.privateKey).then (m) ->
-          $scope.irisIndex.addMessage(m)
+          $scope.irisSocialNetwork.addMessage(m)
         $scope.nameAdded = true
       else
         $scope.addingName = true
@@ -229,7 +229,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
         attr.collapse = !attr.collapse
 
     $scope.getSentMsgs = ->
-      return unless $scope.identity and $scope.irisIndex
+      return unless $scope.identity and $scope.irisSocialNetwork
       $scope.sent = []
       cursor = if $scope.sent.length then $scope.sent[$scope.sent.length - 1].cursor else ''
       callback = (msg) ->
@@ -239,7 +239,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
       $scope.identity.sent({callback})
 
     $scope.getReceivedMsgs = ->
-      return unless $scope.identity and $scope.irisIndex
+      return unless $scope.identity and $scope.irisSocialNetwork
       $scope.received =
         list: []
         seen: {}
@@ -273,7 +273,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
         recipient = {coverPhoto: '/ipfs/' + files[0].path}
         recipient[$scope.idType] = $scope.idValue
         $window.irisLib.Message.createVerification({recipient}, $scope.privateKey).then (m) ->
-          $scope.irisIndex.addMessage(m)
+          $scope.irisSocialNetwork.addMessage(m)
           $scope.uploadModal.close()
 
     $scope.openSharePageModal = () ->
@@ -288,7 +288,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
     $scope.showChatButton = !$scope.isCurrentUser && ($scope.idType == 'keyID' || $scope.idType == 'uuid')
 
     $scope.findOne = ->
-      return unless $scope.irisIndex
+      return unless $scope.irisSocialNetwork
       $scope.idAttr = new $window.irisLib.Attribute($scope.idType, $scope.idValue)
       $scope.idUrl = $scope.getIdUrl($scope.idType, $scope.idValue)
       $scope.isCurrentUser = $scope.authentication and
@@ -304,8 +304,10 @@ angular.module('irisAngular').controller 'IdentitiesController', [
         $scope.tabs[2].active = true if $scope.tabs
       if $state.is 'identities.show'
         $scope.setPageTitle $scope.idValue
-      $scope.identity = $scope.irisIndex.get($scope.idType, $scope.idValue) # , true)
-      $scope.setIdentityNames($scope.identity, false, true)
+      $scope.identity = $scope.irisSocialNetwork.getContacts
+        type: $scope.idType
+        value: $scope.idValue
+      $scope.setContactNames($scope.identity, false, true)
       $scope.identity.gun.on (data) ->
         $scope.identity.data = data
       $scope.getAttributes()
@@ -325,7 +327,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
       $scope.seenChatMessages = {}
       setUuidLastSeenTime = () ->
         time = new Date().toISOString()
-        $scope.irisIndex.gun.user().get('iris').get('chatMessagesByUuid').get($scope.idValue).get('msgsLastSeenTime').put(time)
+        $scope.irisSocialNetwork.gun.user().get('iris').get('chatMessagesByUuid').get($scope.idValue).get('msgsLastSeenTime').put(time)
       onMessage = (msg, info) ->
         $scope.$apply ->
           if msg.hash
@@ -365,11 +367,11 @@ angular.module('irisAngular').controller 'IdentitiesController', [
               text: text
               time: t
             $scope.chat.send(m)
-        $scope.irisIndex.getOnline $scope.idValue, (res) ->
+        $window.irisLib.Chat.getOnline $scope.gun, $scope.idValue, (res) ->
           $scope.isOnline = res.isOnline
           $scope.lastActive = res.lastActive unless res.isOnline
       if $scope.idType == 'uuid'
-        $scope.irisIndex.getChatMsgs($scope.idValue, {callback: onMessage})
+        $scope.irisSocialNetwork.getChatMsgs($scope.idValue, {callback: onMessage})
         $scope.sendChatMessage = (text) ->
           msg = {}
           msg.type = 'chat'
@@ -385,7 +387,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
           setUuidLastSeenTime()
 
     load = ->
-      if $scope.irisIndex
+      if $scope.irisSocialNetwork
         if $state.is('identities.show')
           $scope.findOne()
 
@@ -396,7 +398,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
         if $state.is('chats.show')
           $scope.findOne()
           loadChatMessages()
-    $scope.$watch 'irisIndex', load
+    $scope.$watch 'irisSocialNetwork', load
 
     $scope.qrScanSuccess = (data) ->
       a = data.split('/')

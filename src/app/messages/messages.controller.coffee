@@ -54,19 +54,19 @@ angular.module('irisAngular').controller 'MessagesController', [
           $scope.setPageTitle 'Message ' + hash
           $scope.setMsgRawData($scope.message)
           $scope.message.signerKeyID = $scope.message.getSignerKeyID()
-          $scope.message.verifiedBy = $scope.irisIndex.get('keyID', $scope.message.signerKeyID)
-          $scope.setIdentityNames($scope.message.verifiedBy, true)
+          $scope.message.verifiedBy = $scope.irisSocialNetwork.get('keyID', $scope.message.signerKeyID)
+          $scope.setContactNames($scope.message.verifiedBy, true)
           $scope.message.verifiedByAttr = new $window.irisLib.Attribute('keyID', $scope.message.signerKeyID)
           $scope.message.ipfsUri = hash if isIpfsHash
 
-        $scope.irisIndex.getMessageByHash(hash).then (m) ->
+        $scope.irisSocialNetwork.getMessageByHash(hash).then (m) ->
           $scope.$apply ->
             $scope.message = m
             processResponse()
 
     load = ->
-      return unless $scope.irisIndex
+      return unless $scope.irisSocialNetwork
       if $state.is('messages.show')
         $scope.findOne()
-    $scope.$watch 'irisIndex', load
+    $scope.$watch 'irisSocialNetwork', load
 ]

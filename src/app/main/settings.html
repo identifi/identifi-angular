@@ -165,7 +165,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr ng-repeat="i in trustedIndexes">
+            <tr ng-repeat="i in trustedSocialNetworkes">
               <td>
                 <identicon uib-tooltip="{{i.attribute.value}}" identity="i.attribute" class="mar-right5" border="3" width="30"></identicon>
                 <a ui-sref="identities.show({ type: i.attribute.type, value: i.attribute.value })">
@@ -181,8 +181,8 @@
             </tr>
             <tr>
               <td colspan="4">
-                <form class="form-inline" ng-submit="addTrustedIndex(trustedIndexKey)">
-                  <input class="form-control" type="text" placeholder="public key" ng-model="trustedIndexKey">
+                <form class="form-inline" ng-submit="addTrustedSocialNetwork(trustedSocialNetworkKey)">
+                  <input class="form-control" type="text" placeholder="public key" ng-model="trustedSocialNetworkKey">
                   <input class="btn btn-primary" type="submit" value="Add trusted index">
                 </form>
               </td>
@@ -198,7 +198,7 @@
       </div>
       <div class="panel-body">
         <p>
-          <pre ng-bind="irisIndex.options|json"></pre>
+          <pre ng-bind="irisSocialNetwork.options|json"></pre>
         </p>
       </div>
     </div>-->

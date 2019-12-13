@@ -58,7 +58,7 @@ angular.module('irisAngular').controller 'MainController', [
     $scope.getIdKey = (id) ->
       return encodeURIComponent(id.type) + ':' + encodeURIComponent(id.value)
 
-    $scope.defaultIndexKeyID = 'b8ByaYNBDCMLNdZqMdas5oUFLCxBf2VH3-NjUulDaTo.DVzINErRVs6m5tyjAux6fcNfndadcgZVN5hLSwYTCLc'
+    $scope.defaultSocialNetworkKeyID = 'b8ByaYNBDCMLNdZqMdas5oUFLCxBf2VH3-NjUulDaTo.DVzINErRVs6m5tyjAux6fcNfndadcgZVN5hLSwYTCLc'
     $scope.query = {}
     $scope.query.term = ''
     $scope.previousSearchKey = ''
@@ -97,7 +97,7 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.copyToClipboard 'https://iris.to' + $window.location.pathname + $window.location.hash, event
 
     $scope.search = (query, limit) ->
-      return unless $scope.irisIndex
+      return unless $scope.irisSocialNetwork
       q = query or $scope.query.term
       if q and q.trim().indexOf('https://iris.to/#/') == 0
         $window.location.href = q.replace('https://iris.to/', '')
@@ -105,6 +105,7 @@ angular.module('irisAngular').controller 'MainController', [
         return
       $scope.ids.activeKey = -1
       $scope.ids.list = []
+      $scope.ids.seen = {}
       searchKey = (query or $scope.query.term or '').toLowerCase().trim()
       $scope.searchKey = searchKey
       $scope.previousSearchKey = searchKey
@@ -112,22 +113,28 @@ angular.module('irisAngular').controller 'MainController', [
       cursor = ''
       if $scope.ids.list.length
         cursor = $scope.ids.list[$scope.ids.list.length - 1].cursor
-      seen = {}
 
       resultFound = (i) ->
         return if searchKey != $scope.searchKey
         i.gun.on (data) ->
           i.data = data
           i.gun.get('linkTo').on (linkTo) ->
-            return if i.linkTo or !linkTo
+            return if i.linkTo
+            return unless linkTo
+            return unless linkTo.type and linkTo.value
             s = linkTo.type + linkTo.value
-            return if seen[s]
-            seen[s] = true
+            return if $scope.ids.seen[s]
+            $scope.ids.seen[s] = true
             $scope.ids.list.push i
             i.linkTo = linkTo
-        $scope.setIdentityNames(i, true)
+        $scope.setContactNames(i, true)
 
-      $scope.irisIndex.search(searchKey, undefined, resultFound, limit, cursor)
+      $scope.irisSocialNetwork.getContacts
+        query: searchKey
+        type: undefined
+        callback: resultFound
+        limit: limit
+        cursor: cursor
       return new Promise (resolve) -> # TODO: uib-typeahead is limited, but something better pls
         setTimeout ->
           resolve($scope.ids.list)
@@ -202,22 +209,22 @@ angular.module('irisAngular').controller 'MainController', [
         , 30000
       return o
 
-    setIndex = (i) ->
-      i.setOnline(true) if (i.writable and not $scope.localSettings.publicOnlineStatusHidden)
+    setSocialNetwork = (i) ->
+      $window.irisLib.Chat.setOnline($scope.gun, true) if (i.writable and not $scope.localSettings.publicOnlineStatusHidden)
       i.ready.then ->
         $scope.ids.list = []
         $scope.msgs.list = []
         $scope.msgs.seen = {}
-        $scope.irisIndex = i
+        $scope.irisSocialNetwork = i
         setTimeout -> # for some reason, dist version fails to show messages and identities without this
           $scope.search()
           $scope.showMoreMsgs()
         , 1000
-        $scope.trustedIndexes = []
+        $scope.trustedSocialNetworkes = []
         $scope.chats = []
         $scope.chatKeys = {}
         if i.writable
-          $scope.irisIndex.gun.user().get('iris').get('chatMessagesByUuid').map().on (node, key) ->
+          $scope.irisSocialNetwork.gun.user().get('iris').get('chatMessagesByUuid').map().on (node, key) ->
             return if $scope.chatKeys['uuid' + key]
             $scope.chatKeys['uuid' + key] = true
             chat =
@@ -225,27 +232,27 @@ angular.module('irisAngular').controller 'MainController', [
               idType: 'uuid'
               latest: 0
               unreadMsgs: 0
-            $scope.irisIndex.gun.user().get('iris').get('chatMessagesByUuid').get(key).get('msgsLastSeenTime').on (time) ->
+            $scope.irisSocialNetwork.gun.user().get('iris').get('chatMessagesByUuid').get(key).get('msgsLastSeenTime').on (time) ->
               chat.myMsgsLastSeenTime = new Date(time)
             $scope.$apply ->
-              identity = $scope.irisIndex.get('uuid', key)
-              $scope.setIdentityNames identity
+              identity = $scope.irisSocialNetwork.getContacts({type: 'uuid', value: key})
+              $scope.setContactNames identity
               Object.assign chat, {identity}
               $scope.chats.push chat
               onMessage = (msg, info) ->
                 $scope.$apply ->
                   msg.getHash()
                   $scope.onChatMessage(msg, info, chat)
-              $scope.irisIndex.getChatMsgs(key, {callback: onMessage})
+              $scope.irisSocialNetwork.getChatMsgs(key, {callback: onMessage})
           timeout = 0
-          $scope.irisIndex.getChats (key) ->
+          $scope.irisSocialNetwork.getChats (key) ->
             return unless key
             return if $scope.chatKeys['keyID' + key]
             $scope.chatKeys['keyID' + key] = true
             setTimeout ->
               $scope.$apply ->
-                identity = $scope.irisIndex.get('keyID', key)
-                $scope.setIdentityNames identity
+                identity = $scope.irisSocialNetwork.get('keyID', key)
+                $scope.setContactNames identity
                 chat =
                   idValue: key
                   idType: 'keyID'
@@ -256,12 +263,12 @@ angular.module('irisAngular').controller 'MainController', [
                 $scope.chats.push(chat)
             , timeout # TODO lol fix
             timeout = timeout + 500
-        $scope.irisIndex.gun.get('trustedIndexes').open (r) ->
+        $scope.irisSocialNetwork.gun.get('trustedSocialNetworkes').open (r) ->
           for k, v of r
-            $scope.trustedIndexes.push
+            $scope.trustedSocialNetworkes.push
               index: k
               attribute: new $window.irisLib.Attribute('keyID', k)
-              identity: $scope.irisIndex.get('keyID', k)
+              identity: $scope.irisSocialNetwork.get('keyID', k)
         setTimeout () ->
           $scope.$broadcast('rzSliderForceRender')
         , 1000
@@ -271,21 +278,23 @@ angular.module('irisAngular').controller 'MainController', [
         setTimeout () ->
           $scope.$broadcast('rzSliderForceRender')
         , 5000 # :---D
-        console.log 'Got index', $scope.irisIndex
-        $scope.viewpoint.identity = $scope.irisIndex.get($scope.viewpoint.type, $scope.viewpoint.value)
-        $scope.setIdentityNames($scope.viewpoint.identity)
+        console.log 'Got index', $scope.irisSocialNetwork
+        $scope.viewpoint.identity = $scope.irisSocialNetwork.getContacts
+          type: $scope.viewpoint.type
+          value: $scope.viewpoint.value
+        $scope.setContactNames($scope.viewpoint.identity)
         $scope.viewpoint.identity.gun.get('attrs').open (attrs) ->
           $scope.viewpoint.attrs = attrs
-          $scope.viewpoint.mostVerifiedAttributes = $window.irisLib.Identity.getMostVerifiedAttributes(attrs)
+          $scope.viewpoint.mostVerifiedAttributes = $window.irisLib.Contact.getMostVerifiedAttributes(attrs)
 
-    $scope.loadDefaultIndex = ->
-      $scope.irisIndex = null
-      $scope.viewpoint = {type: 'keyID', value: $scope.defaultIndexKeyID}
-      i = new $window.irisLib.Index({gun: $scope.gun, pubKey: $scope.defaultIndexKeyID, ipfs: $scope.ipfs})
-      setIndex(i)
+    $scope.loadDefaultSocialNetwork = ->
+      $scope.irisSocialNetwork = null
+      $scope.viewpoint = {type: 'keyID', value: $scope.defaultSocialNetworkKeyID}
+      i = new $window.irisLib.SocialNetwork({gun: $scope.gun, pubKey: $scope.defaultSocialNetworkKeyID, ipfs: $scope.ipfs})
+      setSocialNetwork(i)
 
     $scope.loginWithKey = (privateKeySerialized, self, previouslyExisting) ->
-      $scope.irisIndex = null
+      $scope.irisSocialNetwork = null
       $scope.loggingIn = true
       $scope.privateKey = $window.irisLib.Key.fromString(privateKeySerialized)
       $scope.loginModal.close() if $scope.loginModal
@@ -302,13 +311,13 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.ids.list = []
       $scope.msgs.list = []
       $scope.msgs.seen = {}
-      i = new $window.irisLib.Index({gun: $scope.gun, keypair: $scope.privateKey, self, ipfs: $scope.ipfs, debug: true})
-      setIndex(i)
+      i = new $window.irisLib.SocialNetwork({gun: $scope.gun, keypair: $scope.privateKey, self, ipfs: $scope.ipfs, debug: true})
+      setSocialNetwork(i)
       i.ready.then ->
         $scope.loggingIn = false
-        $scope.authentication.identity = $scope.irisIndex.get('keyID', keyID)
+        $scope.authentication.identity = $scope.irisSocialNetwork.get('keyID', keyID)
         $scope.authentication.identity.gun.get('attrs').open (val, key, msg, eve) ->
-          mva = $window.irisLib.Identity.getMostVerifiedAttributes(val)
+          mva = $window.irisLib.Contact.getMostVerifiedAttributes(val)
           $scope.authentication.identity.mva = mva
           eve.off() if mva.profilePhoto
         startAt = new Date()
@@ -317,8 +326,8 @@ angular.module('irisAngular').controller 'MainController', [
           console.log 'you got a msg'
           $window.irisLib.Message.fromSig(m).then (msg) ->
             if new Date(msg.signedData.time||msg.signedData.timestamp) > startAt
-              author = msg.getAuthor($scope.irisIndex)
-              $scope.setIdentityNames(author).then (name) ->
+              author = msg.getAuthor($scope.irisSocialNetwork)
+              $scope.setContactNames(author).then (name) ->
                 NotificationService.create
                   type: 'post'
                   from: name
@@ -335,7 +344,7 @@ angular.module('irisAngular').controller 'MainController', [
     if privateKey
       $scope.loginWithKey(privateKey)
     else
-      $scope.loadDefaultIndex()
+      $scope.loadDefaultSocialNetwork()
 
     $scope.openChatModal = () ->
       $scope.openModal 'chatModal', { templateUrl: 'app/identities/chat.modal.html', size: 'md' }
@@ -382,7 +391,7 @@ angular.module('irisAngular').controller 'MainController', [
           $scope.closeProfileUploadNotification()
         $window.irisLib.Message.createVerification({recipient}, $scope.privateKey).then (m) ->
           $scope.hideProfilePhoto = true # There's a weird bug where the profile identicon doesn't update
-          $scope.irisIndex.addMessage(m).then ->
+          $scope.irisSocialNetwork.addMessage(m).then ->
             $scope.hideProfilePhoto = false
             if !$state.is 'identities.show'
               $state.go 'identities.show', { type: $scope.authentication.user.idType, value: $scope.authentication.user.idValue }
@@ -475,7 +484,7 @@ angular.module('irisAngular').controller 'MainController', [
           message = $window.irisLib.Message.create(msg, $scope.privateKey)
 
         message.then (m) ->
-          $scope.irisIndex.addMessage(m)
+          $scope.irisSocialNetwork.addMessage(m)
           $scope.msgs.seen[m.getHash()] = true
           $scope.processMessages([m])
         .then (messages) ->
@@ -557,7 +566,7 @@ angular.module('irisAngular').controller 'MainController', [
 
       $scope.filters.limit += limit
       if $scope.filters.limit > $scope.filteredMsgs.length
-        $scope.irisIndex.getMessagesByTimestamp(resultFound, undefined, cursor)
+        $scope.irisSocialNetwork.getMessagesByTimestamp(resultFound, undefined, cursor)
 
     $scope.uploadFile = (blob) ->
       return new Promise (resolve, reject) ->
@@ -609,7 +618,7 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.openModal('logoutModal', {templateUrl: 'app/main/logout.modal.html'})
 
     $scope.logout = ->
-      $scope.irisIndex.setOnline(false)
+      $window.irisLib.Chat.setOnline($scope.gun, false)
       $scope.filters.maxDistance = 0
       $scope.privateKeySerialized = ''
       $scope.authentication = {}
@@ -618,7 +627,7 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.privateKey = null
       $scope.publicKey = null
       $scope.logoutModal.close()
-      $scope.loadDefaultIndex()
+      $scope.loadDefaultSocialNetwork()
       $scope.localSettings = {}
 
     $scope.msgFilter = (msg, index, array) ->
@@ -669,11 +678,11 @@ angular.module('irisAngular').controller 'MainController', [
         if msg.liked
           msg.liked = false
           msg.likes = if msg.likes then msg.likes - 1 else 0
-          $scope.irisIndex.setReaction(msg, null)
+          $scope.irisSocialNetwork.setReaction(msg, null)
         else
           msg.liked = true
           msg.likes = if msg.likes then msg.likes + 1 else 1
-          $scope.irisIndex.setReaction(msg, 'like')
+          $scope.irisSocialNetwork.setReaction(msg, 'like')
       share: (msg) ->
         $scope.message = msg
         $scope.openModal 'shareModal', { templateUrl: 'app/messages/share.modal.html', size: 'md' }
@@ -696,15 +705,15 @@ angular.module('irisAngular').controller 'MainController', [
       $scope.message = message
       # TODO: check sig
       if message.signedData.recipient
-        $scope.message.recipient = $scope.message.getRecipient($scope.irisIndex)
+        $scope.message.recipient = $scope.message.getRecipient($scope.irisSocialNetwork)
         $scope.message.recipient.gun.get('attrs').open (d) ->
-          mva = $window.irisLib.Identity.getMostVerifiedAttributes(d)
+          mva = $window.irisLib.Contact.getMostVerifiedAttributes(d)
           if mva.name
             $scope.$apply -> $scope.message.recipient_name = mva.name.attribute.value
           else if mva.nickname
             $scope.$apply -> $scope.message.recipient_name = mva.nickname.attribute.value
       $scope.message.signerKeyID = $scope.message.getSignerKeyID()
-      $scope.message.verifiedBy = $scope.irisIndex.get('keyID', $scope.message.signerKeyID)
+      $scope.message.verifiedBy = $scope.irisSocialNetwork.get('keyID', $scope.message.signerKeyID)
       $scope.message.verifiedByAttr = new $window.irisLib.Attribute('keyID', $scope.message.signerKeyID)
       $scope.openModal('chatModal', {templateUrl: 'app/messages/show.modal.html', size})
 
@@ -720,7 +729,7 @@ angular.module('irisAngular').controller 'MainController', [
     $scope.processMessages = (messages, msgOptions = {}, options = {}) ->
       angular.forEach messages, (msg, key) ->
         msg[k] = v for k, v of msgOptions
-        msg.author = msg.getAuthor($scope.irisIndex)
+        msg.author = msg.getAuthor($scope.irisSocialNetwork)
         msg.author.gun.get('trustDistance').on (d) -> msg.authorTrustDistance = d
       return messages
 
@@ -736,12 +745,12 @@ angular.module('irisAngular').controller 'MainController', [
       return
 
     # should be moved to iris-lib?
-    $scope.setIdentityNames = (i, htmlSafe, setTitle) ->
+    $scope.setContactNames = (i, htmlSafe, setTitle) ->
       i.wellVerified = false
       return new Promise (resolve) ->
         i.gun.get('attrs').open (attrs) ->
           $scope.$apply ->
-            mva = $window.irisLib.Identity.getMostVerifiedAttributes(attrs)
+            mva = $window.irisLib.Contact.getMostVerifiedAttributes(attrs)
             if mva.name
               i.primaryName = mva.name.attribute.value
               i.hasProperName = true
@@ -842,9 +851,9 @@ angular.module('irisAngular').controller 'MainController', [
     $scope.setPublicOnlineStatusHidden = (hidden) ->
       $scope.saveLocalSetting('publicOnlineStatusHidden', hidden)
       if hidden
-        $scope.irisIndex.setOnline(false)
+        $window.irisLib.Chat.setOnline($scope.gun, false)
       else
-        $scope.irisIndex.setOnline(true)
+        $window.irisLib.Chat.setOnline($scope.gun, true)
 
     $scope.setAutoStartOnBootDisabled = (disabled) ->
       $scope.saveLocalSetting('autoStartOnBootDisabled', disabled)
