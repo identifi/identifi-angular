@@ -81981,12 +81981,14 @@ Gun.chain.unset = function(node){
 	      throw new Error('You must supply either opt.name or opt.class');
 	    }
 	    this.class = opt.class;
-	    if (this.class && !this.class.deserialize) {
-	      throw new Error('opt.class must have deserialize() method');
+	    this.serializer = opt.serializer;
+	    if (this.class && !this.class.deserialize && !this.serializer) {
+	      throw new Error('opt.class must have deserialize() method or opt.serializer must be defined');
 	    }
 	    this.name = opt.name || opt.class.name;
 	    this.gun = opt.gun;
 	    this.indexes = opt.indexes || [];
+	    this.indexer = opt.indexer;
 	    this.askPeers = typeof opt.askPeers === 'undefined' ? true : opt.askPeers;
 	  }
 
@@ -81996,14 +81998,20 @@ Gun.chain.unset = function(node){
 
 
 	  Collection.prototype.put = function put(object) {
+	    var opt = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
 	    var data = object;
-	    if (this.class) {
+	    if (this.serializer) {
+	      data = this.serializer.serialize(object);
+	    }if (this.class) {
 	      data = object.serialize();
 	    }
 	    // TODO: optionally use gun hash table
 	    var node = void 0;
-	    if (data.id) {
-	      node = this.gun.get(this.name).get('id').get(data.id).put(data); // TODO: use .top()
+	    if (opt.id || data.id) {
+	      node = this.gun.get(this.name).get('id').get(opt.id || data.id).put(data); // TODO: use .top()
+	    } else if (object.getId) {
+	      node = this.gun.get(this.name).get('id').get(object.getId()).put(data);
 	    } else {
 	      node = this.gun.get(this.name).get('id').set(data);
 	    }
@@ -82011,11 +82019,27 @@ Gun.chain.unset = function(node){
 	    return data.id || Gun.node.soul(node) || node._.link;
 	  };
 
-	  Collection.prototype._addToIndexes = function _addToIndexes(serializedObject, node) {
-	    for (var i = 0; i < this.indexes.length; i++) {
-	      if (Object.prototype.hasOwnProperty.call(serializedObject, this.indexes[i])) {
-	        var indexName = this.indexes[i];
-	        this.gun.get(this.name).get(indexName).get(serializedObject[indexName]).put(node);
+	  Collection.prototype._addToIndexes = async function _addToIndexes(serializedObject, node) {
+	    var _this = this;
+
+	    if (Gun.node.is(serializedObject)) {
+	      serializedObject = await serializedObject.open();
+	    }
+	    var addToIndex = function addToIndex(indexName, indexKey) {
+	      _this.gun.get(_this.name).get(indexName).get(indexKey).put(node);
+	    };
+	    if (this.indexer) {
+	      var customIndexes = await this.indexer(serializedObject);
+	      var customIndexKeys = _Object$keys(customIndexes);
+	      for (var i = 0; i < customIndexKeys; i++) {
+	        var key = customIndexKeys[i];
+	        addToIndex(key, customIndexes[key]);
+	      }
+	    }
+	    for (var _i = 0; _i < this.indexes.length; _i++) {
+	      var indexName = this.indexes[_i];
+	      if (Object.prototype.hasOwnProperty.call(serializedObject, indexName)) {
+	        addToIndex(indexName, serializedObject[indexName]);
 	      }
 	    }
 	  };
@@ -82028,7 +82052,7 @@ Gun.chain.unset = function(node){
 
 
 	  Collection.prototype.get = function get() {
-	    var _this = this;
+	    var _this2 = this;
 
 	    var opt = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
@@ -82036,7 +82060,7 @@ Gun.chain.unset = function(node){
 	      return;
 	    }
 	    var results = 0;
-	    var matcher = function matcher(data) {
+	    var matcher = function matcher(data, id, node) {
 	      if (!data) {
 	        return;
 	      }
@@ -82068,8 +82092,8 @@ Gun.chain.unset = function(node){
 	      if (opt.query) {
 	        // TODO: use gun.get() lt / gt operators
 	        var _keys = _Object$keys(opt.query);
-	        for (var _i = 0; _i < _keys.length; _i++) {
-	          var _key = _keys[_i];
+	        for (var _i2 = 0; _i2 < _keys.length; _i2++) {
+	          var _key = _keys[_i2];
 	          if (!Object.prototype.hasOwnProperty.call(data, _key)) {
 	            return;
 	          }
@@ -82087,8 +82111,10 @@ Gun.chain.unset = function(node){
 	          }
 	        }
 	      }
-	      if (_this.class) {
-	        opt.callback(_this.class.deserialize(data));
+	      if (_this2.serializer) {
+	        opt.callback(_this2.serializer.deserialize(data, { id: id, gun: node.$ }));
+	      } else if (_this2.class) {
+	        opt.callback(_this2.class.deserialize(data, { id: id, gun: node.$ }));
 	      } else {
 	        opt.callback(data);
 	      }
@@ -82109,7 +82135,7 @@ Gun.chain.unset = function(node){
 	    this.gun.get(this.name).get(indexName).map().on(matcher); // TODO: limit .open recursion
 	    if (this.askPeers) {
 	      this.gun.get('trustedIndexes').on(function (val, key) {
-	        _this.gun.user(key).get(_this.name).get(indexName).map().on(matcher);
+	        _this2.gun.user(key).get(_this2.name).get(indexName).map().on(matcher);
 	      });
 	    }
 	  };
@@ -94203,6 +94229,10 @@ Gun.chain.unset = function(node){
 	    return this.hash;
 	  };
 
+	  Message.prototype.getId = function getId() {
+	    return this.getHash();
+	  };
+
 	  Message.fromSig = async function fromSig(obj) {
 	    if (!obj.sig) {
 	      throw new Error('Missing signature in object:', obj);
@@ -94374,12 +94404,11 @@ Gun.chain.unset = function(node){
 	  /**
 	  * @param {Object} gun node where the Contact data lives
 	  */
-	  function Contact(gun, linkTo, index) {
+	  function Contact(gun, linkTo) {
 	    _classCallCheck(this, Contact);
 
 	    this.gun = gun;
 	    this.linkTo = linkTo;
-	    this.index = index;
 	  }
 
 	  Contact.create = function create(gun, data, index) {
@@ -94446,14 +94475,18 @@ Gun.chain.unset = function(node){
 	    return attrs || {};
 	  };
 
+	  Contact.prototype.getId = function getId() {
+	    return this.linkTo.value;
+	  };
+
 	  /**
 	  * Get sent Messages
 	  * @param {Object} options
 	  */
 
 
-	  Contact.prototype.sent = function sent(options) {
-	    this.index._getSentMsgs(this, options);
+	  Contact.prototype.sent = function sent(index, options) {
+	    index._getSentMsgs(this, options);
 	  };
 
 	  /**
@@ -94462,8 +94495,8 @@ Gun.chain.unset = function(node){
 	  */
 
 
-	  Contact.prototype.received = function received(options) {
-	    this.index._getReceivedMsgs(this, options);
+	  Contact.prototype.received = function received(index, options) {
+	    index._getReceivedMsgs(this, options);
 	  };
 
 	  /**
@@ -94716,6 +94749,15 @@ Gun.chain.unset = function(node){
 	    }
 
 	    return identicon$$1;
+	  };
+
+	  Contact.prototype.serialize = function serialize() {
+	    return this.gun;
+	  };
+
+	  Contact.deserialize = function deserialize(data, opt) {
+	    var linkTo = new Attribute({ type: 'uuid', value: opt.id });
+	    return new Contact(opt.gun, linkTo);
 	  };
 
 	  return Contact;
@@ -95258,7 +95300,7 @@ Gun.chain.unset = function(node){
 	    this.gun.get('messagesByHash').put(user.top('messagesByHash'));
 	    this.gun.get('messagesByDistance').put(user.top('messagesByDistance'));
 
-	    this.messages = new Collection({ gun: this.gun, class: Message });
+	    this.messages = new Collection({ gun: this.gun, class: Message, indexes: ['time', 'trustDistance'] });
 	    this.contacts = new Collection({ gun: this.gun, class: Contact });
 
 	    var uri = this.rootContact.uri();
@@ -95597,16 +95639,16 @@ Gun.chain.unset = function(node){
 	  SocialNetwork.prototype.getContacts = function getContacts() {
 	    var _this5 = this;
 
-	    var opts = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+	    var opt = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 	    // cursor // TODO: param 'exact', type param
-	    if (opts.value) {
-	      if (opts.type) {
-	        return this.getContact(opts.type, opts.value, opts.reload);
+	    if (opt.value) {
+	      if (opt.type) {
+	        return this.getContact(opt.type, opt.value, opt.reload);
 	      } else {
-	        return this.getContact(opts.value);
+	        return this.getContact(opt.value);
 	      }
 	    }
-	    opts.query = opts.query || '';
+	    opt.query = opt.query || '';
 	    var seen = {};
 	    function searchTermCheck(key) {
 	      var arr = key.split(':');
@@ -95615,17 +95657,17 @@ Gun.chain.unset = function(node){
 	      }
 	      var keyValue = arr[0];
 	      var keyType = arr[1];
-	      if (keyValue.indexOf(encodeURIComponent(opts.query)) !== 0) {
+	      if (keyValue.indexOf(encodeURIComponent(opt.query)) !== 0) {
 	        return false;
 	      }
-	      if (opts.type && keyType !== opts.type) {
+	      if (opt.type && keyType !== opt.type) {
 	        return false;
 	      }
 	      return true;
 	    }
 	    var node = this.gun.get('identitiesBySearchKey');
 	    node.map().on(function (id, key) {
-	      if (_Object$keys(seen).length >= opts.limit) {
+	      if (_Object$keys(seen).length >= opt.limit) {
 	        // TODO: turn off .map cb
 	        return;
 	      }
@@ -95637,14 +95679,14 @@ Gun.chain.unset = function(node){
 	        seen[soul] = true;
 	        var contact = new Contact(node.get(key), undefined, _this5);
 	        contact.cursor = key;
-	        opts.callback(contact);
+	        opt.callback(contact);
 	      }
 	    });
 	    if (this.options.indexSync.query.enabled) {
 	      this.gun.get('trustedIndexes').map().once(function (val, key) {
 	        if (val) {
 	          _this5.gun.user(key).get('iris').get('identitiesBySearchKey').map().on(function (id, k) {
-	            if (_Object$keys(seen).length >= opts.limit) {
+	            if (_Object$keys(seen).length >= opt.limit) {
 	              // TODO: turn off .map cb
 	              return;
 	            }
@@ -95654,7 +95696,7 @@ Gun.chain.unset = function(node){
 	            var soul = Gun.node.soul(id);
 	            if (soul && !Object.prototype.hasOwnProperty.call(seen, soul)) {
 	              seen[soul] = true;
-	              opts.callback(new Contact(_this5.gun.user(key).get('iris').get('identitiesBySearchKey').get(k), undefined, _this5));
+	              opt.callback(new Contact(_this5.gun.user(key).get('iris').get('identitiesBySearchKey').get(k), undefined, _this5));
 	            }
 	          });
 	        }
@@ -96005,8 +96047,7 @@ Gun.chain.unset = function(node){
 	    var _this10 = this;
 
 	    var maxMsgsToCrawl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.options.indexSync.importOnAdd.maxMsgCount;
-	    var maxMsgDistance = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : this.options.indexSync.importOnAdd.maxMsgDistance;
-
+	    // maxMsgDistance = this.options.indexSync.importOnAdd.maxMsgDistance
 	    if (gunUri === this.rootContact.value) {
 	      return;
 	    }
@@ -96018,17 +96059,15 @@ Gun.chain.unset = function(node){
 	    var msgs = [];
 	    if (this.options.indexSync.importOnAdd.enabled) {
 	      await util$1.timeoutPromise(new _Promise(function (resolve) {
-	        _this10.gun.user(gunUri).get('iris').get('messagesByDistance').map(function (val, key) {
-	          var d = _Number$parseInt(key.split(':')[0]);
-	          if (!isNaN(d) && d <= maxMsgDistance) {
-	            Message.fromSig(val).then(function (msg) {
-	              msgs.push(msg);
-	              if (msgs.length >= maxMsgsToCrawl) {
-	                resolve();
-	              }
-	            });
+	        var gun = _this10.gun.user(gunUri).get('iris');
+	        var callback = function callback(msg) {
+	          msgs.push(msg);
+	          if (msgs.length >= maxMsgsToCrawl) {
+	            resolve();
 	          }
-	        });
+	        };
+	        var messages = new Collection({ gun: gun, class: Message, indexes: ['trustDistance'] });
+	        messages.get({ callback: callback, orderBy: 'trustDistance', desc: false });
 	      }), 10000);
 	      this.debug('adding', msgs.length, 'msgs');
 	      this.addMessages(msgs);
@@ -96196,6 +96235,10 @@ Gun.chain.unset = function(node){
 	      this.gun.back(-1).get('messagesByHash').get(msg.signedData.sharedMsg).get('shares').get(hash).put(node);
 	    }
 	    start = new Date();
+
+	    this.messages.put(msg);
+
+	    // TODO: this should be moved to Collection
 	    var indexKeys = SocialNetwork.getMsgIndexKeys(msg);
 	    this.debug(new Date() - start, 'ms getMsgIndexKeys');
 	    for (var index in indexKeys) {
@@ -96213,6 +96256,7 @@ Gun.chain.unset = function(node){
 	        }
 	      }
 	    }
+
 	    if (this.options.ipfs) {
 	      try {
 	        var ipfsUri = await msg.saveToIpfs(this.options.ipfs);
@@ -96232,18 +96276,17 @@ Gun.chain.unset = function(node){
 	  };
 
 	  /**
-	  * @param {Object} opts {hash, orderBy, callback, limit, cursor, desc, filter}
+	  * Alias to socialNetwork.messages.get(opt) (but with opt.orderBy = 'time')
+	  * @param {Object} opt {hash, orderBy, callback, limit, cursor, desc, filter}
 	  */
 
 
-	  SocialNetwork.prototype.getMessages = async function getMessages(opts) {
-	    if (opts.hash) {
-	      return this.getMessageByHash(opts.hash);
+	  SocialNetwork.prototype.getMessages = async function getMessages(opt) {
+	    if (opt.hash) {
+	      return this.messages.get({ id: opt.hash });
 	    }
-	    if (opts.orderBy && opts.orderBy === 'trustDistance') {
-	      return this.getMessagesByDistance(opts.callback, opts.limit, opts.cursor, opts.desc, opts.filter);
-	    }
-	    return this.getMessagesByTimestamp(opts.callback, opts.limit, opts.cursor, opts.desc || true, opts.filter);
+	    opt.orderBy = opt.orderBy || 'time';
+	    return this.messages.get(opt);
 	  };
 
 	  /*
@@ -96475,7 +96518,7 @@ Gun.chain.unset = function(node){
 	  return SocialNetwork;
 	}();
 
-	var version$2 = "0.0.131";
+	var version$2 = "0.0.132";
 
 	/*eslint no-useless-escape: "off", camelcase: "off" */
 
