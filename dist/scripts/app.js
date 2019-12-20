@@ -678,6 +678,717 @@
 
 (function() {
   'use strict';
+  // Identities controller
+  angular.module('irisAngular').controller('IdentitiesController', [
+    '$scope',
+    '$state',
+    '$rootScope',
+    '$window',
+    '$document',
+    '$stateParams',
+    '$transitions',
+    '$location',
+    '$http',
+    '$q',
+    '$timeout',
+    '$uibModal',
+    // 'Authentication'
+    'config',
+    'localStorageService',
+    'focus',
+    'NotificationService',
+    function($scope,
+    $state,
+    $rootScope,
+    $window,
+    $document,
+    $stateParams,
+    $transitions,
+    $location,
+    $http,
+    $q,
+    $timeout,
+    $uibModal,
+    config,
+    localStorageService,
+    focus,
+    NotificationService) { //, Authentication
+      var checkEmptyChats,
+    load,
+    loadChatMessages,
+    s,
+    thumbsDownObj,
+    thumbsUpObj;
+      $scope.newEntry = {};
+      $scope.activeTab = 1;
+      $scope.activateTab = function(tabId) {
+        return $scope.activeTab = tabId;
+      };
+      $scope.sent = [];
+      $scope.received = {
+        list: [],
+        seen: {}
+      };
+      $scope.attributes = [];
+      thumbsUpObj = {};
+      thumbsDownObj = {};
+      $scope.thumbsUp = [];
+      $scope.thumbsDown = [];
+      $scope.verifications = [];
+      if ($stateParams.search) {
+        $scope.query.term = $stateParams.search;
+      }
+      $scope.newVerification = {
+        type: '',
+        value: ''
+      };
+      $scope.collapseLevel = {};
+      $scope.collapseFilters = $window.innerWidth < 992;
+      $scope.slider = {
+        options: {
+          floor: -3,
+          ceil: 3,
+          hidePointerLabels: true,
+          hideLimitLabels: true,
+          disableAnimation: true
+        }
+      };
+      s = $location.search();
+      if (s.share) {
+        $scope.share = true;
+      }
+      if (s.stream) {
+        $scope.stream = true;
+      }
+      if ($scope.query.term.length && $state.is('identities.list')) {
+        $scope.query.term = '';
+        $scope.search();
+      }
+      if ($state.is('identities.show')) {
+        $scope.filters.maxDistance = 0;
+        $scope.filters.type = null;
+        if ($scope.stream && !$scope.videoChatModal) {
+          $scope.openVideoChatModal();
+        }
+      }
+      $scope.addEntry = function(event,
+    entry) {
+        var linkTo,
+    params;
+        if (entry.email) {
+          linkTo = {
+            type: 'email',
+            value: entry.email
+          };
+        } else if (entry.url) {
+          linkTo = {
+            type: 'url',
+            value: entry.url
+          };
+        } else {
+          linkTo = $window.irisLib.Attribute.getUuid();
+          entry.uuid = linkTo.value;
+        }
+        params = {
+          type: 'verification',
+          recipient: entry
+        };
+        return $scope.createMessage(event,
+    params).then(function(response) {
+          return $state.go('identities.show',
+    linkTo);
+        },
+    function(error) {
+          return console.log("error",
+    error);
+        });
+      };
+      $scope.createChat = function(chatName) {
+        var msg,
+    uuid;
+        if (!(chatName && chatName.length > 0)) {
+          return;
+        }
+        uuid = $window.irisLib.Attribute.getUuid().value;
+        $scope.irisSocialNetwork.gun.user().get('iris').get('chatMessagesByUuid').get(uuid).put({});
+        msg = {
+          type: 'verification',
+          recipient: {
+            uuid: uuid,
+            name: chatName,
+            type: 'group'
+          }
+        };
+        $scope.createMessage(void 0,
+    msg);
+        return $state.go('chats.show',
+    {
+          type: 'uuid',
+          value: uuid
+        });
+      };
+      $scope.guessAttributeType = function() {
+        if ($scope.newVerification.value.length) {
+          $scope.newVerification.type = $window.irisLib.Attribute.guessTypeOf($scope.newVerification.value);
+          if (!$scope.newVerification.type) {
+            if (!$scope.newVerification.value.match(/\`|\~|\!|\@|\#|\$|\%|\^|\&|\*|\(|\)|\+|\=|\[|\{|\]|\}|\||\\|\'|\<|\,|\.|\>|\?|\/|\""|\;|\:/)) {
+              return $scope.newVerification.type = 'name';
+            }
+          }
+        } else {
+          return $scope.newVerification.type = '';
+        }
+      };
+      $scope.addName = function(name) {
+        var recipient;
+        if (name) {
+          recipient = {name};
+          recipient[$scope.idType] = $scope.idValue;
+          $window.irisLib.Message.createVerification({recipient},
+    $scope.privateKey).then(function(m) {
+            return $scope.irisSocialNetwork.addMessage(m);
+          });
+          return $scope.nameAdded = true;
+        } else {
+          $scope.addingName = true;
+          return focus('addNameFocus');
+        }
+      };
+      $scope.getAttributes = function() {
+        return $scope.identity.gun.get('attrs').open(function(attrs) {
+          var a,
+    alpha,
+    attributes,
+    c,
+    i,
+    len,
+    mostConfirmations,
+    percentage,
+    ref;
+          attributes = attrs || [];
+          if (attributes.length > 0) {
+            c = attributes[0];
+            mostConfirmations = c.verifications;
+          } else {
+            mostConfirmations = 1;
+          }
+          $scope.attributes = Object.values(attributes);
+          ref = $scope.attributes;
+          for (i = 0, len = ref.length; i < len; i++) {
+            a = ref[i];
+            if (!(a.type && a.value)) {
+              return;
+            }
+            a.attr = new $window.irisLib.Attribute(a.type,
+    a.value);
+            a.isCurrent = new $window.irisLib.Attribute($scope.idType,
+    $scope.idValue).equals(a.attr);
+            a.order = a.isCurrent ? 2e308 : (a.verifications || a.conf) - 2 * (a.unverifications || a.ref);
+            if (a.isCurrent) {
+              a.rowClass = 'cursor-default';
+            }
+            switch (a.type) {
+              case 'email':
+                a.iconStyle = 'glyphicon glyphicon-envelope';
+                a.btnStyle = 'btn-success';
+                a.link = 'mailto:' + a.value;
+                a.quickContact = true;
+                break;
+              case 'bitcoin_address':
+              case 'bitcoin':
+                a.iconStyle = 'fab fa-bitcoin';
+                a.btnStyle = 'btn-primary';
+                a.link = 'https://blockchain.info/address/' + a.value;
+                a.quickContact = true;
+                break;
+              case 'gpg_fingerprint':
+              case 'gpg_keyid':
+                a.iconStyle = 'fa fa-key';
+                a.btnStyle = 'btn-default';
+                a.link = 'https://pgp.mit.edu/pks/lookup?op=get&search=0x' + a.value;
+                break;
+              case 'account':
+                a.iconStyle = 'fa fa-at';
+                break;
+              case 'nickname':
+                $scope.identity.hasProperName = true;
+                a.iconStyle = 'glyphicon glyphicon-font';
+                break;
+              case 'name':
+                $scope.identity.hasProperName = true;
+                a.iconStyle = 'glyphicon glyphicon-font';
+                break;
+              case 'tel':
+              case 'phone':
+                a.iconStyle = 'glyphicon glyphicon-earphone';
+                a.btnStyle = 'btn-success';
+                a.link = 'tel:' + a.value;
+                a.quickContact = true;
+                break;
+              case 'keyID':
+                a.iconStyle = 'fa fa-key';
+                break;
+              case 'coverPhoto':
+                if (a.value.match(/^\/ipfs\/[1-9A-Za-z]{40,60}$/)) {
+                  $scope.ipfsGet(a.value).then(function(coverPhoto) {
+                    return $scope.coverPhoto = $scope.coverPhoto || {
+                      'background-image': 'url(data:image;base64,' + coverPhoto.toString('base64') + ')'
+                    };
+                  });
+                }
+                break;
+              case 'url':
+                a.link = a.value;
+                if (a.value.indexOf('facebook.com/') > -1) {
+                  a.iconStyle = 'fab fa-facebook';
+                  a.btnStyle = 'btn-facebook';
+                  a.link = a.value;
+                  a.linkName = a.value.split('facebook.com/')[1];
+                  a.quickContact = true;
+                } else if (a.value.indexOf('twitter.com/') > -1) {
+                  a.iconStyle = 'fab fa-twitter';
+                  a.btnStyle = 'btn-twitter';
+                  a.link = a.value;
+                  a.linkName = a.value.split('twitter.com/')[1];
+                  a.quickContact = true;
+                } else if (a.value.indexOf('plus.google.com/') > -1) {
+                  a.iconStyle = 'fab fa-google-plus';
+                  a.btnStyle = 'btn-google-plus';
+                  a.link = a.value;
+                  a.linkName = a.value.split('plus.google.com/')[1];
+                  a.quickContact = true;
+                } else if (a.value.indexOf('linkedin.com/') > -1) {
+                  a.iconStyle = 'fab fa-linkedin';
+                  a.btnStyle = 'btn-linkedin';
+                  a.link = a.value;
+                  a.linkName = a.value.split('linkedin.com/')[1];
+                  a.quickContact = true;
+                } else if (a.value.indexOf('github.com/') > -1) {
+                  a.iconStyle = 'fab fa-github';
+                  a.btnStyle = 'btn-github';
+                  a.link = a.value;
+                  a.linkName = a.value.split('github.com/')[1];
+                  a.quickContact = true;
+                } else {
+                  a.iconStyle = 'glyphicon glyphicon-link';
+                  a.btnStyle = 'btn-default';
+                }
+                break;
+              default:
+                a.iconStyle = 'glyphicon glyphicon-star';
+            }
+            if (a.value && a.value.match(/^\/ipfs\/[1-9A-Za-z]{40,60}$/)) {
+              a.link = 'https://ipfs.io' + a.value;
+              a.linkName = a.value;
+              a.iconStyle = 'glyphicon glyphicon-link';
+              a.btnStyle = 'btn-default';
+            }
+            if (a.verifications + a.unverifications > 0) {
+              percentage = a.verifications * 100 / (a.verifications + a.unverifications);
+              if (percentage >= 80) {
+                alpha = a.verifications / mostConfirmations * 0.7 + 0.3;
+              // a.rowStyle = 'background-color: rgba(223,240,216,' + alpha + ')'
+              } else if (percentage >= 60) {
+                a.rowClass = 'warning';
+              } else {
+                a.rowClass = 'danger';
+              }
+            }
+            $scope.hasQuickContacts = $scope.hasQuickContacts || a.quickContact;
+          }
+          return $scope.attributesLength = $scope.attributes.length;
+        });
+      };
+      $scope.attributeClicked = function(event,
+    attr) {
+        var a,
+    hasAttr1,
+    hasAttr2,
+    i,
+    j,
+    len,
+    len1,
+    msg,
+    ref,
+    ref1,
+    ref2;
+        if (attr.connectingMsgs) {
+          return attr.collapse = !attr.collapse;
+        } else {
+          attr.connectingMsgs = [];
+          ref = $scope.received.list;
+          for (i = 0, len = ref.length; i < len; i++) {
+            msg = ref[i];
+            if ((ref1 = msg.signedData.type) !== 'verification' && ref1 !== 'unverification' && ref1 !== 'verify_identity' && ref1 !== 'unverify_identity') {
+              continue;
+            }
+            hasAttr1 = hasAttr2 = false;
+            ref2 = msg.getRecipientArray();
+            for (j = 0, len1 = ref2.length; j < len1; j++) {
+              a = ref2[j];
+              hasAttr1 = hasAttr1 || a.type === attr.type && a.value === attr.value;
+              hasAttr2 = hasAttr2 || a.type === $scope.idType && a.value === $scope.idValue;
+              if (hasAttr1 && hasAttr2) {
+                attr.connectingMsgs.push(msg);
+                break;
+              }
+            }
+          }
+          return attr.collapse = !attr.collapse;
+        }
+      };
+      $scope.getSentMsgs = function() {
+        var callback,
+    cursor;
+        if (!($scope.identity && $scope.irisSocialNetwork)) {
+          return;
+        }
+        $scope.sent = [];
+        cursor = $scope.sent.length ? $scope.sent[$scope.sent.length - 1].cursor : '';
+        callback = function(msg) {
+          $scope.processMessages([msg],
+    {
+            authorIsSelf: true
+          });
+          return $scope.sent.push(msg);
+        };
+        return $scope.identity.sent({callback});
+      };
+      $scope.getReceivedMsgs = function() {
+        var callback,
+    cursor;
+        if (!($scope.identity && $scope.irisSocialNetwork)) {
+          return;
+        }
+        $scope.received = {
+          list: [],
+          seen: {}
+        };
+        cursor = $scope.received.list.length ? $scope.received.list[$scope.received.list.length - 1].cursor : '';
+        callback = function(msg) {
+          if ($scope.received.seen[msg.getHash()]) {
+            return;
+          }
+          $scope.processMessages([msg],
+    {
+            recipientIsSelf: true
+          });
+          return $scope.$apply(function() {
+            var a,
+    i,
+    len,
+    ref;
+            if (msg.isPositive()) {
+              if (!msg.linkToAuthor) {
+                msg.authorArray = msg.getAuthorArray();
+                ref = msg.authorArray;
+                for (i = 0, len = ref.length; i < len; i++) {
+                  a = ref[i];
+                  if (!msg.linkToAuthor) {
+                    msg.linkToAuthor = a;
+                  }
+                }
+              }
+              if ($scope.thumbsUp.length < 12 && !thumbsUpObj[JSON.stringify(msg.signedData.author)]) {
+                thumbsUpObj[JSON.stringify(msg.signedData.author)] = true;
+                $scope.thumbsUp.push(msg);
+                $scope.hasThumbsUp = true;
+              }
+            } else if (msg.isNegative() && $scope.thumbsDown.length < 12 && !thumbsDownObj[JSON.stringify(msg.signedData.author)]) {
+              thumbsDownObj[JSON.stringify(msg.signedData.author)] = true;
+              $scope.thumbsDown.push(msg);
+              $scope.hasThumbsDown = true;
+            }
+            $scope.received.list.push(msg);
+            return $scope.received.seen[msg.getHash()] = true;
+          });
+        };
+        return $scope.identity.received({callback,
+    cursor});
+      };
+      $scope.setFilters = function(filters) {
+        return angular.extend($scope.filters,
+    filters);
+      };
+      $scope.uploadCoverPhoto = function(blob,
+    identity) {
+        return $scope.uploadFile(blob).then(function(files) {
+          var recipient;
+          recipient = {
+            coverPhoto: '/ipfs/' + files[0].path
+          };
+          recipient[$scope.idType] = $scope.idValue;
+          return $window.irisLib.Message.createVerification({recipient},
+    $scope.privateKey).then(function(m) {
+            $scope.irisSocialNetwork.addMessage(m);
+            return $scope.uploadModal.close();
+          });
+        });
+      };
+      $scope.openSharePageModal = function() {
+        return $scope.openModal('sharePageModal',
+    {
+          templateUrl: 'app/identities/share.modal.html',
+          size: 'md'
+        });
+      };
+      $scope.openCoverPhotoUploadModal = function() {
+        if (!$scope.authentication.identity) {
+          return;
+        }
+        return $scope.openUploadModal($scope.uploadCoverPhoto,
+    'Upload cover photo',
+    false);
+      };
+      $scope.idType = $stateParams.type;
+      $scope.idValue = $stateParams.value;
+      $scope.showChatButton = !$scope.isCurrentUser && ($scope.idType === 'keyID' || $scope.idType === 'uuid');
+      $scope.findOne = function() {
+        if (!$scope.irisSocialNetwork) {
+          return;
+        }
+        $scope.idAttr = new $window.irisLib.Attribute($scope.idType,
+    $scope.idValue);
+        $scope.idUrl = $scope.getIdUrl($scope.idType,
+    $scope.idValue);
+        $scope.isCurrentUser = $scope.authentication && $scope.authentication.user && $scope.idType === $scope.authentication.user.idType && $scope.idValue === $scope.authentication.user.idValue;
+        if ($scope.isCurrentUser && $state.is('identities.show')) {
+          NotificationService.markPostsSeen();
+        }
+        if ($state.includes('chats')) {
+          NotificationService.markChatsSeen();
+        }
+        $scope.isUniqueType = function() {
+          return $window.irisLib.Attribute.isUniqueType($scope.idType) || $scope.idType === 'channel';
+        };
+        if (!$scope.isUniqueType) {
+          $state.go('identities.list',
+    {
+            search: $scope.idValue
+          });
+          if ($scope.tabs) {
+            $scope.tabs[2].active = true;
+          }
+        }
+        if ($state.is('identities.show')) {
+          $scope.setPageTitle($scope.idValue);
+        }
+        $scope.identity = $scope.irisSocialNetwork.getContacts({
+          type: $scope.idType,
+          value: $scope.idValue
+        });
+        $scope.setContactNames($scope.identity,
+    false,
+    true);
+        $scope.identity.gun.on(function(data) {
+          return $scope.identity.data = data;
+        });
+        $scope.getAttributes();
+        $scope.getSentMsgs();
+        $scope.getReceivedMsgs();
+        return $scope.identity.gun.get('scores').open(function(scores) {
+          return $scope.scores = scores;
+        });
+      };
+      checkEmptyChats = function() { // hack for resetting broken chats
+        var chat,
+    i,
+    len,
+    ref,
+    results;
+        ref = $scope.chats;
+        results = [];
+        for (i = 0, len = ref.length; i < len; i++) {
+          chat = ref[i];
+          if (chat.idType === 'keyID' && chat.chat && !chat.latest) {
+            results.push(chat.chat = $scope.getPrivateChat(chat));
+          } else {
+            results.push(void 0);
+          }
+        }
+        return results;
+      };
+      loadChatMessages = function() {
+        var onMessage,
+    setUuidLastSeenTime,
+    visibilityChanged;
+        checkEmptyChats();
+        $scope.chatMessages = [];
+        $scope.seenChatMessages = {};
+        setUuidLastSeenTime = function() {
+          var time;
+          time = new Date().toISOString();
+          return $scope.irisSocialNetwork.gun.user().get('iris').get('chatMessagesByUuid').get($scope.idValue).get('msgsLastSeenTime').put(time);
+        };
+        onMessage = function(msg,
+    info) {
+          return $scope.$apply(function() {
+            if (msg.hash) {
+              if ($scope.seenChatMessages[msg.hash]) {
+                return;
+              }
+              $scope.seenChatMessages[msg.hash] = true;
+            }
+            msg.selfAuthored = info && info.selfAuthored;
+            if (msg) {
+              $scope.chatMessages.push(msg);
+            }
+            if ($scope.idType === 'uuid') {
+              setUuidLastSeenTime();
+            }
+            if ($scope.chat) {
+              if ((msg.time > $scope.chat.myMsgsLastSeenTime) && !$document.hidden) {
+                $scope.chat.setMyMsgsLastSeenTime();
+              }
+              if (!($scope.chat.repliedByThem || info.selfAuthored)) {
+                return $scope.chat.repliedByThem = true;
+              }
+            }
+          });
+        };
+        if ($scope.idType === 'keyID') {
+          if ($scope.authentication.user) {
+            $scope.chat = new $window.irisLib.Chat({
+              onMessage: onMessage,
+              key: $scope.privateKey,
+              gun: $scope.gun,
+              participants: $scope.idValue
+            });
+            $scope.chat.seen = {};
+            visibilityChanged = function() {
+              if ($document.visibilityState === 'visible') {
+                return $scope.chat.setMyMsgsLastSeenTime();
+              }
+            };
+            $document.on('visibilitychange',
+    visibilityChanged);
+            $scope.$on('$destroy',
+    function() {
+              return $document.off('visibilitychange',
+    visibilityChanged);
+            });
+            $scope.chat.setMyMsgsLastSeenTime();
+            $scope.chat.getMyMsgsLastSeenTime(function(time) {
+              return $scope.$apply(function() {
+                return $scope.chat.myMsgsLastSeenTime = time;
+              });
+            });
+            $scope.chat.getTheirMsgsLastSeenTime(function(time) {
+              return $scope.$apply(function() {
+                return $scope.chat.theirMsgsLastSeenTime = time;
+              });
+            });
+            $scope.sendChatMessage = function(text) {
+              var m,
+    t;
+              t = new Date().toISOString();
+              m = {
+                author: $scope.viewpoint.identity.primaryName,
+                text: text,
+                time: t
+              };
+              return $scope.chat.send(m);
+            };
+          }
+          $window.irisLib.Chat.getOnline($scope.gun,
+    $scope.idValue,
+    function(res) {
+            $scope.isOnline = res.isOnline;
+            if (!res.isOnline) {
+              return $scope.lastActive = res.lastActive;
+            }
+          });
+        }
+        if ($scope.idType === 'uuid') {
+          $scope.irisSocialNetwork.getChatMsgs($scope.idValue,
+    {
+            callback: onMessage
+          });
+          $scope.sendChatMessage = function(text) {
+            var msg;
+            msg = {};
+            msg.type = 'chat';
+            msg.text = text;
+            msg.recipient = {
+              uuid: $scope.idValue
+            };
+            $scope.createMessage(void 0,
+    msg);
+            return console.log('send public chat msg',
+    msg);
+          };
+          if ($scope.authentication.user) {
+            visibilityChanged = function() {
+              if ($document.visibilityState === 'visible') {
+                return setUuidLastSeenTime();
+              }
+            };
+            $document.on('visibilitychange',
+    visibilityChanged);
+            return setUuidLastSeenTime();
+          }
+        }
+      };
+      load = function() {
+        if ($scope.irisSocialNetwork) {
+          if ($state.is('identities.show')) {
+            $scope.findOne();
+          }
+          if ($state.is('identities.create')) {
+            focus('idNameFocus');
+            $scope.newEntry.name = $scope.capitalizeWords($scope.query.term);
+          }
+          if ($state.is('chats.show')) {
+            $scope.findOne();
+            return loadChatMessages();
+          }
+        }
+      };
+      $scope.$watch('irisSocialNetwork',
+    load);
+      $scope.qrScanSuccess = function(data) {
+        var a,
+    json,
+    type,
+    value;
+        a = data.split('/');
+        if (a.length > 4) {
+          type = decodeURIComponent(a[a.length - 2]);
+          value = decodeURIComponent(a[a.length - 1].split('?')[0]);
+          console.log('value',
+    value);
+          console.log('data',
+    data);
+          return $state.go('identities.show',
+    {type,
+    value});
+        } else {
+          json = JSON.parse(data);
+          console.log('read qr json',
+    json);
+          if (json.priv && json.epriv && !$scope.authentication.user) {
+            return $scope.loginWithKey(data,
+    void 0,
+    true);
+          } else {
+            return console.log('Unrecognized identity url',
+    data);
+          }
+        }
+      };
+      return $scope.qrScanError = function(e) {};
+    }
+  ]);
+
+  // this is called each time a QR code is not found on the camera
+// console.error e
+
+}).call(this);
+
+//# sourceMappingURL=data:application/json;charset=utf8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaWRlbnRpdGllcy9pZGVudGl0aWVzLmNvbnRyb2xsZXIuanMiLCJzb3VyY2VzIjpbImlkZW50aXRpZXMvaWRlbnRpdGllcy5jb250cm9sbGVyLmNvZmZlZSJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiQUFBQTtFQUFBLGFBQUE7O0VBRUEsT0FBTyxDQUFDLE1BQVIsQ0FBZSxhQUFmLENBQTZCLENBQUMsVUFBOUIsQ0FBeUMsc0JBQXpDLEVBQWlFO0lBQy9ELFFBRCtEO0lBRS9ELFFBRitEO0lBRy9ELFlBSCtEO0lBSS9ELFNBSitEO0lBSy9ELFdBTCtEO0lBTS9ELGNBTitEO0lBTy9ELGNBUCtEO0lBUS9ELFdBUitEO0lBUy9ELE9BVCtEO0lBVS9ELElBVitEO0lBVy9ELFVBWCtEO0lBWS9ELFdBWitEOztJQWMvRCxRQWQrRDtJQWUvRCxxQkFmK0Q7SUFnQi9ELE9BaEIrRDtJQWlCL0QscUJBakIrRDtJQWtCL0QsUUFBQSxDQUFDLE1BQUQ7SUFBUyxNQUFUO0lBQWlCLFVBQWpCO0lBQTZCLE9BQTdCO0lBQXNDLFNBQXRDO0lBQWlELFlBQWpEO0lBQStELFlBQS9EO0lBQTZFLFNBQTdFO0lBQXdGLEtBQXhGO0lBQStGLEVBQS9GO0lBQW1HLFFBQW5HO0lBQTZHLFNBQTdHO0lBQXdILE1BQXhIO0lBQ0EsbUJBREE7SUFDcUIsS0FEckI7SUFDNEIsbUJBRDVCLENBQUEsRUFBQTtBQUVFLFVBQUEsZUFBQTtJQUFBLElBQUE7SUFBQSxnQkFBQTtJQUFBLENBQUE7SUFBQSxhQUFBO0lBQUE7TUFBQSxNQUFNLENBQUMsUUFBUCxHQUFrQixDQUFBO01BQ2xCLE1BQU0sQ0FBQyxTQUFQLEdBQW1CO01BQ25CLE1BQU0sQ0FBQyxXQUFQLEdBQXFCLFFBQUEsQ0FBQyxLQUFELENBQUE7ZUFBVyxNQUFNLENBQUMsU0FBUCxHQUFtQjtNQUE5QjtNQUNyQixNQUFNLENBQUMsSUFBUCxHQUFjO01BQ2QsTUFBTSxDQUFDLFFBQVAsR0FDRTtRQUFBLElBQUEsRUFBTSxFQUFOO1FBQ0Es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Q0FBQyxJQUExRDttQkFDRSxNQUFNLENBQUMsWUFBUCxDQUFvQixJQUFwQjtJQUEwQixNQUExQjtJQUFxQyxJQUFyQyxFQURGO1dBQUEsTUFBQTttQkFHRSxPQUFPLENBQUMsR0FBUixDQUFZLDJCQUFaO0lBQXlDLElBQXpDLEVBSEY7V0FURjs7TUFGcUI7YUFldkIsTUFBTSxDQUFDLFdBQVAsR0FBcUIsUUFBQSxDQUFDLENBQUQsQ0FBQSxFQUFBO0lBN1l2QixDQWxCK0Q7R0FBakU7O0VBRkE7O0FBQUEiLCJzb3VyY2VzQ29udGVudCI6WyIndXNlIHN0cmljdCdcbiMgSWRlbnRpdGllcyBjb250cm9sbGVyXG5hbmd1bGFyLm1vZHVsZSgnaXJpc0FuZ3VsYXInKS5jb250cm9sbGVyICdJZGVudGl0aWVzQ29udHJvbGxlcicsIFtcbiAgJyRzY29wZSdcbiAgJyRzdGF0ZSdcbiAgJyRyb290U2NvcGUnXG4gICckd2luZG93J1xuICAnJGRvY3VtZW50J1xuICAnJHN0YXRlUGFyYW1zJ1xuICAnJHRyYW5zaXRpb25zJ1xuICAnJGxvY2F0aW9uJ1xuICAnJGh0dHAnXG4gICckcSdcbiAgJyR0aW1lb3V0J1xuICAnJHVpYk1vZGFsJ1xuICAjICdBdXRoZW50aWNhdGlvbidcbiAgJ2NvbmZpZydcbiAgJ2xvY2FsU3RvcmFnZVNlcnZpY2UnXG4gICdmb2N1cydcbiAgJ05vdGlmaWNhdGlvblNlcnZpY2UnXG4gICgkc2NvcGUsICRzdGF0ZSwgJHJvb3RTY29wZSwgJHdpbmRvdywgJGRvY3VtZW50LCAkc3RhdGVQYXJhbXMsICR0cmFuc2l0aW9ucywgJGxvY2F0aW9uLCAkaHR0cCwgJHEsICR0aW1lb3V0LCAkdWliTW9kYWwsIGNvbmZpZyxcbiAgbG9jYWxTdG9yYWdlU2VydmljZSwgZm9jdXMsIE5vdGlmaWNhdGlvblNlcnZpY2UpIC0+ICMsIEF1dGhlbnRpY2F0aW9uXG4gICAgJHNjb3BlLm5ld0VudHJ5ID0ge31cbiAgICAkc2NvcGUuYWN0aXZlVGFiID0gMVxuICAgICRzY29wZS5hY3RpdmF0ZVRhYiA9ICh0YWJJZCkgLT4gJHNjb3BlLmFjdGl2ZVRhYiA9IHRhYklkXG4gICAgJHNjb3BlLnNlbnQgPSBbXVxuICAgICRzY29wZS5yZWNlaXZlZCA9XG4gICAgICBsaXN0OiBbXVxuICAgICAgc2Vlbjoge31cbiAgICAkc2NvcGUuYXR0cmlidXRlcyA9IFtdXG4gICAgdGh1bWJzVXBPYmogPSB7fVxuICAgIHRodW1ic0Rvd25PYmogPSB7fVxuICAgICRzY29wZS50aHVtYnNVcCA9IFtdXG4gICAgJHNjb3BlLnRodW1ic0Rvd24gPSBbXVxuICAgICRzY29wZS52ZXJpZmljYXRpb25zID0gW11cbiAgICAkc2NvcGUucXVlcnkudGVybSA9ICRzdGF0ZVBhcmFtcy5zZWFyY2ggaWYgJHN0YXRlUGFyYW1zLnNlYXJjaFxuICAgICRzY29wZS5uZXdWZXJpZmljYXRpb24gPVxuICAgICAgdHlwZTogJydcbiAgICAgIHZhbHVlOiAnJ1xuICAgICRzY29wZS5jb2xsYXBzZUxldmVsID0ge31cbiAgICAkc2NvcGUuY29sbGFwc2VGaWx0ZXJzID0gJHdpbmRvdy5pbm5lcldpZHRoIDwgOTkyXG4gICAgJHNjb3BlLnNsaWRlciA9XG4gICAgICBvcHRpb25zOlxuICAgICAgICBmbG9vcjogLTNcbiAgICAgICAgY2VpbDogM1xuICAgICAgICBoaWRlUG9pbnRlckxhYmVsczogdHJ1ZVxuICAgICAgICBoaWRlTGltaXRMYWJlbHM6IHRydWVcbiAgICAgICAgZGlzYWJsZUFuaW1hdGlvbjogdHJ1ZVxuXG4gICAgcyA9ICRsb2NhdGlvbi5zZWFyY2goKVxuICAgICRzY29wZS5zaGFyZSA9IHRydWUgaWYgcy5zaGFyZVxuICAgICRzY29wZS5zdHJlYW0gPSB0cnVlIGlmIHMuc3RyZWFtXG5cbiAgICBpZiAkc2NvcGUucXVlcnkudGVybS5sZW5ndGggYW5kICRzdGF0ZS5pcyAnaWRlbnRpdGllcy5saXN0J1xuICAgICAgJHNjb3BlLnF1ZXJ5LnRlcm0gPSAnJ1xuICAgICAgJHNjb3BlLnNlYXJjaCgpXG5cbiAgICBpZiAkc3RhdGUuaXMgJ2lkZW50aXRpZXMuc2hvdydcbiAgICAgICRzY29wZS5maWx0ZXJzLm1heERpc3RhbmNlID0gMFxuICAgICAgJHNjb3BlLmZpbHRlcnMudHlwZSA9IG51bGxcbiAgICAgICRzY29wZS5vcGVuVmlkZW9DaGF0TW9kYWwoKSBpZiAkc2NvcGUuc3RyZWFtIGFuZCBub3QgJHNjb3BlLnZpZGVvQ2hhdE1vZGFsXG5cbiAgICAkc2NvcGUuYWRkRW50cnkgPSAoZXZlbnQsIGVudHJ5KSAtPlxuICAgICAgaWYgZW50cnkuZW1haWxcbiAgICAgICAgbGlua1RvID0ge3R5cGU6J2VtYWlsJywgdmFsdWU6IGVudHJ5LmVtYWlsfVxuICAgICAgZWxzZSBpZiBlbnRyeS51cmxcbiAgICAgICAgbGlua1RvID0ge3R5cGU6J3VybCcsIHZhbHVlOiBlbnRyeS51cmx9XG4gICAgICBlbHNlXG4gICAgICAgIGxpbmtUbyA9ICR3aW5kb3cuaXJpc0xpYi5BdHRyaWJ1dGUuZ2V0VXVpZCgpXG4gICAgICAgIGVudHJ5LnV1aWQgPSBsaW5rVG8udmFsdWVcbiAgICAgIHBhcmFtcyA9XG4gICAgICAgIHR5cGU6ICd2ZXJpZmljYXRpb24nXG4gICAgICAgIHJlY2lwaWVudDogZW50cnlcbiAgICAgICRzY29wZS5jcmVhdGVNZXNzYWdlKGV2ZW50LCBwYXJhbXMpLnRoZW4gKHJlc3BvbnNlKSAtPlxuICAgICAgICAkc3RhdGUuZ28gJ2lkZW50aXRpZXMuc2hvdycsIGxpbmtUb1xuICAgICAgLCAoZXJyb3IpIC0+XG4gICAgICAgIGNvbnNvbGUubG9nIFwiZXJyb3JcIiwgZXJyb3JcblxuICAgICRzY29wZS5jcmVhdGVDaGF0ID0gKGNoYXROYW1lKSAtPlxuICAgICAgcmV0dXJuIHVubGVzcyBjaGF0TmFtZSBhbmQgY2hhdE5hbWUubGVuZ3RoID4gMFxuICAgICAgdXVpZCA9ICR3aW5kb3cuaXJpc0xpYi5BdHRyaWJ1dGUuZ2V0VXVpZCgpLnZhbHVlXG4gICAgICAkc2NvcGUuaXJpc1NvY2lhbE5ldHdvcmsuZ3VuLnVzZXIoKS5nZXQoJ2lyaXMnKS5nZXQoJ2NoYXRNZXNzYWdlc0J5VXVpZCcpLmdldCh1dWlkKS5wdXQoe30pXG4gICAgICBtc2cgPVxuICAgICAgICB0eXBlOiAndmVyaWZpY2F0aW9uJ1xuICAgICAgICByZWNpcGllbnQ6XG4gICAgICAgICAgdXVpZDogdXVpZFxuICAgICAgICAgIG5hbWU6IGNoYXROYW1lXG4gICAgICAgICAgdHlwZTogJ2dyb3VwJ1xuICAgICAgJHNjb3BlLmNyZWF0ZU1lc3NhZ2UodW5kZWZpbmVkLCBtc2cpXG4gICAgICAkc3RhdGUuZ28gJ2NoYXRzLnNob3cnLCB7IHR5cGU6ICd1dWlkJywgdmFsdWU6IHV1aWQgfVxuXG4gICAgJHNjb3BlLmd1ZXNzQXR0cmlidXRlVHlwZSA9IC0+XG4gICAgICBpZiAkc2NvcGUubmV3VmVyaWZpY2F0aW9uLnZhbHVlLmxlbmd0aFxuICAgICAgICAkc2NvcGUubmV3VmVyaWZpY2F0aW9uLnR5cGUgPSAkd2luZG93LmlyaXNMaWIuQXR0cmlidXRlLmd1ZXNzVHlwZU9mKCRzY29wZS5uZXdWZXJpZmljYXRpb24udmFsdWUpXG4gICAgICAgIHVubGVzcyAkc2NvcGUubmV3VmVyaWZpY2F0aW9uLnR5cGVcbiAgICAgICAgICB1bmxlc3MgJHNjb3BlLm5ld1ZlcmlmaWNhdGlvbi52YWx1ZS5tYXRjaCAvXFxgfFxcfnxcXCF8XFxAfFxcI3xcXCR8XFwlfFxcXnxcXCZ8XFwqfFxcKHxcXCl8XFwrfFxcPXxcXFt8XFx7fFxcXXxcXH18XFx8fFxcXFx8XFwnfFxcPHxcXCx8XFwufFxcPnxcXD98XFwvfFxcXCJcInxcXDt8XFw6L1xuICAgICAgICAgICAgJHNjb3BlLm5ld1ZlcmlmaWNhdGlvbi50eXBlID0gJ25hbWUnXG4gICAgICBlbHNlXG4gICAgICAgICRzY29wZS5uZXdWZXJpZmljYXRpb24udHlwZSA9ICcnXG5cbiAgICAkc2NvcGUuYWRkTmFtZSA9IChuYW1lKSAtPlxuICAgICAgaWYgbmFtZVxuICAgICAgICByZWNpcGllbnQgPSB7bmFtZX1cbiAgICAgICAgcmVjaXBpZW50WyRzY29wZS5pZFR5cGVdID0gJHNjb3BlLmlkVmFsdWVcbiAgICAgICAgJHdpbmRvdy5pcmlzTGliLk1lc3NhZ2UuY3JlYXRlVmVyaWZpY2F0aW9uKHtyZWNpcGllbnR9LCAkc2NvcGUucHJpdmF0ZUtleSkudGhlbiAobSkgLT5cbiAgICAgICAgICAkc2NvcGUuaXJpc1NvY2lhbE5ldHdvcmsuYWRkTWVzc2FnZShtKVxuICAgICAgICAkc2NvcGUubmFtZUFkZGVkID0gdHJ1ZVxuICAgICAgZWxzZVxuICAgICAgICAkc2NvcGUuYWRkaW5nTmFtZSA9IHRydWVcbiAgICAgICAgZm9jdXMoJ2FkZE5hbWVGb2N1cycpXG5cbiAgICAkc2NvcGUuZ2V0QXR0cmlidXRlcyA9IC0+XG4gICAgICAkc2NvcGUuaWRlbnRpdHkuZ3VuLmdldCgnYXR0cnMnKS5vcGVuIChhdHRycykgLT5cbiAgICAgICAgYXR0cmlidXRlcyA9IGF0dHJzIG9yIFtdXG4gICAgICAgIGlmIGF0dHJpYnV0ZXMubGVuZ3RoID4gMFxuICAgICAgICAgIGMgPSBhdHRyaWJ1dGVzWzBdXG4gICAgICAgICAgbW9zdENvbmZpcm1hdGlvbnMgPSBjLnZlcmlmaWNhdGlvbnNcbiAgICAgICAgZWxzZVxuICAgICAgICAgIG1vc3RDb25maXJtYXRpb25zID0gMVxuICAgICAgICAkc2NvcGUuYXR0cmlidXRlcyA9IE9iamVjdC52YWx1ZXMoYXR0cmlidXRlcylcbiAgICAgICAgZm9yIGEgaW4gJHNjb3BlLmF0dHJpYnV0ZXNcbiAgICAgICAgICByZXR1cm4gdW5sZXNzIGEudHlwZSBhbmQgYS52YWx1ZVxuICAgICAgICAgIGEuYXR0ciA9IG5ldyAkd2luZG93LmlyaXNMaWIuQXR0cmlidXRlKGEudHlwZSwgYS52YWx1ZSlcbiAgICAgICAgICBhLmlzQ3VycmVudCA9IG5ldyAkd2luZG93LmlyaXNMaWIuQXR0cmlidXRlKCRzY29wZS5pZFR5cGUsICRzY29wZS5pZFZhbHVlKS5lcXVhbHMoYS5hdHRyKVxuICAgICAgICAgIGEub3JkZXIgPSBpZiBhLmlzQ3VycmVudCB0aGVuIEluZmluaXR5IGVsc2UgKGEudmVyaWZpY2F0aW9ucyBvciBhLmNvbmYpIC0gMiAqIChhLnVudmVyaWZpY2F0aW9ucyBvciBhLnJlZilcbiAgICAgICAgICBhLnJvd0NsYXNzID0gJ2N1cnNvci1kZWZhdWx0JyBpZiBhLmlzQ3VycmVudFxuICAgICAgICAgIHN3aXRjaCBhLnR5cGVcbiAgICAgICAgICAgIHdoZW4gJ2VtYWlsJ1xuICAgICAgICAgICAgICBhLmljb25TdHlsZSA9ICdnbHlwaGljb24gZ2x5cGhpY29uLWVudmVsb3BlJ1xuICAgICAgICAgICAgICBhLmJ0blN0eWxlID0gJ2J0bi1zdWNjZXNzJ1xuICAgICAgICAgICAgICBhLmxpbmsgPSAnbWFpbHRvOicgKyBhLnZhbHVlXG4gICAgICAgICAgICAgIGEucXVpY2tDb250YWN0ID0gdHJ1ZVxuICAgICAgICAgICAgd2hlbiAnYml0Y29pbl9hZGRyZXNzJywgJ2JpdGNvaW4nXG4gICAgICAgICAgICAgIGEuaWNvblN0eWxlID0gJ2ZhYiBmYS1iaXRjb2luJ1xuICAgICAgICAgICAgICBhLmJ0blN0eWxlID0gJ2J0bi1wcmltYXJ5J1xuICAgICAgICAgICAgICBhLmxpbmsgPSAnaHR0cHM6Ly9ibG9ja2NoYWluLmluZm8vYWRkcmVzcy8nICsgYS52YWx1ZVxuICAgICAgICAgICAgICBhLnF1aWNrQ29udGFjdCA9IHRydWVcbiAgICAgICAgICAgIHdoZW4gJ2dwZ19maW5nZXJwcmludCcsICdncGdfa2V5aWQnXG4gICAgICAgICAgICAgIGEuaWNvblN0eWxlID0gJ2ZhIGZhLWtleSdcbiAgICAgICAgICAgICAgYS5idG5TdHlsZSA9ICdidG4tZGVmYXVsdCdcbiAgICAgICAgICAgICAgYS5saW5rID0gJ2h0dHBzOi8vcGdwLm1pdC5lZHUvcGtzL2xvb2t1cD9vcD1nZXQmc2VhcmNoPTB4JyArIGEudmFsdWVcbiAgICAgICAgICAgIHdoZW4gJ2FjY291bnQnXG4gICAgICAgICAgICAgIGEuaWNvblN0eWxlID0gJ2ZhIGZhLWF0J1xuICAgICAgICAgICAgd2hlbiAnbmlja25hbWUnXG4gICAgICAgICAgICAgICRzY29wZS5pZGVudGl0eS5oYXNQcm9wZXJOYW1lID0gdHJ1ZVxuICAgICAgICAgICAgICBhLmljb25TdHlsZSA9ICdnbHlwaGljb24gZ2x5cGhpY29uLWZvbnQnXG4gICAgICAgICAgICB3aGVuICduYW1lJ1xuICAgICAgICAgICAgICAkc2NvcGUuaWRlbnRpdHkuaGFzUHJvcGVyTmFtZSA9IHRydWVcbiAgICAgICAgICAgICAgYS5pY29uU3R5bGUgPSAnZ2x5cGhpY29uIGdseXBoaWNvbi1mb250J1xuICAgICAgICAgICAgd2hlbiAndGVsJywgJ3Bob25lJ1xuICAgICAgICAgICAgICBhLmljb25TdHlsZSA9ICdnbHlwaGljb24gZ2x5cGhpY29uLWVhcnBob25lJ1xuICAgICAgICAgICAgICBhLmJ0blN0eWxlID0gJ2J0bi1zdWNjZXNzJ1xuICAgICAgICAgICAgICBhLmxpbmsgPSAndGVsOicgKyBhLnZhbHVlXG4gICAgICAgICAgICAgIGEucXVpY2tDb250YWN0ID0gdHJ1ZVxuICAgICAgICAgICAgd2hlbiAna2V5SUQnXG4gICAgICAgICAgICAgIGEuaWNvblN0eWxlID0gJ2ZhIGZhLWtleSdcbiAgICAgICAgICAgIHdoZW4gJ2NvdmVyUGhvdG8nXG4gICAgICAgICAgICAgIGlmIGEudmFsdWUubWF0Y2ggL15cXC9pcGZzXFwvWzEtOUEtWmEtel17NDAsNjB9JC9cbiAgICAgICAgICAgICAgICAkc2NvcGUuaXBmc0dldChhLnZhbHVlKS50aGVuIChjb3ZlclBob3RvKSAtPlxuICAgICAgICAgICAgICAgICAgJHNjb3BlLmNvdmVyUGhvdG8gPSAkc2NvcGUuY292ZXJQaG90byBvciB7ICdiYWNrZ3JvdW5kLWltYWdlJzogJ3VybChkYXRhOmltYWdlO2Jhc2U2NCwnICsgY292ZXJQaG90by50b1N0cmluZygnYmFzZTY0JykgKyAnKScgfVxuICAgICAgICAgICAgd2hlbiAndXJsJ1xuICAgICAgICAgICAgICBhLmxpbmsgPSBhLnZhbHVlXG4gICAgICAgICAgICAgIGlmIGEudmFsdWUuaW5kZXhPZignZmFjZWJvb2suY29tLycpID4gLTFcbiAgICAgICAgICAgICAgICBhLmljb25TdHlsZSA9ICdmYWIgZmEtZmFjZWJvb2snXG4gICAgICAgICAgICAgICAgYS5idG5TdHlsZSA9ICdidG4tZmFjZWJvb2snXG4gICAgICAgICAgICAgICAgYS5saW5rID0gYS52YWx1ZVxuICAgICAgICAgICAgICAgIGEubGlua05hbWUgPSBhLnZhbHVlLnNwbGl0KCdmYWNlYm9vay5jb20vJylbMV1cbiAgICAgICAgICAgICAgICBhLnF1aWNrQ29udGFjdCA9IHRydWVcbiAgICAgICAgICAgICAgZWxzZSBpZiBhLnZhbHVlLmluZGV4T2YoJ3R3aXR0ZXIuY29tLycpID4gLTFcbiAgICAgICAgICAgICAgICBhLmljb25TdHlsZSA9ICdmYWIgZmEtdHdpdHRlcidcbiAgICAgICAgICAgICAgICBhLmJ0blN0eWxlID0gJ2J0bi10d2l0dGVyJ1xuICAgICAgICAgICAgICAgIGEubGluayA9IGEudmFsdWVcbiAgICAgICAgICAgICAgICBhLmxpbmtOYW1lID0gYS52YWx1ZS5zcGxpdCgndHdpdHRlci5jb20vJylbMV1cbiAgICAgICAgICAgICAgICBhLnF1aWNrQ29udGFjdCA9IHRydWVcbiAgICAgICAgICAgICAgZWxzZSBpZiBhLnZhbHVlLmluZGV4T2YoJ3BsdXMuZ29vZ2xlLmNvbS8nKSA+IC0xXG4gICAgICAgICAgICAgICAgYS5pY29uU3R5bGUgPSAnZmFiIGZhLWdvb2dsZS1wbHVzJ1xuICAgICAgICAgICAgICAgIGEuYnRuU3R5bGUgPSAnYnRuLWdvb2dsZS1wbHVzJ1xuICAgICAgICAgICAgICAgIGEubGluayA9IGEudmFsdWVcbiAgICAgICAgICAgICAgICBhLmxpbmtOYW1lID0gYS52YWx1ZS5zcGxpdCgncGx1cy5nb29nbGUuY29tLycpWzFdXG4gICAgICAgICAgICAgICAgYS5xdWlja0NvbnRhY3QgPSB0cnVlXG4gICAgICAgICAgICAgIGVsc2UgaWYgYS52YWx1ZS5pbmRleE9mKCdsaW5rZWRpbi5jb20vJykgPiAtMVxuICAgICAgICAgICAgICAgIGEuaWNvblN0eWxlID0gJ2ZhYiBmYS1saW5rZWRpbidcbiAgICAgICAgICAgICAgICBhLmJ0blN0eWxlID0gJ2J0bi1saW5rZWRpbidcbiAgICAgICAgICAgICAgICBhLmxpbmsgPSBhLnZhbHVlXG4gICAgICAgICAgICAgICAgYS5saW5rTmFtZSA9IGEudmFsdWUuc3BsaXQoJ2xpbmtlZGluLmNvbS8nKVsxXVxuICAgICAgICAgICAgICAgIGEucXVpY2tDb250YWN0ID0gdHJ1ZVxuICAgICAgICAgICAgICBlbHNlIGlmIGEudmFsdWUuaW5kZXhPZignZ2l0aHViLmNvbS8nKSA+IC0xXG4gICAgICAgICAgICAgICAgYS5pY29uU3R5bGUgPSAnZmFiIGZhLWdpdGh1YidcbiAgICAgICAgICAgICAgICBhLmJ0blN0eWxlID0gJ2J0bi1naXRodWInXG4gICAgICAgICAgICAgICAgYS5saW5rID0gYS52YWx1ZVxuICAgICAgICAgICAgICAgIGEubGlua05hbWUgPSBhLnZhbHVlLnNwbGl0KCdnaXRodWIuY29tLycpWzFdXG4gICAgICAgICAgICAgICAgYS5xdWlja0NvbnRhY3QgPSB0cnVlXG4gICAgICAgICAgICAgIGVsc2VcbiAgICAgICAgICAgICAgICBhLmljb25TdHlsZSA9ICdnbHlwaGljb24gZ2x5cGhpY29uLWxpbmsnXG4gICAgICAgICAgICAgICAgYS5idG5TdHlsZSA9ICdidG4tZGVmYXVsdCdcbiAgICAgICAgICAgIGVsc2VcbiAgICAgICAgICAgICAgYS5pY29uU3R5bGUgPSAnZ2x5cGhpY29uIGdseXBoaWNvbi1zdGFyJ1xuICAgICAgICAgIGlmIGEudmFsdWUgYW5kIGEudmFsdWUubWF0Y2ggL15cXC9pcGZzXFwvWzEtOUEtWmEtel17NDAsNjB9JC9cbiAgICAgICAgICAgIGEubGluayA9ICdodHRwczovL2lwZnMuaW8nICsgYS52YWx1ZVxuICAgICAgICAgICAgYS5saW5rTmFtZSA9IGEudmFsdWVcbiAgICAgICAgICAgIGEuaWNvblN0eWxlID0gJ2dseXBoaWNvbiBnbHlwaGljb24tbGluaydcbiAgICAgICAgICAgIGEuYnRuU3R5bGUgPSAnYnRuLWRlZmF1bHQnXG4gICAgICAgICAgaWYgYS52ZXJpZmljYXRpb25zICsgYS51bnZlcmlmaWNhdGlvbnMgPiAwXG4gICAgICAgICAgICBwZXJjZW50YWdlID0gYS52ZXJpZmljYXRpb25zICogMTAwIC8gKGEudmVyaWZpY2F0aW9ucyArIGEudW52ZXJpZmljYXRpb25zKVxuICAgICAgICAgICAgaWYgcGVyY2VudGFnZSA+PSA4MFxuICAgICAgICAgICAgICBhbHBoYSA9IGEudmVyaWZpY2F0aW9ucyAvIG1vc3RDb25maXJtYXRpb25zICogMC43ICsgMC4zXG4gICAgICAgICAgICAgICMgYS5yb3dTdHlsZSA9ICdiYWNrZ3JvdW5kLWNvbG9yOiByZ2JhKDIyMywyNDAsMjE2LCcgKyBhbHBoYSArICcpJ1xuICAgICAgICAgICAgZWxzZSBpZiBwZXJjZW50YWdlID49IDYwXG4gICAgICAgICAgICAgIGEucm93Q2xhc3MgPSAnd2FybmluZydcbiAgICAgICAgICAgIGVsc2VcbiAgICAgICAgICAgICAgYS5yb3dDbGFzcyA9ICdkYW5nZXInXG4gICAgICAgICAgJHNjb3BlLmhhc1F1aWNrQ29udGFjdHMgPSAkc2NvcGUuaGFzUXVpY2tDb250YWN0cyBvciBhLnF1aWNrQ29udGFjdFxuICAgICAgICAkc2NvcGUuYXR0cmlidXRlc0xlbmd0aCA9ICRzY29wZS5hdHRyaWJ1dGVzLmxlbmd0aFxuXG4gICAgJHNjb3BlLmF0dHJpYnV0ZUNsaWNrZWQgPSAoZXZlbnQsIGF0dHIpIC0+XG4gICAgICBpZiBhdHRyLmNvbm5lY3RpbmdNc2dzXG4gICAgICAgIGF0dHIuY29sbGFwc2UgPSAhYXR0ci5jb2xsYXBzZVxuICAgICAgZWxzZVxuICAgICAgICBhdHRyLmNvbm5lY3RpbmdNc2dzID0gW11cbiAgICAgICAgZm9yIG1zZyBpbiAkc2NvcGUucmVjZWl2ZWQubGlzdFxuICAgICAgICAgIGNvbnRpbnVlIHVubGVzcyBtc2cuc2lnbmVkRGF0YS50eXBlIGluIFsndmVyaWZpY2F0aW9uJywgJ3VudmVyaWZpY2F0aW9uJywgJ3ZlcmlmeV9pZGVudGl0eScsICd1bnZlcmlmeV9pZGVudGl0eSddXG4gICAgICAgICAgaGFzQXR0cjEgPSBoYXNBdHRyMiA9IGZhbHNlXG4gICAgICAgICAgZm9yIGEgaW4gbXNnLmdldFJlY2lwaWVudEFycmF5KClcbiAgICAgICAgICAgIGhhc0F0dHIxID0gaGFzQXR0cjEgb3IgYS50eXBlID09IGF0dHIudHlwZSBhbmQgYS52YWx1ZSA9PSBhdHRyLnZhbHVlXG4gICAgICAgICAgICBoYXNBdHRyMiA9IGhhc0F0dHIyIG9yIGEudHlwZSA9PSAkc2NvcGUuaWRUeXBlIGFuZCBhLnZhbHVlID09ICRzY29wZS5pZFZhbHVlXG4gICAgICAgICAgICBpZiBoYXNBdHRyMSBhbmQgaGFzQXR0cjJcbiAgICAgICAgICAgICAgYXR0ci5jb25uZWN0aW5nTXNncy5wdXNoIG1zZ1xuICAgICAgICAgICAgICBicmVha1xuICAgICAgICBhdHRyLmNvbGxhcHNlID0gIWF0dHIuY29sbGFwc2VcblxuICAgICRzY29wZS5nZXRTZW50TXNncyA9IC0+XG4gICAgICByZXR1cm4gdW5sZXNzICRzY29wZS5pZGVudGl0eSBhbmQgJHNjb3BlLmlyaXNTb2NpYWxOZXR3b3JrXG4gICAgICAkc2NvcGUuc2VudCA9IFtdXG4gICAgICBjdXJzb3IgPSBpZiAkc2NvcGUuc2VudC5sZW5ndGggdGhlbiAkc2NvcGUuc2VudFskc2NvcGUuc2VudC5sZW5ndGggLSAxXS5jdXJzb3IgZWxzZSAnJ1xuICAgICAgY2FsbGJhY2sgPSAobXNnKSAtPlxuICAgICAgICAkc2NvcGUucHJvY2Vzc01lc3NhZ2VzIFttc2ddLCB7IGF1dGhvcklzU2VsZjogdHJ1ZSB9XG4gICAgICAgICRzY29wZS5zZW50LnB1c2ggbXNnXG5cbiAgICAgICRzY29wZS5pZGVudGl0eS5zZW50KHtjYWxsYmFja30pXG5cbiAgICAkc2NvcGUuZ2V0UmVjZWl2ZWRNc2dzID0gLT5cbiAgICAgIHJldHVybiB1bmxlc3MgJHNjb3BlLmlkZW50aXR5IGFuZCAkc2NvcGUuaXJpc1NvY2lhbE5ldHdvcmtcbiAgICAgICRzY29wZS5yZWNlaXZlZCA9XG4gICAgICAgIGxpc3Q6IFtdXG4gICAgICAgIHNlZW46IHt9XG4gICAgICBjdXJzb3IgPSBpZiAkc2NvcGUucmVjZWl2ZWQubGlzdC5sZW5ndGggdGhlbiAkc2NvcGUucmVjZWl2ZWQubGlzdFskc2NvcGUucmVjZWl2ZWQubGlzdC5sZW5ndGggLSAxXS5jdXJzb3IgZWxzZSAnJ1xuICAgICAgY2FsbGJhY2sgPSAobXNnKSAtPlxuICAgICAgICByZXR1cm4gaWYgJHNjb3BlLnJlY2VpdmVkLnNlZW5bbXNnLmdldEhhc2goKV1cbiAgICAgICAgJHNjb3BlLnByb2Nlc3NNZXNzYWdlcyBbbXNnXSwgeyByZWNpcGllbnRJc1NlbGY6IHRydWUgfVxuICAgICAgICAkc2NvcGUuJGFwcGx5IC0+XG4gICAgICAgICAgaWYgbXNnLmlzUG9zaXRpdmUoKVxuICAgICAgICAgICAgdW5sZXNzIG1zZy5saW5rVG9BdXRob3JcbiAgICAgICAgICAgICAgbXNnLmF1dGhvckFycmF5ID0gbXNnLmdldEF1dGhvckFycmF5KClcbiAgICAgICAgICAgICAgZm9yIGEgaW4gbXNnLmF1dGhvckFycmF5XG4gICAgICAgICAgICAgICAgbXNnLmxpbmtUb0F1dGhvciA9IGEgdW5sZXNzIG1zZy5saW5rVG9BdXRob3JcbiAgICAgICAgICAgIGlmICRzY29wZS50aHVtYnNVcC5sZW5ndGggPCAxMiBhbmQgbm90IHRodW1ic1VwT2JqW0pTT04uc3RyaW5naWZ5KG1zZy5zaWduZWREYXRhLmF1dGhvcildXG4gICAgICAgICAgICAgIHRodW1ic1VwT2JqW0pTT04uc3RyaW5naWZ5KG1zZy5zaWduZWREYXRhLmF1dGhvcildID0gdHJ1ZVxuICAgICAgICAgICAgICAkc2NvcGUudGh1bWJzVXAucHVzaCBtc2dcbiAgICAgICAgICAgICAgJHNjb3BlLmhhc1RodW1ic1VwID0gdHJ1ZVxuICAgICAgICAgIGVsc2UgaWYgbXNnLmlzTmVnYXRpdmUoKSBhbmQgJHNjb3BlLnRodW1ic0Rvd24ubGVuZ3RoIDwgMTIgYW5kIG5vdCB0aHVtYnNEb3duT2JqW0pTT04uc3RyaW5naWZ5KG1zZy5zaWduZWREYXRhLmF1dGhvcildXG4gICAgICAgICAgICB0aHVtYnNEb3duT2JqW0pTT04uc3RyaW5naWZ5KG1zZy5zaWduZWREYXRhLmF1dGhvcildID0gdHJ1ZVxuICAgICAgICAgICAgJHNjb3BlLnRodW1ic0Rvd24ucHVzaCBtc2dcbiAgICAgICAgICAgICRzY29wZS5oYXNUaHVtYnNEb3duID0gdHJ1ZVxuICAgICAgICAgICRzY29wZS5yZWNlaXZlZC5saXN0LnB1c2ggbXNnXG4gICAgICAgICAgJHNjb3BlLnJlY2VpdmVkLnNlZW5bbXNnLmdldEhhc2goKV0gPSB0cnVlXG4gICAgICAkc2NvcGUuaWRlbnRpdHkucmVjZWl2ZWQoe2NhbGxiYWNrLCBjdXJzb3J9KVxuXG4gICAgJHNjb3BlLnNldEZpbHRlcnMgPSAoZmlsdGVycykgLT5cbiAgICAgIGFuZ3VsYXIuZXh0ZW5kICRzY29wZS5maWx0ZXJzLCBmaWx0ZXJzXG5cbiAgICAkc2NvcGUudXBsb2FkQ292ZXJQaG90byA9IChibG9iLCBpZGVudGl0eSkgLT5cbiAgICAgICRzY29wZS51cGxvYWRGaWxlKGJsb2IpLnRoZW4gKGZpbGVzKSAtPlxuICAgICAgICByZWNpcGllbnQgPSB7Y292ZXJQaG90bzogJy9pcGZzLycgKyBmaWxlc1swXS5wYXRofVxuICAgICAgICByZWNpcGllbnRbJHNjb3BlLmlkVHlwZV0gPSAkc2NvcGUuaWRWYWx1ZVxuICAgICAgICAkd2luZG93LmlyaXNMaWIuTWVzc2FnZS5jcmVhdGVWZXJpZmljYXRpb24oe3JlY2lwaWVudH0sICRzY29wZS5wcml2YXRlS2V5KS50aGVuIChtKSAtPlxuICAgICAgICAgICRzY29wZS5pcmlzU29jaWFsTmV0d29yay5hZGRNZXNzYWdlKG0pXG4gICAgICAgICAgJHNjb3BlLnVwbG9hZE1vZGFsLmNsb3NlKClcblxuICAgICRzY29wZS5vcGVuU2hhcmVQYWdlTW9kYWwgPSAoKSAtPlxuICAgICAgJHNjb3BlLm9wZW5Nb2RhbCAnc2hhcmVQYWdlTW9kYWwnLCB7IHRlbXBsYXRlVXJsOiAnYXBwL2lkZW50aXRpZXMvc2hhcmUubW9kYWwuaHRtbCcsIHNpemU6ICdtZCcgfVxuXG4gICAgJHNjb3BlLm9wZW5Db3ZlclBob3RvVXBsb2FkTW9kYWwgPSAtPlxuICAgICAgcmV0dXJuIHVubGVzcyAkc2NvcGUuYXV0aGVudGljYXRpb24uaWRlbnRpdHlcbiAgICAgICRzY29wZS5vcGVuVXBsb2FkTW9kYWwoJHNjb3BlLnVwbG9hZENvdmVyUGhvdG8sICdVcGxvYWQgY292ZXIgcGhvdG8nLCBmYWxzZSlcblxuICAgICRzY29wZS5pZFR5cGUgPSAkc3RhdGVQYXJhbXMudHlwZVxuICAgICRzY29wZS5pZFZhbHVlID0gJHN0YXRlUGFyYW1zLnZhbHVlXG4gICAgJHNjb3BlLnNob3dDaGF0QnV0dG9uID0gISRzY29wZS5pc0N1cnJlbnRVc2VyICYmICgkc2NvcGUuaWRUeXBlID09ICdrZXlJRCcgfHwgJHNjb3BlLmlkVHlwZSA9PSAndXVpZCcpXG5cbiAgICAkc2NvcGUuZmluZE9uZSA9IC0+XG4gICAgICByZXR1cm4gdW5sZXNzICRzY29wZS5pcmlzU29jaWFsTmV0d29ya1xuICAgICAgJHNjb3BlLmlkQXR0ciA9IG5ldyAkd2luZG93LmlyaXNMaWIuQXR0cmlidXRlKCRzY29wZS5pZFR5cGUsICRzY29wZS5pZFZhbHVlKVxuICAgICAgJHNjb3BlLmlkVXJsID0gJHNjb3BlLmdldElkVXJsKCRzY29wZS5pZFR5cGUsICRzY29wZS5pZFZhbHVlKVxuICAgICAgJHNjb3BlLmlzQ3VycmVudFVzZXIgPSAkc2NvcGUuYXV0aGVudGljYXRpb24gYW5kXG4gICAgICAgICRzY29wZS5hdXRoZW50aWNhdGlvbi51c2VyIGFuZFxuICAgICAgICAkc2NvcGUuaWRUeXBlID09ICRzY29wZS5hdXRoZW50aWNhdGlvbi51c2VyLmlkVHlwZSBhbmRcbiAgICAgICAgJHNjb3BlLmlkVmFsdWUgPT0gJHNjb3BlLmF1dGhlbnRpY2F0aW9uLnVzZXIuaWRWYWx1ZVxuICAgICAgTm90aWZpY2F0aW9uU2VydmljZS5tYXJrUG9zdHNTZWVuKCkgaWYgJHNjb3BlLmlzQ3VycmVudFVzZXIgYW5kICRzdGF0ZS5pcyAnaWRlbnRpdGllcy5zaG93J1xuICAgICAgTm90aWZpY2F0aW9uU2VydmljZS5tYXJrQ2hhdHNTZWVuKCkgaWYgJHN0YXRlLmluY2x1ZGVzICdjaGF0cydcbiAgICAgICRzY29wZS5pc1VuaXF1ZVR5cGUgPSAoKSAtPlxuICAgICAgICAkd2luZG93LmlyaXNMaWIuQXR0cmlidXRlLmlzVW5pcXVlVHlwZSgkc2NvcGUuaWRUeXBlKSBvciAkc2NvcGUuaWRUeXBlID09ICdjaGFubmVsJ1xuICAgICAgaWYgISRzY29wZS5pc1VuaXF1ZVR5cGVcbiAgICAgICAgJHN0YXRlLmdvICdpZGVudGl0aWVzLmxpc3QnLCB7IHNlYXJjaDogJHNjb3BlLmlkVmFsdWUgfVxuICAgICAgICAkc2NvcGUudGFic1syXS5hY3RpdmUgPSB0cnVlIGlmICRzY29wZS50YWJzXG4gICAgICBpZiAkc3RhdGUuaXMgJ2lkZW50aXRpZXMuc2hvdydcbiAgICAgICAgJHNjb3BlLnNldFBhZ2VUaXRsZSAkc2NvcGUuaWRWYWx1ZVxuICAgICAgJHNjb3BlLmlkZW50aXR5ID0gJHNjb3BlLmlyaXNTb2NpYWxOZXR3b3JrLmdldENvbnRhY3RzXG4gICAgICAgIHR5cGU6ICRzY29wZS5pZFR5cGVcbiAgICAgICAgdmFsdWU6ICRzY29wZS5pZFZhbHVlXG4gICAgICAkc2NvcGUuc2V0Q29udGFjdE5hbWVzKCRzY29wZS5pZGVudGl0eSwgZmFsc2UsIHRydWUpXG4gICAgICAkc2NvcGUuaWRlbnRpdHkuZ3VuLm9uIChkYXRhKSAtPlxuICAgICAgICAkc2NvcGUuaWRlbnRpdHkuZGF0YSA9IGRhdGFcbiAgICAgICRzY29wZS5nZXRBdHRyaWJ1dGVzKClcbiAgICAgICRzY29wZS5nZXRTZW50TXNncygpXG4gICAgICAkc2NvcGUuZ2V0UmVjZWl2ZWRNc2dzKClcbiAgICAgICRzY29wZS5pZGVudGl0eS5ndW4uZ2V0KCdzY29yZXMnKS5vcGVuIChzY29yZXMpIC0+XG4gICAgICAgICRzY29wZS5zY29yZXMgPSBzY29yZXNcblxuICAgIGNoZWNrRW1wdHlDaGF0cyA9IC0+ICMgaGFjayBmb3IgcmVzZXR0aW5nIGJyb2tlbiBjaGF0c1xuICAgICAgZm9yIGNoYXQgaW4gJHNjb3BlLmNoYXRzXG4gICAgICAgIGlmIGNoYXQuaWRUeXBlID09ICdrZXlJRCcgYW5kIGNoYXQuY2hhdCBhbmQgbm90IGNoYXQubGF0ZXN0XG4gICAgICAgICAgY2hhdC5jaGF0ID0gJHNjb3BlLmdldFByaXZhdGVDaGF0KGNoYXQpXG5cbiAgICBsb2FkQ2hhdE1lc3NhZ2VzID0gLT5cbiAgICAgIGNoZWNrRW1wdHlDaGF0cygpXG4gICAgICAkc2NvcGUuY2hhdE1lc3NhZ2VzID0gW11cbiAgICAgICRzY29wZS5zZWVuQ2hhdE1lc3NhZ2VzID0ge31cbiAgICAgIHNldFV1aWRMYXN0U2VlblRpbWUgPSAoKSAtPlxuICAgICAgICB0aW1lID0gbmV3IERhdGUoKS50b0lTT1N0cmluZygpXG4gICAgICAgICRzY29wZS5pcmlzU29jaWFsTmV0d29yay5ndW4udXNlcigpLmdldCgnaXJpcycpLmdldCgnY2hhdE1lc3NhZ2VzQnlVdWlkJykuZ2V0KCRzY29wZS5pZFZhbHVlKS5nZXQoJ21zZ3NMYXN0U2VlblRpbWUnKS5wdXQodGltZSlcbiAgICAgIG9uTWVzc2FnZSA9IChtc2csIGluZm8pIC0+XG4gICAgICAgICRzY29wZS4kYXBwbHkgLT5cbiAgICAgICAgICBpZiBtc2cuaGFzaFxuICAgICAgICAgICAgcmV0dXJuIGlmICRzY29wZS5zZWVuQ2hhdE1lc3NhZ2VzW21zZy5oYXNoXVxuICAgICAgICAgICAgJHNjb3BlLnNlZW5DaGF0TWVzc2FnZXNbbXNnLmhhc2hdID0gdHJ1ZVxuICAgICAgICAgIG1zZy5zZWxmQXV0aG9yZWQgPSBpbmZvIGFuZCBpbmZvLnNlbGZBdXRob3JlZFxuICAgICAgICAgICRzY29wZS5jaGF0TWVzc2FnZXMucHVzaChtc2cpIGlmIG1zZ1xuICAgICAgICAgIGlmICRzY29wZS5pZFR5cGUgPT0gJ3V1aWQnXG4gICAgICAgICAgICBzZXRVdWlkTGFzdFNlZW5UaW1lKClcbiAgICAgICAgICBpZiAkc2NvcGUuY2hhdFxuICAgICAgICAgICAgaWYgKG1zZy50aW1lID4gJHNjb3BlLmNoYXQubXlNc2dzTGFzdFNlZW5UaW1lKSBhbmQgbm90ICRkb2N1bWVudC5oaWRkZW5cbiAgICAgICAgICAgICAgJHNjb3BlLmNoYXQuc2V0TXlNc2dzTGFzdFNlZW5UaW1lKClcbiAgICAgICAgICAgIHVubGVzcyAkc2NvcGUuY2hhdC5yZXBsaWVkQnlUaGVtIG9yIGluZm8uc2VsZkF1dGhvcmVkXG4gICAgICAgICAgICAgICRzY29wZS5jaGF0LnJlcGxpZWRCeVRoZW0gPSB0cnVlXG4gICAgICBpZiAkc2NvcGUuaWRUeXBlID09ICdrZXlJRCdcbiAgICAgICAgaWYgJHNjb3BlLmF1dGhlbnRpY2F0aW9uLnVzZXJcbiAgICAgICAgICAkc2NvcGUuY2hhdCA9IG5ldyAkd2luZG93LmlyaXNMaWIuQ2hhdFxuICAgICAgICAgICAgb25NZXNzYWdlOiBvbk1lc3NhZ2VcbiAgICAgICAgICAgIGtleTogJHNjb3BlLnByaXZhdGVLZXlcbiAgICAgICAgICAgIGd1bjogJHNjb3BlLmd1blxuICAgICAgICAgICAgcGFydGljaXBhbnRzOiAkc2NvcGUuaWRWYWx1ZVxuICAgICAgICAgICRzY29wZS5jaGF0LnNlZW4gPSB7fVxuICAgICAgICAgIHZpc2liaWxpdHlDaGFuZ2VkID0gKCkgLT5cbiAgICAgICAgICAgIGlmICRkb2N1bWVudC52aXNpYmlsaXR5U3RhdGUgPT0gJ3Zpc2libGUnXG4gICAgICAgICAgICAgICRzY29wZS5jaGF0LnNldE15TXNnc0xhc3RTZWVuVGltZSgpXG4gICAgICAgICAgJGRvY3VtZW50Lm9uKCd2aXNpYmlsaXR5Y2hhbmdlJywgdmlzaWJpbGl0eUNoYW5nZWQpXG4gICAgICAgICAgJHNjb3BlLiRvbignJGRlc3Ryb3knLCAoKSAtPiAkZG9jdW1lbnQub2ZmKCd2aXNpYmlsaXR5Y2hhbmdlJywgdmlzaWJpbGl0eUNoYW5nZWQpKVxuICAgICAgICAgICRzY29wZS5jaGF0LnNldE15TXNnc0xhc3RTZWVuVGltZSgpXG4gICAgICAgICAgJHNjb3BlLmNoYXQuZ2V0TXlNc2dzTGFzdFNlZW5UaW1lICh0aW1lKSAtPlxuICAgICAgICAgICAgJHNjb3BlLiRhcHBseSAtPiAkc2NvcGUuY2hhdC5teU1zZ3NMYXN0U2VlblRpbWUgPSB0aW1lXG4gICAgICAgICAgJHNjb3BlLmNoYXQuZ2V0VGhlaXJNc2dzTGFzdFNlZW5UaW1lICh0aW1lKSAtPlxuICAgICAgICAgICAgJHNjb3BlLiRhcHBseSAtPiAkc2NvcGUuY2hhdC50aGVpck1zZ3NMYXN0U2VlblRpbWUgPSB0aW1lXG4gICAgICAgICAgJHNjb3BlLnNlbmRDaGF0TWVzc2FnZSA9ICh0ZXh0KSAtPlxuICAgICAgICAgICAgdCA9IG5ldyBEYXRlKCkudG9JU09TdHJpbmcoKVxuICAgICAgICAgICAgbSA9XG4gICAgICAgICAgICAgIGF1dGhvcjogJHNjb3BlLnZpZXdwb2ludC5pZGVudGl0eS5wcmltYXJ5TmFtZVxuICAgICAgICAgICAgICB0ZXh0OiB0ZXh0XG4gICAgICAgICAgICAgIHRpbWU6IHRcbiAgICAgICAgICAgICRzY29wZS5jaGF0LnNlbmQobSlcbiAgICAgICAgJHdpbmRvdy5pcmlzTGliLkNoYXQuZ2V0T25saW5lICRzY29wZS5ndW4sICRzY29wZS5pZFZhbHVlLCAocmVzKSAtPlxuICAgICAgICAgICRzY29wZS5pc09ubGluZSA9IHJlcy5pc09ubGluZVxuICAgICAgICAgICRzY29wZS5sYXN0QWN0aXZlID0gcmVzLmxhc3RBY3RpdmUgdW5sZXNzIHJlcy5pc09ubGluZVxuICAgICAgaWYgJHNjb3BlLmlkVHlwZSA9PSAndXVpZCdcbiAgICAgICAgJHNjb3BlLmlyaXNTb2NpYWxOZXR3b3JrLmdldENoYXRNc2dzKCRzY29wZS5pZFZhbHVlLCB7Y2FsbGJhY2s6IG9uTWVzc2FnZX0pXG4gICAgICAgICRzY29wZS5zZW5kQ2hhdE1lc3NhZ2UgPSAodGV4dCkgLT5cbiAgICAgICAgICBtc2cgPSB7fVxuICAgICAgICAgIG1zZy50eXBlID0gJ2NoYXQnXG4gICAgICAgICAgbXNnLnRleHQgPSB0ZXh0XG4gICAgICAgICAgbXNnLnJlY2lwaWVudCA9IHt1dWlkOiAkc2NvcGUuaWRWYWx1ZX1cbiAgICAgICAgICAkc2NvcGUuY3JlYXRlTWVzc2FnZSh1bmRlZmluZWQsIG1zZylcbiAgICAgICAgICBjb25zb2xlLmxvZyAnc2VuZCBwdWJsaWMgY2hhdCBtc2cnLCBtc2dcbiAgICAgICAgaWYgJHNjb3BlLmF1dGhlbnRpY2F0aW9uLnVzZXJcbiAgICAgICAgICB2aXNpYmlsaXR5Q2hhbmdlZCA9ICgpIC0+XG4gICAgICAgICAgICBpZiAkZG9jdW1lbnQudmlzaWJpbGl0eVN0YXRlID09ICd2aXNpYmxlJ1xuICAgICAgICAgICAgICBzZXRVdWlkTGFzdFNlZW5UaW1lKClcbiAgICAgICAgICAkZG9jdW1lbnQub24oJ3Zpc2liaWxpdHljaGFuZ2UnLCB2aXNpYmlsaXR5Q2hhbmdlZClcbiAgICAgICAgICBzZXRVdWlkTGFzdFNlZW5UaW1lKClcblxuICAgIGxvYWQgPSAtPlxuICAgICAgaWYgJHNjb3BlLmlyaXNTb2NpYWxOZXR3b3JrXG4gICAgICAgIGlmICRzdGF0ZS5pcygnaWRlbnRpdGllcy5zaG93JylcbiAgICAgICAgICAkc2NvcGUuZmluZE9uZSgpXG5cbiAgICAgICAgaWYgJHN0YXRlLmlzICdpZGVudGl0aWVzLmNyZWF0ZSdcbiAgICAgICAgICBmb2N1cygnaWROYW1lRm9jdXMnKVxuICAgICAgICAgICRzY29wZS5uZXdFbnRyeS5uYW1lID0gJHNjb3BlLmNhcGl0YWxpemVXb3Jkcygkc2NvcGUucXVlcnkudGVybSlcblxuICAgICAgICBpZiAkc3RhdGUuaXMoJ2NoYXRzLnNob3cnKVxuICAgICAgICAgICRzY29wZS5maW5kT25lKClcbiAgICAgICAgICBsb2FkQ2hhdE1lc3NhZ2VzKClcbiAgICAkc2NvcGUuJHdhdGNoICdpcmlzU29jaWFsTmV0d29yaycsIGxvYWRcblxuICAgICRzY29wZS5xclNjYW5TdWNjZXNzID0gKGRhdGEpIC0+XG4gICAgICBhID0gZGF0YS5zcGxpdCgnLycpXG4gICAgICBpZiBhLmxlbmd0aCA+IDRcbiAgICAgICAgdHlwZSA9IGRlY29kZVVSSUNvbXBvbmVudChhW2EubGVuZ3RoIC0gMl0pXG4gICAgICAgIHZhbHVlID0gZGVjb2RlVVJJQ29tcG9uZW50KGFbYS5sZW5ndGggLSAxXS5zcGxpdCgnPycpWzBdKVxuICAgICAgICBjb25zb2xlLmxvZyAndmFsdWUnLCB2YWx1ZVxuICAgICAgICBjb25zb2xlLmxvZyAnZGF0YScsIGRhdGFcbiAgICAgICAgJHN0YXRlLmdvICdpZGVudGl0aWVzLnNob3cnLCB7dHlwZSwgdmFsdWV9XG4gICAgICBlbHNlXG4gICAgICAgIGpzb24gPSBKU09OLnBhcnNlKGRhdGEpXG4gICAgICAgIGNvbnNvbGUubG9nICdyZWFkIHFyIGpzb24nLCBqc29uXG4gICAgICAgIGlmIGpzb24ucHJpdiBhbmQganNvbi5lcHJpdiBhbmQgbm90ICRzY29wZS5hdXRoZW50aWNhdGlvbi51c2VyXG4gICAgICAgICAgJHNjb3BlLmxvZ2luV2l0aEtleShkYXRhLCB1bmRlZmluZWQsIHRydWUpXG4gICAgICAgIGVsc2VcbiAgICAgICAgICBjb25zb2xlLmxvZyAnVW5yZWNvZ25pemVkIGlkZW50aXR5IHVybCcsIGRhdGFcbiAgICAkc2NvcGUucXJTY2FuRXJyb3IgPSAoZSkgLT5cbiAgICAgICMgdGhpcyBpcyBjYWxsZWQgZWFjaCB0aW1lIGEgUVIgY29kZSBpcyBub3QgZm91bmQgb24gdGhlIGNhbWVyYVxuICAgICAgIyBjb25zb2xlLmVycm9yIGVcbl1cbiJdfQ==
+
+(function() {
+  'use strict';
   // Messages controller
   angular.module('irisAngular').controller('MessagesController', [
     '$scope',
@@ -2271,717 +2982,6 @@
 //# sourceMappingURL=data:application/json;charset=utf8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiY29tcG9uZW50cy9zY3JvbGxvbmNsaWNrLmpzIiwic291cmNlcyI6WyJjb21wb25lbnRzL3Njcm9sbG9uY2xpY2suY29mZmVlIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBO0VBQUEsT0FBTyxDQUFDLE1BQVIsQ0FBZSxhQUFmLENBQ0EsQ0FBQyxTQURELENBQ1csZUFEWCxFQUM0QixRQUFBLENBQUEsQ0FBQTtXQUMxQixRQUFBLENBQUMsS0FBRCxFQUFRLElBQVIsRUFBYyxJQUFkLENBQUE7YUFDRSxJQUFJLENBQUMsRUFBTCxDQUFRLE9BQVIsRUFBaUIsUUFBQSxDQUFDLENBQUQsQ0FBQTtRQUNmLENBQUMsQ0FBQyxhQUFhLENBQUMsSUFBaEIsQ0FBQTtlQUNBLENBQUEsQ0FBRSxXQUFGLENBQWMsQ0FBQyxPQUFmLENBQXVCO1VBQUMsU0FBQSxFQUFXO1FBQVosQ0FBdkIsRUFBdUMsTUFBdkM7TUFGZSxDQUFqQjtJQURGO0VBRDBCLENBRDVCO0FBQUEiLCJzb3VyY2VzQ29udGVudCI6WyJhbmd1bGFyLm1vZHVsZSAnaXJpc0FuZ3VsYXInXG4uZGlyZWN0aXZlICdzY3JvbGxPbkNsaWNrJywgLT5cbiAgKHNjb3BlLCBlbGVtLCBhdHRyKSAtPlxuICAgIGVsZW0ub24gJ2NsaWNrJywgKGUpIC0+XG4gICAgICBlLmN1cnJlbnRUYXJnZXQuYmx1cigpXG4gICAgICAkKFwiaHRtbCxib2R5XCIpLmFuaW1hdGUoe3Njcm9sbFRvcDogMH0sIFwic2xvd1wiKVxuIl19
 
 (function() {
-  'use strict';
-  // Identities controller
-  angular.module('irisAngular').controller('IdentitiesController', [
-    '$scope',
-    '$state',
-    '$rootScope',
-    '$window',
-    '$document',
-    '$stateParams',
-    '$transitions',
-    '$location',
-    '$http',
-    '$q',
-    '$timeout',
-    '$uibModal',
-    // 'Authentication'
-    'config',
-    'localStorageService',
-    'focus',
-    'NotificationService',
-    function($scope,
-    $state,
-    $rootScope,
-    $window,
-    $document,
-    $stateParams,
-    $transitions,
-    $location,
-    $http,
-    $q,
-    $timeout,
-    $uibModal,
-    config,
-    localStorageService,
-    focus,
-    NotificationService) { //, Authentication
-      var checkEmptyChats,
-    load,
-    loadChatMessages,
-    s,
-    thumbsDownObj,
-    thumbsUpObj;
-      $scope.newEntry = {};
-      $scope.activeTab = 1;
-      $scope.activateTab = function(tabId) {
-        return $scope.activeTab = tabId;
-      };
-      $scope.sent = [];
-      $scope.received = {
-        list: [],
-        seen: {}
-      };
-      $scope.attributes = [];
-      thumbsUpObj = {};
-      thumbsDownObj = {};
-      $scope.thumbsUp = [];
-      $scope.thumbsDown = [];
-      $scope.verifications = [];
-      if ($stateParams.search) {
-        $scope.query.term = $stateParams.search;
-      }
-      $scope.newVerification = {
-        type: '',
-        value: ''
-      };
-      $scope.collapseLevel = {};
-      $scope.collapseFilters = $window.innerWidth < 992;
-      $scope.slider = {
-        options: {
-          floor: -3,
-          ceil: 3,
-          hidePointerLabels: true,
-          hideLimitLabels: true,
-          disableAnimation: true
-        }
-      };
-      s = $location.search();
-      if (s.share) {
-        $scope.share = true;
-      }
-      if (s.stream) {
-        $scope.stream = true;
-      }
-      if ($scope.query.term.length && $state.is('identities.list')) {
-        $scope.query.term = '';
-        $scope.search();
-      }
-      if ($state.is('identities.show')) {
-        $scope.filters.maxDistance = 0;
-        $scope.filters.type = null;
-        if ($scope.stream && !$scope.videoChatModal) {
-          $scope.openVideoChatModal();
-        }
-      }
-      $scope.addEntry = function(event,
-    entry) {
-        var linkTo,
-    params;
-        if (entry.email) {
-          linkTo = {
-            type: 'email',
-            value: entry.email
-          };
-        } else if (entry.url) {
-          linkTo = {
-            type: 'url',
-            value: entry.url
-          };
-        } else {
-          linkTo = $window.irisLib.Attribute.getUuid();
-          entry.uuid = linkTo.value;
-        }
-        params = {
-          type: 'verification',
-          recipient: entry
-        };
-        return $scope.createMessage(event,
-    params).then(function(response) {
-          return $state.go('identities.show',
-    linkTo);
-        },
-    function(error) {
-          return console.log("error",
-    error);
-        });
-      };
-      $scope.createChat = function(chatName) {
-        var msg,
-    uuid;
-        if (!(chatName && chatName.length > 0)) {
-          return;
-        }
-        uuid = $window.irisLib.Attribute.getUuid().value;
-        $scope.irisSocialNetwork.gun.user().get('iris').get('chatMessagesByUuid').get(uuid).put({});
-        msg = {
-          type: 'verification',
-          recipient: {
-            uuid: uuid,
-            name: chatName,
-            type: 'group'
-          }
-        };
-        $scope.createMessage(void 0,
-    msg);
-        return $state.go('chats.show',
-    {
-          type: 'uuid',
-          value: uuid
-        });
-      };
-      $scope.guessAttributeType = function() {
-        if ($scope.newVerification.value.length) {
-          $scope.newVerification.type = $window.irisLib.Attribute.guessTypeOf($scope.newVerification.value);
-          if (!$scope.newVerification.type) {
-            if (!$scope.newVerification.value.match(/\`|\~|\!|\@|\#|\$|\%|\^|\&|\*|\(|\)|\+|\=|\[|\{|\]|\}|\||\\|\'|\<|\,|\.|\>|\?|\/|\""|\;|\:/)) {
-              return $scope.newVerification.type = 'name';
-            }
-          }
-        } else {
-          return $scope.newVerification.type = '';
-        }
-      };
-      $scope.addName = function(name) {
-        var recipient;
-        if (name) {
-          recipient = {name};
-          recipient[$scope.idType] = $scope.idValue;
-          $window.irisLib.Message.createVerification({recipient},
-    $scope.privateKey).then(function(m) {
-            return $scope.irisSocialNetwork.addMessage(m);
-          });
-          return $scope.nameAdded = true;
-        } else {
-          $scope.addingName = true;
-          return focus('addNameFocus');
-        }
-      };
-      $scope.getAttributes = function() {
-        return $scope.identity.gun.get('attrs').open(function(attrs) {
-          var a,
-    alpha,
-    attributes,
-    c,
-    i,
-    len,
-    mostConfirmations,
-    percentage,
-    ref;
-          attributes = attrs || [];
-          if (attributes.length > 0) {
-            c = attributes[0];
-            mostConfirmations = c.verifications;
-          } else {
-            mostConfirmations = 1;
-          }
-          $scope.attributes = Object.values(attributes);
-          ref = $scope.attributes;
-          for (i = 0, len = ref.length; i < len; i++) {
-            a = ref[i];
-            if (!(a.type && a.value)) {
-              return;
-            }
-            a.attr = new $window.irisLib.Attribute(a.type,
-    a.value);
-            a.isCurrent = new $window.irisLib.Attribute($scope.idType,
-    $scope.idValue).equals(a.attr);
-            a.order = a.isCurrent ? 2e308 : (a.verifications || a.conf) - 2 * (a.unverifications || a.ref);
-            if (a.isCurrent) {
-              a.rowClass = 'cursor-default';
-            }
-            switch (a.type) {
-              case 'email':
-                a.iconStyle = 'glyphicon glyphicon-envelope';
-                a.btnStyle = 'btn-success';
-                a.link = 'mailto:' + a.value;
-                a.quickContact = true;
-                break;
-              case 'bitcoin_address':
-              case 'bitcoin':
-                a.iconStyle = 'fab fa-bitcoin';
-                a.btnStyle = 'btn-primary';
-                a.link = 'https://blockchain.info/address/' + a.value;
-                a.quickContact = true;
-                break;
-              case 'gpg_fingerprint':
-              case 'gpg_keyid':
-                a.iconStyle = 'fa fa-key';
-                a.btnStyle = 'btn-default';
-                a.link = 'https://pgp.mit.edu/pks/lookup?op=get&search=0x' + a.value;
-                break;
-              case 'account':
-                a.iconStyle = 'fa fa-at';
-                break;
-              case 'nickname':
-                $scope.identity.hasProperName = true;
-                a.iconStyle = 'glyphicon glyphicon-font';
-                break;
-              case 'name':
-                $scope.identity.hasProperName = true;
-                a.iconStyle = 'glyphicon glyphicon-font';
-                break;
-              case 'tel':
-              case 'phone':
-                a.iconStyle = 'glyphicon glyphicon-earphone';
-                a.btnStyle = 'btn-success';
-                a.link = 'tel:' + a.value;
-                a.quickContact = true;
-                break;
-              case 'keyID':
-                a.iconStyle = 'fa fa-key';
-                break;
-              case 'coverPhoto':
-                if (a.value.match(/^\/ipfs\/[1-9A-Za-z]{40,60}$/)) {
-                  $scope.ipfsGet(a.value).then(function(coverPhoto) {
-                    return $scope.coverPhoto = $scope.coverPhoto || {
-                      'background-image': 'url(data:image;base64,' + coverPhoto.toString('base64') + ')'
-                    };
-                  });
-                }
-                break;
-              case 'url':
-                a.link = a.value;
-                if (a.value.indexOf('facebook.com/') > -1) {
-                  a.iconStyle = 'fab fa-facebook';
-                  a.btnStyle = 'btn-facebook';
-                  a.link = a.value;
-                  a.linkName = a.value.split('facebook.com/')[1];
-                  a.quickContact = true;
-                } else if (a.value.indexOf('twitter.com/') > -1) {
-                  a.iconStyle = 'fab fa-twitter';
-                  a.btnStyle = 'btn-twitter';
-                  a.link = a.value;
-                  a.linkName = a.value.split('twitter.com/')[1];
-                  a.quickContact = true;
-                } else if (a.value.indexOf('plus.google.com/') > -1) {
-                  a.iconStyle = 'fab fa-google-plus';
-                  a.btnStyle = 'btn-google-plus';
-                  a.link = a.value;
-                  a.linkName = a.value.split('plus.google.com/')[1];
-                  a.quickContact = true;
-                } else if (a.value.indexOf('linkedin.com/') > -1) {
-                  a.iconStyle = 'fab fa-linkedin';
-                  a.btnStyle = 'btn-linkedin';
-                  a.link = a.value;
-                  a.linkName = a.value.split('linkedin.com/')[1];
-                  a.quickContact = true;
-                } else if (a.value.indexOf('github.com/') > -1) {
-                  a.iconStyle = 'fab fa-github';
-                  a.btnStyle = 'btn-github';
-                  a.link = a.value;
-                  a.linkName = a.value.split('github.com/')[1];
-                  a.quickContact = true;
-                } else {
-                  a.iconStyle = 'glyphicon glyphicon-link';
-                  a.btnStyle = 'btn-default';
-                }
-                break;
-              default:
-                a.iconStyle = 'glyphicon glyphicon-star';
-            }
-            if (a.value && a.value.match(/^\/ipfs\/[1-9A-Za-z]{40,60}$/)) {
-              a.link = 'https://ipfs.io' + a.value;
-              a.linkName = a.value;
-              a.iconStyle = 'glyphicon glyphicon-link';
-              a.btnStyle = 'btn-default';
-            }
-            if (a.verifications + a.unverifications > 0) {
-              percentage = a.verifications * 100 / (a.verifications + a.unverifications);
-              if (percentage >= 80) {
-                alpha = a.verifications / mostConfirmations * 0.7 + 0.3;
-              // a.rowStyle = 'background-color: rgba(223,240,216,' + alpha + ')'
-              } else if (percentage >= 60) {
-                a.rowClass = 'warning';
-              } else {
-                a.rowClass = 'danger';
-              }
-            }
-            $scope.hasQuickContacts = $scope.hasQuickContacts || a.quickContact;
-          }
-          return $scope.attributesLength = $scope.attributes.length;
-        });
-      };
-      $scope.attributeClicked = function(event,
-    attr) {
-        var a,
-    hasAttr1,
-    hasAttr2,
-    i,
-    j,
-    len,
-    len1,
-    msg,
-    ref,
-    ref1,
-    ref2;
-        if (attr.connectingMsgs) {
-          return attr.collapse = !attr.collapse;
-        } else {
-          attr.connectingMsgs = [];
-          ref = $scope.received.list;
-          for (i = 0, len = ref.length; i < len; i++) {
-            msg = ref[i];
-            if ((ref1 = msg.signedData.type) !== 'verification' && ref1 !== 'unverification' && ref1 !== 'verify_identity' && ref1 !== 'unverify_identity') {
-              continue;
-            }
-            hasAttr1 = hasAttr2 = false;
-            ref2 = msg.getRecipientArray();
-            for (j = 0, len1 = ref2.length; j < len1; j++) {
-              a = ref2[j];
-              hasAttr1 = hasAttr1 || a.type === attr.type && a.value === attr.value;
-              hasAttr2 = hasAttr2 || a.type === $scope.idType && a.value === $scope.idValue;
-              if (hasAttr1 && hasAttr2) {
-                attr.connectingMsgs.push(msg);
-                break;
-              }
-            }
-          }
-          return attr.collapse = !attr.collapse;
-        }
-      };
-      $scope.getSentMsgs = function() {
-        var callback,
-    cursor;
-        if (!($scope.identity && $scope.irisSocialNetwork)) {
-          return;
-        }
-        $scope.sent = [];
-        cursor = $scope.sent.length ? $scope.sent[$scope.sent.length - 1].cursor : '';
-        callback = function(msg) {
-          $scope.processMessages([msg],
-    {
-            authorIsSelf: true
-          });
-          return $scope.sent.push(msg);
-        };
-        return $scope.identity.sent({callback});
-      };
-      $scope.getReceivedMsgs = function() {
-        var callback,
-    cursor;
-        if (!($scope.identity && $scope.irisSocialNetwork)) {
-          return;
-        }
-        $scope.received = {
-          list: [],
-          seen: {}
-        };
-        cursor = $scope.received.list.length ? $scope.received.list[$scope.received.list.length - 1].cursor : '';
-        callback = function(msg) {
-          if ($scope.received.seen[msg.getHash()]) {
-            return;
-          }
-          $scope.processMessages([msg],
-    {
-            recipientIsSelf: true
-          });
-          return $scope.$apply(function() {
-            var a,
-    i,
-    len,
-    ref;
-            if (msg.isPositive()) {
-              if (!msg.linkToAuthor) {
-                msg.authorArray = msg.getAuthorArray();
-                ref = msg.authorArray;
-                for (i = 0, len = ref.length; i < len; i++) {
-                  a = ref[i];
-                  if (!msg.linkToAuthor) {
-                    msg.linkToAuthor = a;
-                  }
-                }
-              }
-              if ($scope.thumbsUp.length < 12 && !thumbsUpObj[JSON.stringify(msg.signedData.author)]) {
-                thumbsUpObj[JSON.stringify(msg.signedData.author)] = true;
-                $scope.thumbsUp.push(msg);
-                $scope.hasThumbsUp = true;
-              }
-            } else if (msg.isNegative() && $scope.thumbsDown.length < 12 && !thumbsDownObj[JSON.stringify(msg.signedData.author)]) {
-              thumbsDownObj[JSON.stringify(msg.signedData.author)] = true;
-              $scope.thumbsDown.push(msg);
-              $scope.hasThumbsDown = true;
-            }
-            $scope.received.list.push(msg);
-            return $scope.received.seen[msg.getHash()] = true;
-          });
-        };
-        return $scope.identity.received({callback,
-    cursor});
-      };
-      $scope.setFilters = function(filters) {
-        return angular.extend($scope.filters,
-    filters);
-      };
-      $scope.uploadCoverPhoto = function(blob,
-    identity) {
-        return $scope.uploadFile(blob).then(function(files) {
-          var recipient;
-          recipient = {
-            coverPhoto: '/ipfs/' + files[0].path
-          };
-          recipient[$scope.idType] = $scope.idValue;
-          return $window.irisLib.Message.createVerification({recipient},
-    $scope.privateKey).then(function(m) {
-            $scope.irisSocialNetwork.addMessage(m);
-            return $scope.uploadModal.close();
-          });
-        });
-      };
-      $scope.openSharePageModal = function() {
-        return $scope.openModal('sharePageModal',
-    {
-          templateUrl: 'app/identities/share.modal.html',
-          size: 'md'
-        });
-      };
-      $scope.openCoverPhotoUploadModal = function() {
-        if (!$scope.authentication.identity) {
-          return;
-        }
-        return $scope.openUploadModal($scope.uploadCoverPhoto,
-    'Upload cover photo',
-    false);
-      };
-      $scope.idType = $stateParams.type;
-      $scope.idValue = $stateParams.value;
-      $scope.showChatButton = !$scope.isCurrentUser && ($scope.idType === 'keyID' || $scope.idType === 'uuid');
-      $scope.findOne = function() {
-        if (!$scope.irisSocialNetwork) {
-          return;
-        }
-        $scope.idAttr = new $window.irisLib.Attribute($scope.idType,
-    $scope.idValue);
-        $scope.idUrl = $scope.getIdUrl($scope.idType,
-    $scope.idValue);
-        $scope.isCurrentUser = $scope.authentication && $scope.authentication.user && $scope.idType === $scope.authentication.user.idType && $scope.idValue === $scope.authentication.user.idValue;
-        if ($scope.isCurrentUser && $state.is('identities.show')) {
-          NotificationService.markPostsSeen();
-        }
-        if ($state.includes('chats')) {
-          NotificationService.markChatsSeen();
-        }
-        $scope.isUniqueType = function() {
-          return $window.irisLib.Attribute.isUniqueType($scope.idType) || $scope.idType === 'channel';
-        };
-        if (!$scope.isUniqueType) {
-          $state.go('identities.list',
-    {
-            search: $scope.idValue
-          });
-          if ($scope.tabs) {
-            $scope.tabs[2].active = true;
-          }
-        }
-        if ($state.is('identities.show')) {
-          $scope.setPageTitle($scope.idValue);
-        }
-        $scope.identity = $scope.irisSocialNetwork.getContacts({
-          type: $scope.idType,
-          value: $scope.idValue
-        });
-        $scope.setContactNames($scope.identity,
-    false,
-    true);
-        $scope.identity.gun.on(function(data) {
-          return $scope.identity.data = data;
-        });
-        $scope.getAttributes();
-        $scope.getSentMsgs();
-        $scope.getReceivedMsgs();
-        return $scope.identity.gun.get('scores').open(function(scores) {
-          return $scope.scores = scores;
-        });
-      };
-      checkEmptyChats = function() { // hack for resetting broken chats
-        var chat,
-    i,
-    len,
-    ref,
-    results;
-        ref = $scope.chats;
-        results = [];
-        for (i = 0, len = ref.length; i < len; i++) {
-          chat = ref[i];
-          if (chat.idType === 'keyID' && chat.chat && !chat.latest) {
-            results.push(chat.chat = $scope.getPrivateChat(chat));
-          } else {
-            results.push(void 0);
-          }
-        }
-        return results;
-      };
-      loadChatMessages = function() {
-        var onMessage,
-    setUuidLastSeenTime,
-    visibilityChanged;
-        checkEmptyChats();
-        $scope.chatMessages = [];
-        $scope.seenChatMessages = {};
-        setUuidLastSeenTime = function() {
-          var time;
-          time = new Date().toISOString();
-          return $scope.irisSocialNetwork.gun.user().get('iris').get('chatMessagesByUuid').get($scope.idValue).get('msgsLastSeenTime').put(time);
-        };
-        onMessage = function(msg,
-    info) {
-          return $scope.$apply(function() {
-            if (msg.hash) {
-              if ($scope.seenChatMessages[msg.hash]) {
-                return;
-              }
-              $scope.seenChatMessages[msg.hash] = true;
-            }
-            msg.selfAuthored = info && info.selfAuthored;
-            if (msg) {
-              $scope.chatMessages.push(msg);
-            }
-            if ($scope.idType === 'uuid') {
-              setUuidLastSeenTime();
-            }
-            if ($scope.chat) {
-              if ((msg.time > $scope.chat.myMsgsLastSeenTime) && !$document.hidden) {
-                $scope.chat.setMyMsgsLastSeenTime();
-              }
-              if (!($scope.chat.repliedByThem || info.selfAuthored)) {
-                return $scope.chat.repliedByThem = true;
-              }
-            }
-          });
-        };
-        if ($scope.idType === 'keyID') {
-          if ($scope.authentication.user) {
-            $scope.chat = new $window.irisLib.Chat({
-              onMessage: onMessage,
-              key: $scope.privateKey,
-              gun: $scope.gun,
-              participants: $scope.idValue
-            });
-            $scope.chat.seen = {};
-            visibilityChanged = function() {
-              if ($document.visibilityState === 'visible') {
-                return $scope.chat.setMyMsgsLastSeenTime();
-              }
-            };
-            $document.on('visibilitychange',
-    visibilityChanged);
-            $scope.$on('$destroy',
-    function() {
-              return $document.off('visibilitychange',
-    visibilityChanged);
-            });
-            $scope.chat.setMyMsgsLastSeenTime();
-            $scope.chat.getMyMsgsLastSeenTime(function(time) {
-              return $scope.$apply(function() {
-                return $scope.chat.myMsgsLastSeenTime = time;
-              });
-            });
-            $scope.chat.getTheirMsgsLastSeenTime(function(time) {
-              return $scope.$apply(function() {
-                return $scope.chat.theirMsgsLastSeenTime = time;
-              });
-            });
-            $scope.sendChatMessage = function(text) {
-              var m,
-    t;
-              t = new Date().toISOString();
-              m = {
-                author: $scope.viewpoint.identity.primaryName,
-                text: text,
-                time: t
-              };
-              return $scope.chat.send(m);
-            };
-          }
-          $window.irisLib.Chat.getOnline($scope.gun,
-    $scope.idValue,
-    function(res) {
-            $scope.isOnline = res.isOnline;
-            if (!res.isOnline) {
-              return $scope.lastActive = res.lastActive;
-            }
-          });
-        }
-        if ($scope.idType === 'uuid') {
-          $scope.irisSocialNetwork.getChatMsgs($scope.idValue,
-    {
-            callback: onMessage
-          });
-          $scope.sendChatMessage = function(text) {
-            var msg;
-            msg = {};
-            msg.type = 'chat';
-            msg.text = text;
-            msg.recipient = {
-              uuid: $scope.idValue
-            };
-            $scope.createMessage(void 0,
-    msg);
-            return console.log('send public chat msg',
-    msg);
-          };
-          if ($scope.authentication.user) {
-            visibilityChanged = function() {
-              if ($document.visibilityState === 'visible') {
-                return setUuidLastSeenTime();
-              }
-            };
-            $document.on('visibilitychange',
-    visibilityChanged);
-            return setUuidLastSeenTime();
-          }
-        }
-      };
-      load = function() {
-        if ($scope.irisSocialNetwork) {
-          if ($state.is('identities.show')) {
-            $scope.findOne();
-          }
-          if ($state.is('identities.create')) {
-            focus('idNameFocus');
-            $scope.newEntry.name = $scope.capitalizeWords($scope.query.term);
-          }
-          if ($state.is('chats.show')) {
-            $scope.findOne();
-            return loadChatMessages();
-          }
-        }
-      };
-      $scope.$watch('irisSocialNetwork',
-    load);
-      $scope.qrScanSuccess = function(data) {
-        var a,
-    json,
-    type,
-    value;
-        a = data.split('/');
-        if (a.length > 4) {
-          type = decodeURIComponent(a[a.length - 2]);
-          value = decodeURIComponent(a[a.length - 1].split('?')[0]);
-          console.log('value',
-    value);
-          console.log('data',
-    data);
-          return $state.go('identities.show',
-    {type,
-    value});
-        } else {
-          json = JSON.parse(data);
-          console.log('read qr json',
-    json);
-          if (json.priv && json.epriv && !$scope.authentication.user) {
-            return $scope.loginWithKey(data,
-    void 0,
-    true);
-          } else {
-            return console.log('Unrecognized identity url',
-    data);
-          }
-        }
-      };
-      return $scope.qrScanError = function(e) {};
-    }
-  ]);
-
-  // this is called each time a QR code is not found on the camera
-// console.error e
-
-}).call(this);
-
-//# sourceMappingURL=data:application/json;charset=utf8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaWRlbnRpdGllcy9pZGVudGl0aWVzLmNvbnRyb2xsZXIuanMiLCJzb3VyY2VzIjpbImlkZW50aXRpZXMvaWRlbnRpdGllcy5jb250cm9sbGVyLmNvZmZlZSJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiQUFBQTtFQUFBLGFBQUE7O0VBRUEsT0FBTyxDQUFDLE1BQVIsQ0FBZSxhQUFmLENBQTZCLENBQUMsVUFBOUIsQ0FBeUMsc0JBQXpDLEVBQWlFO0lBQy9ELFFBRCtEO0lBRS9ELFFBRitEO0lBRy9ELFlBSCtEO0lBSS9ELFNBSitEO0lBSy9ELFdBTCtEO0lBTS9ELGNBTitEO0lBTy9ELGNBUCtEO0lBUS9ELFdBUitEO0lBUy9ELE9BVCtEO0lBVS9ELElBVitEO0lBVy9ELFVBWCtEO0lBWS9ELFdBWitEOztJQWMvRCxRQWQrRDtJQWUvRCxxQkFmK0Q7SUFnQi9ELE9BaEIrRDtJQWlCL0QscUJBakIrRDtJQWtCL0QsUUFBQSxDQUFDLE1BQUQ7SUFBUyxNQUFUO0lBQWlCLFVBQWpCO0lBQTZCLE9BQTdCO0lBQXNDLFNBQXRDO0lBQWlELFlBQWpEO0lBQStELFlBQS9EO0lBQTZFLFNBQTdFO0lBQXdGLEtBQXhGO0lBQStGLEVBQS9GO0lBQW1HLFFBQW5HO0lBQTZHLFNBQTdHO0lBQXdILE1BQXhIO0lBQ0EsbUJBREE7SUFDcUIsS0FEckI7SUFDNEIsbUJBRDVCLENBQUEsRUFBQTtBQUVFLFVBQUEsZUFBQTtJQUFBLElBQUE7SUFBQSxnQkFBQTtJQUFBLENBQUE7SUFBQSxhQUFBO0lBQUE7TUFBQSxNQUFNLENBQUMsUUFBUCxHQUFrQixDQUFBO01BQ2xCLE1BQU0sQ0FBQyxTQUFQLEdBQW1CO01BQ25CLE1BQU0sQ0FBQyxXQUFQLEdBQXFCLFFBQUEsQ0FBQyxLQUFELENBQUE7ZUFBVyxNQUFNLENBQUMsU0FBUCxHQUFtQjtNQUE5QjtNQUNyQixNQUFNLENBQUMsSUFBUCxHQUFjO01BQ2QsTUFBTSxDQUFDLFFBQVAsR0FDRTtRQUFBLElBQUEsRUFBTSxFQUFOO1FBQ0Es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Q0FBQyxJQUExRDttQkFDRSxNQUFNLENBQUMsWUFBUCxDQUFvQixJQUFwQjtJQUEwQixNQUExQjtJQUFxQyxJQUFyQyxFQURGO1dBQUEsTUFBQTttQkFHRSxPQUFPLENBQUMsR0FBUixDQUFZLDJCQUFaO0lBQXlDLElBQXpDLEVBSEY7V0FURjs7TUFGcUI7YUFldkIsTUFBTSxDQUFDLFdBQVAsR0FBcUIsUUFBQSxDQUFDLENBQUQsQ0FBQSxFQUFBO0lBN1l2QixDQWxCK0Q7R0FBakU7O0VBRkE7O0FBQUEiLCJzb3VyY2VzQ29udGVudCI6WyIndXNlIHN0cmljdCdcbiMgSWRlbnRpdGllcyBjb250cm9sbGVyXG5hbmd1bGFyLm1vZHVsZSgnaXJpc0FuZ3VsYXInKS5jb250cm9sbGVyICdJZGVudGl0aWVzQ29udHJvbGxlcicsIFtcbiAgJyRzY29wZSdcbiAgJyRzdGF0ZSdcbiAgJyRyb290U2NvcGUnXG4gICckd2luZG93J1xuICAnJGRvY3VtZW50J1xuICAnJHN0YXRlUGFyYW1zJ1xuICAnJHRyYW5zaXRpb25zJ1xuICAnJGxvY2F0aW9uJ1xuICAnJGh0dHAnXG4gICckcSdcbiAgJyR0aW1lb3V0J1xuICAnJHVpYk1vZGFsJ1xuICAjICdBdXRoZW50aWNhdGlvbidcbiAgJ2NvbmZpZydcbiAgJ2xvY2FsU3RvcmFnZVNlcnZpY2UnXG4gICdmb2N1cydcbiAgJ05vdGlmaWNhdGlvblNlcnZpY2UnXG4gICgkc2NvcGUsICRzdGF0ZSwgJHJvb3RTY29wZSwgJHdpbmRvdywgJGRvY3VtZW50LCAkc3RhdGVQYXJhbXMsICR0cmFuc2l0aW9ucywgJGxvY2F0aW9uLCAkaHR0cCwgJHEsICR0aW1lb3V0LCAkdWliTW9kYWwsIGNvbmZpZyxcbiAgbG9jYWxTdG9yYWdlU2VydmljZSwgZm9jdXMsIE5vdGlmaWNhdGlvblNlcnZpY2UpIC0+ICMsIEF1dGhlbnRpY2F0aW9uXG4gICAgJHNjb3BlLm5ld0VudHJ5ID0ge31cbiAgICAkc2NvcGUuYWN0aXZlVGFiID0gMVxuICAgICRzY29wZS5hY3RpdmF0ZVRhYiA9ICh0YWJJZCkgLT4gJHNjb3BlLmFjdGl2ZVRhYiA9IHRhYklkXG4gICAgJHNjb3BlLnNlbnQgPSBbXVxuICAgICRzY29wZS5yZWNlaXZlZCA9XG4gICAgICBsaXN0OiBbXVxuICAgICAgc2Vlbjoge31cbiAgICAkc2NvcGUuYXR0cmlidXRlcyA9IFtdXG4gICAgdGh1bWJzVXBPYmogPSB7fVxuICAgIHRodW1ic0Rvd25PYmogPSB7fVxuICAgICRzY29wZS50aHVtYnNVcCA9IFtdXG4gICAgJHNjb3BlLnRodW1ic0Rvd24gPSBbXVxuICAgICRzY29wZS52ZXJpZmljYXRpb25zID0gW11cbiAgICAkc2NvcGUucXVlcnkudGVybSA9ICRzdGF0ZVBhcmFtcy5zZWFyY2ggaWYgJHN0YXRlUGFyYW1zLnNlYXJjaFxuICAgICRzY29wZS5uZXdWZXJpZmljYXRpb24gPVxuICAgICAgdHlwZTogJydcbiAgICAgIHZhbHVlOiAnJ1xuICAgICRzY29wZS5jb2xsYXBzZUxldmVsID0ge31cbiAgICAkc2NvcGUuY29sbGFwc2VGaWx0ZXJzID0gJHdpbmRvdy5pbm5lcldpZHRoIDwgOTkyXG4gICAgJHNjb3BlLnNsaWRlciA9XG4gICAgICBvcHRpb25zOlxuICAgICAgICBmbG9vcjogLTNcbiAgICAgICAgY2VpbDogM1xuICAgICAgICBoaWRlUG9pbnRlckxhYmVsczogdHJ1ZVxuICAgICAgICBoaWRlTGltaXRMYWJlbHM6IHRydWVcbiAgICAgICAgZGlzYWJsZUFuaW1hdGlvbjogdHJ1ZVxuXG4gICAgcyA9ICRsb2NhdGlvbi5zZWFyY2goKVxuICAgICRzY29wZS5zaGFyZSA9IHRydWUgaWYgcy5zaGFyZVxuICAgICRzY29wZS5zdHJlYW0gPSB0cnVlIGlmIHMuc3RyZWFtXG5cbiAgICBpZiAkc2NvcGUucXVlcnkudGVybS5sZW5ndGggYW5kICRzdGF0ZS5pcyAnaWRlbnRpdGllcy5saXN0J1xuICAgICAgJHNjb3BlLnF1ZXJ5LnRlcm0gPSAnJ1xuICAgICAgJHNjb3BlLnNlYXJjaCgpXG5cbiAgICBpZiAkc3RhdGUuaXMgJ2lkZW50aXRpZXMuc2hvdydcbiAgICAgICRzY29wZS5maWx0ZXJzLm1heERpc3RhbmNlID0gMFxuICAgICAgJHNjb3BlLmZpbHRlcnMudHlwZSA9IG51bGxcbiAgICAgICRzY29wZS5vcGVuVmlkZW9DaGF0TW9kYWwoKSBpZiAkc2NvcGUuc3RyZWFtIGFuZCBub3QgJHNjb3BlLnZpZGVvQ2hhdE1vZGFsXG5cbiAgICAkc2NvcGUuYWRkRW50cnkgPSAoZXZlbnQsIGVudHJ5KSAtPlxuICAgICAgaWYgZW50cnkuZW1haWxcbiAgICAgICAgbGlua1RvID0ge3R5cGU6J2VtYWlsJywgdmFsdWU6IGVudHJ5LmVtYWlsfVxuICAgICAgZWxzZSBpZiBlbnRyeS51cmxcbiAgICAgICAgbGlua1RvID0ge3R5cGU6J3VybCcsIHZhbHVlOiBlbnRyeS51cmx9XG4gICAgICBlbHNlXG4gICAgICAgIGxpbmtUbyA9ICR3aW5kb3cuaXJpc0xpYi5BdHRyaWJ1dGUuZ2V0VXVpZCgpXG4gICAgICAgIGVudHJ5LnV1aWQgPSBsaW5rVG8udmFsdWVcbiAgICAgIHBhcmFtcyA9XG4gICAgICAgIHR5cGU6ICd2ZXJpZmljYXRpb24nXG4gICAgICAgIHJlY2lwaWVudDogZW50cnlcbiAgICAgICRzY29wZS5jcmVhdGVNZXNzYWdlKGV2ZW50LCBwYXJhbXMpLnRoZW4gKHJlc3BvbnNlKSAtPlxuICAgICAgICAkc3RhdGUuZ28gJ2lkZW50aXRpZXMuc2hvdycsIGxpbmtUb1xuICAgICAgLCAoZXJyb3IpIC0+XG4gICAgICAgIGNvbnNvbGUubG9nIFwiZXJyb3JcIiwgZXJyb3JcblxuICAgICRzY29wZS5jcmVhdGVDaGF0ID0gKGNoYXROYW1lKSAtPlxuICAgICAgcmV0dXJuIHVubGVzcyBjaGF0TmFtZSBhbmQgY2hhdE5hbWUubGVuZ3RoID4gMFxuICAgICAgdXVpZCA9ICR3aW5kb3cuaXJpc0xpYi5BdHRyaWJ1dGUuZ2V0VXVpZCgpLnZhbHVlXG4gICAgICAkc2NvcGUuaXJpc1NvY2lhbE5ldHdvcmsuZ3VuLnVzZXIoKS5nZXQoJ2lyaXMnKS5nZXQoJ2NoYXRNZXNzYWdlc0J5VXVpZCcpLmdldCh1dWlkKS5wdXQoe30pXG4gICAgICBtc2cgPVxuICAgICAgICB0eXBlOiAndmVyaWZpY2F0aW9uJ1xuICAgICAgICByZWNpcGllbnQ6XG4gICAgICAgICAgdXVpZDogdXVpZFxuICAgICAgICAgIG5hbWU6IGNoYXROYW1lXG4gICAgICAgICAgdHlwZTogJ2dyb3VwJ1xuICAgICAgJHNjb3BlLmNyZWF0ZU1lc3NhZ2UodW5kZWZpbmVkLCBtc2cpXG4gICAgICAkc3RhdGUuZ28gJ2NoYXRzLnNob3cnLCB7IHR5cGU6ICd1dWlkJywgdmFsdWU6IHV1aWQgfVxuXG4gICAgJHNjb3BlLmd1ZXNzQXR0cmlidXRlVHlwZSA9IC0+XG4gICAgICBpZiAkc2NvcGUubmV3VmVyaWZpY2F0aW9uLnZhbHVlLmxlbmd0aFxuICAgICAgICAkc2NvcGUubmV3VmVyaWZpY2F0aW9uLnR5cGUgPSAkd2luZG93LmlyaXNMaWIuQXR0cmlidXRlLmd1ZXNzVHlwZU9mKCRzY29wZS5uZXdWZXJpZmljYXRpb24udmFsdWUpXG4gICAgICAgIHVubGVzcyAkc2NvcGUubmV3VmVyaWZpY2F0aW9uLnR5cGVcbiAgICAgICAgICB1bmxlc3MgJHNjb3BlLm5ld1ZlcmlmaWNhdGlvbi52YWx1ZS5tYXRjaCAvXFxgfFxcfnxcXCF8XFxAfFxcI3xcXCR8XFwlfFxcXnxcXCZ8XFwqfFxcKHxcXCl8XFwrfFxcPXxcXFt8XFx7fFxcXXxcXH18XFx8fFxcXFx8XFwnfFxcPHxcXCx8XFwufFxcPnxcXD98XFwvfFxcXCJcInxcXDt8XFw6L1xuICAgICAgICAgICAgJHNjb3BlLm5ld1ZlcmlmaWNhdGlvbi50eXBlID0gJ25hbWUnXG4gICAgICBlbHNlXG4gICAgICAgICRzY29wZS5uZXdWZXJpZmljYXRpb24udHlwZSA9ICcnXG5cbiAgICAkc2NvcGUuYWRkTmFtZSA9IChuYW1lKSAtPlxuICAgICAgaWYgbmFtZVxuICAgICAgICByZWNpcGllbnQgPSB7bmFtZX1cbiAgICAgICAgcmVjaXBpZW50WyRzY29wZS5pZFR5cGVdID0gJHNjb3BlLmlkVmFsdWVcbiAgICAgICAgJHdpbmRvdy5pcmlzTGliLk1lc3NhZ2UuY3JlYXRlVmVyaWZpY2F0aW9uKHtyZWNpcGllbnR9LCAkc2NvcGUucHJpdmF0ZUtleSkudGhlbiAobSkgLT5cbiAgICAgICAgICAkc2NvcGUuaXJpc1NvY2lhbE5ldHdvcmsuYWRkTWVzc2FnZShtKVxuICAgICAgICAkc2NvcGUubmFtZUFkZGVkID0gdHJ1ZVxuICAgICAgZWxzZVxuICAgICAgICAkc2NvcGUuYWRkaW5nTmFtZSA9IHRydWVcbiAgICAgICAgZm9jdXMoJ2FkZE5hbWVGb2N1cycpXG5cbiAgICAkc2NvcGUuZ2V0QXR0cmlidXRlcyA9IC0+XG4gICAgICAkc2NvcGUuaWRlbnRpdHkuZ3VuLmdldCgnYXR0cnMnKS5vcGVuIChhdHRycykgLT5cbiAgICAgICAgYXR0cmlidXRlcyA9IGF0dHJzIG9yIFtdXG4gICAgICAgIGlmIGF0dHJpYnV0ZXMubGVuZ3RoID4gMFxuICAgICAgICAgIGMgPSBhdHRyaWJ1dGVzWzBdXG4gICAgICAgICAgbW9zdENvbmZpcm1hdGlvbnMgPSBjLnZlcmlmaWNhdGlvbnNcbiAgICAgICAgZWxzZVxuICAgICAgICAgIG1vc3RDb25maXJtYXRpb25zID0gMVxuICAgICAgICAkc2NvcGUuYXR0cmlidXRlcyA9IE9iamVjdC52YWx1ZXMoYXR0cmlidXRlcylcbiAgICAgICAgZm9yIGEgaW4gJHNjb3BlLmF0dHJpYnV0ZXNcbiAgICAgICAgICByZXR1cm4gdW5sZXNzIGEudHlwZSBhbmQgYS52YWx1ZVxuICAgICAgICAgIGEuYXR0ciA9IG5ldyAkd2luZG93LmlyaXNMaWIuQXR0cmlidXRlKGEudHlwZSwgYS52YWx1ZSlcbiAgICAgICAgICBhLmlzQ3VycmVudCA9IG5ldyAkd2luZG93LmlyaXNMaWIuQXR0cmlidXRlKCRzY29wZS5pZFR5cGUsICRzY29wZS5pZFZhbHVlKS5lcXVhbHMoYS5hdHRyKVxuICAgICAgICAgIGEub3JkZXIgPSBpZiBhLmlzQ3VycmVudCB0aGVuIEluZmluaXR5IGVsc2UgKGEudmVyaWZpY2F0aW9ucyBvciBhLmNvbmYpIC0gMiAqIChhLnVudmVyaWZpY2F0aW9ucyBvciBhLnJlZilcbiAgICAgICAgICBhLnJvd0NsYXNzID0gJ2N1cnNvci1kZWZhdWx0JyBpZiBhLmlzQ3VycmVudFxuICAgICAgICAgIHN3aXRjaCBhLnR5cGVcbiAgICAgICAgICAgIHdoZW4gJ2VtYWlsJ1xuICAgICAgICAgICAgICBhLmljb25TdHlsZSA9ICdnbHlwaGljb24gZ2x5cGhpY29uLWVudmVsb3BlJ1xuICAgICAgICAgICAgICBhLmJ0blN0eWxlID0gJ2J0bi1zdWNjZXNzJ1xuICAgICAgICAgICAgICBhLmxpbmsgPSAnbWFpbHRvOicgKyBhLnZhbHVlXG4gICAgICAgICAgICAgIGEucXVpY2tDb250YWN0ID0gdHJ1ZVxuICAgICAgICAgICAgd2hlbiAnYml0Y29pbl9hZGRyZXNzJywgJ2JpdGNvaW4nXG4gICAgICAgICAgICAgIGEuaWNvblN0eWxlID0gJ2ZhYiBmYS1iaXRjb2luJ1xuICAgICAgICAgICAgICBhLmJ0blN0eWxlID0gJ2J0bi1wcmltYXJ5J1xuICAgICAgICAgICAgICBhLmxpbmsgPSAnaHR0cHM6Ly9ibG9ja2NoYWluLmluZm8vYWRkcmVzcy8nICsgYS52YWx1ZVxuICAgICAgICAgICAgICBhLnF1aWNrQ29udGFjdCA9IHRydWVcbiAgICAgICAgICAgIHdoZW4gJ2dwZ19maW5nZXJwcmludCcsICdncGdfa2V5aWQnXG4gICAgICAgICAgICAgIGEuaWNvblN0eWxlID0gJ2ZhIGZhLWtleSdcbiAgICAgICAgICAgICAgYS5idG5TdHlsZSA9ICdidG4tZGVmYXVsdCdcbiAgICAgICAgICAgICAgYS5saW5rID0gJ2h0dHBzOi8vcGdwLm1pdC5lZHUvcGtzL2xvb2t1cD9vcD1nZXQmc2VhcmNoPTB4JyArIGEudmFsdWVcbiAgICAgICAgICAgIHdoZW4gJ2FjY291bnQnXG4gICAgICAgICAgICAgIGEuaWNvblN0eWxlID0gJ2ZhIGZhLWF0J1xuICAgICAgICAgICAgd2hlbiAnbmlja25hbWUnXG4gICAgICAgICAgICAgICRzY29wZS5pZGVudGl0eS5oYXNQcm9wZXJOYW1lID0gdHJ1ZVxuICAgICAgICAgICAgICBhLmljb25TdHlsZSA9ICdnbHlwaGljb24gZ2x5cGhpY29uLWZvbnQnXG4gICAgICAgICAgICB3aGVuICduYW1lJ1xuICAgICAgICAgICAgICAkc2NvcGUuaWRlbnRpdHkuaGFzUHJvcGVyTmFtZSA9IHRydWVcbiAgICAgICAgICAgICAgYS5pY29uU3R5bGUgPSAnZ2x5cGhpY29uIGdseXBoaWNvbi1mb250J1xuICAgICAgICAgICAgd2hlbiAndGVsJywgJ3Bob25lJ1xuICAgICAgICAgICAgICBhLmljb25TdHlsZSA9ICdnbHlwaGljb24gZ2x5cGhpY29uLWVhcnBob25lJ1xuICAgICAgICAgICAgICBhLmJ0blN0eWxlID0gJ2J0bi1zdWNjZXNzJ1xuICAgICAgICAgICAgICBhLmxpbmsgPSAndGVsOicgKyBhLnZhbHVlXG4gICAgICAgICAgICAgIGEucXVpY2tDb250YWN0ID0gdHJ1ZVxuICAgICAgICAgICAgd2hlbiAna2V5SUQnXG4gICAgICAgICAgICAgIGEuaWNvblN0eWxlID0gJ2ZhIGZhLWtleSdcbiAgICAgICAgICAgIHdoZW4gJ2NvdmVyUGhvdG8nXG4gICAgICAgICAgICAgIGlmIGEudmFsdWUubWF0Y2ggL15cXC9pcGZzXFwvWzEtOUEtWmEtel17NDAsNjB9JC9cbiAgICAgICAgICAgICAgICAkc2NvcGUuaXBmc0dldChhLnZhbHVlKS50aGVuIChjb3ZlclBob3RvKSAtPlxuICAgICAgICAgICAgICAgICAgJHNjb3BlLmNvdmVyUGhvdG8gPSAkc2NvcGUuY292ZXJQaG90byBvciB7ICdiYWNrZ3JvdW5kLWltYWdlJzogJ3VybChkYXRhOmltYWdlO2Jhc2U2NCwnICsgY292ZXJQaG90by50b1N0cmluZygnYmFzZTY0JykgKyAnKScgfVxuICAgICAgICAgICAgd2hlbiAndXJsJ1xuICAgICAgICAgICAgICBhLmxpbmsgPSBhLnZhbHVlXG4gICAgICAgICAgICAgIGlmIGEudmFsdWUuaW5kZXhPZignZmFjZWJvb2suY29tLycpID4gLTFcbiAgICAgICAgICAgICAgICBhLmljb25TdHlsZSA9ICdmYWIgZmEtZmFjZWJvb2snXG4gICAgICAgICAgICAgICAgYS5idG5TdHlsZSA9ICdidG4tZmFjZWJvb2snXG4gICAgICAgICAgICAgICAgYS5saW5rID0gYS52YWx1ZVxuICAgICAgICAgICAgICAgIGEubGlua05hbWUgPSBhLnZhbHVlLnNwbGl0KCdmYWNlYm9vay5jb20vJylbMV1cbiAgICAgICAgICAgICAgICBhLnF1aWNrQ29udGFjdCA9IHRydWVcbiAgICAgICAgICAgICAgZWxzZSBpZiBhLnZhbHVlLmluZGV4T2YoJ3R3aXR0ZXIuY29tLycpID4gLTFcbiAgICAgICAgICAgICAgICBhLmljb25TdHlsZSA9ICdmYWIgZmEtdHdpdHRlcidcbiAgICAgICAgICAgICAgICBhLmJ0blN0eWxlID0gJ2J0bi10d2l0dGVyJ1xuICAgICAgICAgICAgICAgIGEubGluayA9IGEudmFsdWVcbiAgICAgICAgICAgICAgICBhLmxpbmtOYW1lID0gYS52YWx1ZS5zcGxpdCgndHdpdHRlci5jb20vJylbMV1cbiAgICAgICAgICAgICAgICBhLnF1aWNrQ29udGFjdCA9IHRydWVcbiAgICAgICAgICAgICAgZWxzZSBpZiBhLnZhbHVlLmluZGV4T2YoJ3BsdXMuZ29vZ2xlLmNvbS8nKSA+IC0xXG4gICAgICAgICAgICAgICAgYS5pY29uU3R5bGUgPSAnZmFiIGZhLWdvb2dsZS1wbHVzJ1xuICAgICAgICAgICAgICAgIGEuYnRuU3R5bGUgPSAnYnRuLWdvb2dsZS1wbHVzJ1xuICAgICAgICAgICAgICAgIGEubGluayA9IGEudmFsdWVcbiAgICAgICAgICAgICAgICBhLmxpbmtOYW1lID0gYS52YWx1ZS5zcGxpdCgncGx1cy5nb29nbGUuY29tLycpWzFdXG4gICAgICAgICAgICAgICAgYS5xdWlja0NvbnRhY3QgPSB0cnVlXG4gICAgICAgICAgICAgIGVsc2UgaWYgYS52YWx1ZS5pbmRleE9mKCdsaW5rZWRpbi5jb20vJykgPiAtMVxuICAgICAgICAgICAgICAgIGEuaWNvblN0eWxlID0gJ2ZhYiBmYS1saW5rZWRpbidcbiAgICAgICAgICAgICAgICBhLmJ0blN0eWxlID0gJ2J0bi1saW5rZWRpbidcbiAgICAgICAgICAgICAgICBhLmxpbmsgPSBhLnZhbHVlXG4gICAgICAgICAgICAgICAgYS5saW5rTmFtZSA9IGEudmFsdWUuc3BsaXQoJ2xpbmtlZGluLmNvbS8nKVsxXVxuICAgICAgICAgICAgICAgIGEucXVpY2tDb250YWN0ID0gdHJ1ZVxuICAgICAgICAgICAgICBlbHNlIGlmIGEudmFsdWUuaW5kZXhPZignZ2l0aHViLmNvbS8nKSA+IC0xXG4gICAgICAgICAgICAgICAgYS5pY29uU3R5bGUgPSAnZmFiIGZhLWdpdGh1YidcbiAgICAgICAgICAgICAgICBhLmJ0blN0eWxlID0gJ2J0bi1naXRodWInXG4gICAgICAgICAgICAgICAgYS5saW5rID0gYS52YWx1ZVxuICAgICAgICAgICAgICAgIGEubGlua05hbWUgPSBhLnZhbHVlLnNwbGl0KCdnaXRodWIuY29tLycpWzFdXG4gICAgICAgICAgICAgICAgYS5xdWlja0NvbnRhY3QgPSB0cnVlXG4gICAgICAgICAgICAgIGVsc2VcbiAgICAgICAgICAgICAgICBhLmljb25TdHlsZSA9ICdnbHlwaGljb24gZ2x5cGhpY29uLWxpbmsnXG4gICAgICAgICAgICAgICAgYS5idG5TdHlsZSA9ICdidG4tZGVmYXVsdCdcbiAgICAgICAgICAgIGVsc2VcbiAgICAgICAgICAgICAgYS5pY29uU3R5bGUgPSAnZ2x5cGhpY29uIGdseXBoaWNvbi1zdGFyJ1xuICAgICAgICAgIGlmIGEudmFsdWUgYW5kIGEudmFsdWUubWF0Y2ggL15cXC9pcGZzXFwvWzEtOUEtWmEtel17NDAsNjB9JC9cbiAgICAgICAgICAgIGEubGluayA9ICdodHRwczovL2lwZnMuaW8nICsgYS52YWx1ZVxuICAgICAgICAgICAgYS5saW5rTmFtZSA9IGEudmFsdWVcbiAgICAgICAgICAgIGEuaWNvblN0eWxlID0gJ2dseXBoaWNvbiBnbHlwaGljb24tbGluaydcbiAgICAgICAgICAgIGEuYnRuU3R5bGUgPSAnYnRuLWRlZmF1bHQnXG4gICAgICAgICAgaWYgYS52ZXJpZmljYXRpb25zICsgYS51bnZlcmlmaWNhdGlvbnMgPiAwXG4gICAgICAgICAgICBwZXJjZW50YWdlID0gYS52ZXJpZmljYXRpb25zICogMTAwIC8gKGEudmVyaWZpY2F0aW9ucyArIGEudW52ZXJpZmljYXRpb25zKVxuICAgICAgICAgICAgaWYgcGVyY2VudGFnZSA+PSA4MFxuICAgICAgICAgICAgICBhbHBoYSA9IGEudmVyaWZpY2F0aW9ucyAvIG1vc3RDb25maXJtYXRpb25zICogMC43ICsgMC4zXG4gICAgICAgICAgICAgICMgYS5yb3dTdHlsZSA9ICdiYWNrZ3JvdW5kLWNvbG9yOiByZ2JhKDIyMywyNDAsMjE2LCcgKyBhbHBoYSArICcpJ1xuICAgICAgICAgICAgZWxzZSBpZiBwZXJjZW50YWdlID49IDYwXG4gICAgICAgICAgICAgIGEucm93Q2xhc3MgPSAnd2FybmluZydcbiAgICAgICAgICAgIGVsc2VcbiAgICAgICAgICAgICAgYS5yb3dDbGFzcyA9ICdkYW5nZXInXG4gICAgICAgICAgJHNjb3BlLmhhc1F1aWNrQ29udGFjdHMgPSAkc2NvcGUuaGFzUXVpY2tDb250YWN0cyBvciBhLnF1aWNrQ29udGFjdFxuICAgICAgICAkc2NvcGUuYXR0cmlidXRlc0xlbmd0aCA9ICRzY29wZS5hdHRyaWJ1dGVzLmxlbmd0aFxuXG4gICAgJHNjb3BlLmF0dHJpYnV0ZUNsaWNrZWQgPSAoZXZlbnQsIGF0dHIpIC0+XG4gICAgICBpZiBhdHRyLmNvbm5lY3RpbmdNc2dzXG4gICAgICAgIGF0dHIuY29sbGFwc2UgPSAhYXR0ci5jb2xsYXBzZVxuICAgICAgZWxzZVxuICAgICAgICBhdHRyLmNvbm5lY3RpbmdNc2dzID0gW11cbiAgICAgICAgZm9yIG1zZyBpbiAkc2NvcGUucmVjZWl2ZWQubGlzdFxuICAgICAgICAgIGNvbnRpbnVlIHVubGVzcyBtc2cuc2lnbmVkRGF0YS50eXBlIGluIFsndmVyaWZpY2F0aW9uJywgJ3VudmVyaWZpY2F0aW9uJywgJ3ZlcmlmeV9pZGVudGl0eScsICd1bnZlcmlmeV9pZGVudGl0eSddXG4gICAgICAgICAgaGFzQXR0cjEgPSBoYXNBdHRyMiA9IGZhbHNlXG4gICAgICAgICAgZm9yIGEgaW4gbXNnLmdldFJlY2lwaWVudEFycmF5KClcbiAgICAgICAgICAgIGhhc0F0dHIxID0gaGFzQXR0cjEgb3IgYS50eXBlID09IGF0dHIudHlwZSBhbmQgYS52YWx1ZSA9PSBhdHRyLnZhbHVlXG4gICAgICAgICAgICBoYXNBdHRyMiA9IGhhc0F0dHIyIG9yIGEudHlwZSA9PSAkc2NvcGUuaWRUeXBlIGFuZCBhLnZhbHVlID09ICRzY29wZS5pZFZhbHVlXG4gICAgICAgICAgICBpZiBoYXNBdHRyMSBhbmQgaGFzQXR0cjJcbiAgICAgICAgICAgICAgYXR0ci5jb25uZWN0aW5nTXNncy5wdXNoIG1zZ1xuICAgICAgICAgICAgICBicmVha1xuICAgICAgICBhdHRyLmNvbGxhcHNlID0gIWF0dHIuY29sbGFwc2VcblxuICAgICRzY29wZS5nZXRTZW50TXNncyA9IC0+XG4gICAgICByZXR1cm4gdW5sZXNzICRzY29wZS5pZGVudGl0eSBhbmQgJHNjb3BlLmlyaXNTb2NpYWxOZXR3b3JrXG4gICAgICAkc2NvcGUuc2VudCA9IFtdXG4gICAgICBjdXJzb3IgPSBpZiAkc2NvcGUuc2VudC5sZW5ndGggdGhlbiAkc2NvcGUuc2VudFskc2NvcGUuc2VudC5sZW5ndGggLSAxXS5jdXJzb3IgZWxzZSAnJ1xuICAgICAgY2FsbGJhY2sgPSAobXNnKSAtPlxuICAgICAgICAkc2NvcGUucHJvY2Vzc01lc3NhZ2VzIFttc2ddLCB7IGF1dGhvcklzU2VsZjogdHJ1ZSB9XG4gICAgICAgICRzY29wZS5zZW50LnB1c2ggbXNnXG5cbiAgICAgICRzY29wZS5pZGVudGl0eS5zZW50KHtjYWxsYmFja30pXG5cbiAgICAkc2NvcGUuZ2V0UmVjZWl2ZWRNc2dzID0gLT5cbiAgICAgIHJldHVybiB1bmxlc3MgJHNjb3BlLmlkZW50aXR5IGFuZCAkc2NvcGUuaXJpc1NvY2lhbE5ldHdvcmtcbiAgICAgICRzY29wZS5yZWNlaXZlZCA9XG4gICAgICAgIGxpc3Q6IFtdXG4gICAgICAgIHNlZW46IHt9XG4gICAgICBjdXJzb3IgPSBpZiAkc2NvcGUucmVjZWl2ZWQubGlzdC5sZW5ndGggdGhlbiAkc2NvcGUucmVjZWl2ZWQubGlzdFskc2NvcGUucmVjZWl2ZWQubGlzdC5sZW5ndGggLSAxXS5jdXJzb3IgZWxzZSAnJ1xuICAgICAgY2FsbGJhY2sgPSAobXNnKSAtPlxuICAgICAgICByZXR1cm4gaWYgJHNjb3BlLnJlY2VpdmVkLnNlZW5bbXNnLmdldEhhc2goKV1cbiAgICAgICAgJHNjb3BlLnByb2Nlc3NNZXNzYWdlcyBbbXNnXSwgeyByZWNpcGllbnRJc1NlbGY6IHRydWUgfVxuICAgICAgICAkc2NvcGUuJGFwcGx5IC0+XG4gICAgICAgICAgaWYgbXNnLmlzUG9zaXRpdmUoKVxuICAgICAgICAgICAgdW5sZXNzIG1zZy5saW5rVG9BdXRob3JcbiAgICAgICAgICAgICAgbXNnLmF1dGhvckFycmF5ID0gbXNnLmdldEF1dGhvckFycmF5KClcbiAgICAgICAgICAgICAgZm9yIGEgaW4gbXNnLmF1dGhvckFycmF5XG4gICAgICAgICAgICAgICAgbXNnLmxpbmtUb0F1dGhvciA9IGEgdW5sZXNzIG1zZy5saW5rVG9BdXRob3JcbiAgICAgICAgICAgIGlmICRzY29wZS50aHVtYnNVcC5sZW5ndGggPCAxMiBhbmQgbm90IHRodW1ic1VwT2JqW0pTT04uc3RyaW5naWZ5KG1zZy5zaWduZWREYXRhLmF1dGhvcildXG4gICAgICAgICAgICAgIHRodW1ic1VwT2JqW0pTT04uc3RyaW5naWZ5KG1zZy5zaWduZWREYXRhLmF1dGhvcildID0gdHJ1ZVxuICAgICAgICAgICAgICAkc2NvcGUudGh1bWJzVXAucHVzaCBtc2dcbiAgICAgICAgICAgICAgJHNjb3BlLmhhc1RodW1ic1VwID0gdHJ1ZVxuICAgICAgICAgIGVsc2UgaWYgbXNnLmlzTmVnYXRpdmUoKSBhbmQgJHNjb3BlLnRodW1ic0Rvd24ubGVuZ3RoIDwgMTIgYW5kIG5vdCB0aHVtYnNEb3duT2JqW0pTT04uc3RyaW5naWZ5KG1zZy5zaWduZWREYXRhLmF1dGhvcildXG4gICAgICAgICAgICB0aHVtYnNEb3duT2JqW0pTT04uc3RyaW5naWZ5KG1zZy5zaWduZWREYXRhLmF1dGhvcildID0gdHJ1ZVxuICAgICAgICAgICAgJHNjb3BlLnRodW1ic0Rvd24ucHVzaCBtc2dcbiAgICAgICAgICAgICRzY29wZS5oYXNUaHVtYnNEb3duID0gdHJ1ZVxuICAgICAgICAgICRzY29wZS5yZWNlaXZlZC5saXN0LnB1c2ggbXNnXG4gICAgICAgICAgJHNjb3BlLnJlY2VpdmVkLnNlZW5bbXNnLmdldEhhc2goKV0gPSB0cnVlXG4gICAgICAkc2NvcGUuaWRlbnRpdHkucmVjZWl2ZWQoe2NhbGxiYWNrLCBjdXJzb3J9KVxuXG4gICAgJHNjb3BlLnNldEZpbHRlcnMgPSAoZmlsdGVycykgLT5cbiAgICAgIGFuZ3VsYXIuZXh0ZW5kICRzY29wZS5maWx0ZXJzLCBmaWx0ZXJzXG5cbiAgICAkc2NvcGUudXBsb2FkQ292ZXJQaG90byA9IChibG9iLCBpZGVudGl0eSkgLT5cbiAgICAgICRzY29wZS51cGxvYWRGaWxlKGJsb2IpLnRoZW4gKGZpbGVzKSAtPlxuICAgICAgICByZWNpcGllbnQgPSB7Y292ZXJQaG90bzogJy9pcGZzLycgKyBmaWxlc1swXS5wYXRofVxuICAgICAgICByZWNpcGllbnRbJHNjb3BlLmlkVHlwZV0gPSAkc2NvcGUuaWRWYWx1ZVxuICAgICAgICAkd2luZG93LmlyaXNMaWIuTWVzc2FnZS5jcmVhdGVWZXJpZmljYXRpb24oe3JlY2lwaWVudH0sICRzY29wZS5wcml2YXRlS2V5KS50aGVuIChtKSAtPlxuICAgICAgICAgICRzY29wZS5pcmlzU29jaWFsTmV0d29yay5hZGRNZXNzYWdlKG0pXG4gICAgICAgICAgJHNjb3BlLnVwbG9hZE1vZGFsLmNsb3NlKClcblxuICAgICRzY29wZS5vcGVuU2hhcmVQYWdlTW9kYWwgPSAoKSAtPlxuICAgICAgJHNjb3BlLm9wZW5Nb2RhbCAnc2hhcmVQYWdlTW9kYWwnLCB7IHRlbXBsYXRlVXJsOiAnYXBwL2lkZW50aXRpZXMvc2hhcmUubW9kYWwuaHRtbCcsIHNpemU6ICdtZCcgfVxuXG4gICAgJHNjb3BlLm9wZW5Db3ZlclBob3RvVXBsb2FkTW9kYWwgPSAtPlxuICAgICAgcmV0dXJuIHVubGVzcyAkc2NvcGUuYXV0aGVudGljYXRpb24uaWRlbnRpdHlcbiAgICAgICRzY29wZS5vcGVuVXBsb2FkTW9kYWwoJHNjb3BlLnVwbG9hZENvdmVyUGhvdG8sICdVcGxvYWQgY292ZXIgcGhvdG8nLCBmYWxzZSlcblxuICAgICRzY29wZS5pZFR5cGUgPSAkc3RhdGVQYXJhbXMudHlwZVxuICAgICRzY29wZS5pZFZhbHVlID0gJHN0YXRlUGFyYW1zLnZhbHVlXG4gICAgJHNjb3BlLnNob3dDaGF0QnV0dG9uID0gISRzY29wZS5pc0N1cnJlbnRVc2VyICYmICgkc2NvcGUuaWRUeXBlID09ICdrZXlJRCcgfHwgJHNjb3BlLmlkVHlwZSA9PSAndXVpZCcpXG5cbiAgICAkc2NvcGUuZmluZE9uZSA9IC0+XG4gICAgICByZXR1cm4gdW5sZXNzICRzY29wZS5pcmlzU29jaWFsTmV0d29ya1xuICAgICAgJHNjb3BlLmlkQXR0ciA9IG5ldyAkd2luZG93LmlyaXNMaWIuQXR0cmlidXRlKCRzY29wZS5pZFR5cGUsICRzY29wZS5pZFZhbHVlKVxuICAgICAgJHNjb3BlLmlkVXJsID0gJHNjb3BlLmdldElkVXJsKCRzY29wZS5pZFR5cGUsICRzY29wZS5pZFZhbHVlKVxuICAgICAgJHNjb3BlLmlzQ3VycmVudFVzZXIgPSAkc2NvcGUuYXV0aGVudGljYXRpb24gYW5kXG4gICAgICAgICRzY29wZS5hdXRoZW50aWNhdGlvbi51c2VyIGFuZFxuICAgICAgICAkc2NvcGUuaWRUeXBlID09ICRzY29wZS5hdXRoZW50aWNhdGlvbi51c2VyLmlkVHlwZSBhbmRcbiAgICAgICAgJHNjb3BlLmlkVmFsdWUgPT0gJHNjb3BlLmF1dGhlbnRpY2F0aW9uLnVzZXIuaWRWYWx1ZVxuICAgICAgTm90aWZpY2F0aW9uU2VydmljZS5tYXJrUG9zdHNTZWVuKCkgaWYgJHNjb3BlLmlzQ3VycmVudFVzZXIgYW5kICRzdGF0ZS5pcyAnaWRlbnRpdGllcy5zaG93J1xuICAgICAgTm90aWZpY2F0aW9uU2VydmljZS5tYXJrQ2hhdHNTZWVuKCkgaWYgJHN0YXRlLmluY2x1ZGVzICdjaGF0cydcbiAgICAgICRzY29wZS5pc1VuaXF1ZVR5cGUgPSAoKSAtPlxuICAgICAgICAkd2luZG93LmlyaXNMaWIuQXR0cmlidXRlLmlzVW5pcXVlVHlwZSgkc2NvcGUuaWRUeXBlKSBvciAkc2NvcGUuaWRUeXBlID09ICdjaGFubmVsJ1xuICAgICAgaWYgISRzY29wZS5pc1VuaXF1ZVR5cGVcbiAgICAgICAgJHN0YXRlLmdvICdpZGVudGl0aWVzLmxpc3QnLCB7IHNlYXJjaDogJHNjb3BlLmlkVmFsdWUgfVxuICAgICAgICAkc2NvcGUudGFic1syXS5hY3RpdmUgPSB0cnVlIGlmICRzY29wZS50YWJzXG4gICAgICBpZiAkc3RhdGUuaXMgJ2lkZW50aXRpZXMuc2hvdydcbiAgICAgICAgJHNjb3BlLnNldFBhZ2VUaXRsZSAkc2NvcGUuaWRWYWx1ZVxuICAgICAgJHNjb3BlLmlkZW50aXR5ID0gJHNjb3BlLmlyaXNTb2NpYWxOZXR3b3JrLmdldENvbnRhY3RzXG4gICAgICAgIHR5cGU6ICRzY29wZS5pZFR5cGVcbiAgICAgICAgdmFsdWU6ICRzY29wZS5pZFZhbHVlXG4gICAgICAkc2NvcGUuc2V0Q29udGFjdE5hbWVzKCRzY29wZS5pZGVudGl0eSwgZmFsc2UsIHRydWUpXG4gICAgICAkc2NvcGUuaWRlbnRpdHkuZ3VuLm9uIChkYXRhKSAtPlxuICAgICAgICAkc2NvcGUuaWRlbnRpdHkuZGF0YSA9IGRhdGFcbiAgICAgICRzY29wZS5nZXRBdHRyaWJ1dGVzKClcbiAgICAgICRzY29wZS5nZXRTZW50TXNncygpXG4gICAgICAkc2NvcGUuZ2V0UmVjZWl2ZWRNc2dzKClcbiAgICAgICRzY29wZS5pZGVudGl0eS5ndW4uZ2V0KCdzY29yZXMnKS5vcGVuIChzY29yZXMpIC0+XG4gICAgICAgICRzY29wZS5zY29yZXMgPSBzY29yZXNcblxuICAgIGNoZWNrRW1wdHlDaGF0cyA9IC0+ICMgaGFjayBmb3IgcmVzZXR0aW5nIGJyb2tlbiBjaGF0c1xuICAgICAgZm9yIGNoYXQgaW4gJHNjb3BlLmNoYXRzXG4gICAgICAgIGlmIGNoYXQuaWRUeXBlID09ICdrZXlJRCcgYW5kIGNoYXQuY2hhdCBhbmQgbm90IGNoYXQubGF0ZXN0XG4gICAgICAgICAgY2hhdC5jaGF0ID0gJHNjb3BlLmdldFByaXZhdGVDaGF0KGNoYXQpXG5cbiAgICBsb2FkQ2hhdE1lc3NhZ2VzID0gLT5cbiAgICAgIGNoZWNrRW1wdHlDaGF0cygpXG4gICAgICAkc2NvcGUuY2hhdE1lc3NhZ2VzID0gW11cbiAgICAgICRzY29wZS5zZWVuQ2hhdE1lc3NhZ2VzID0ge31cbiAgICAgIHNldFV1aWRMYXN0U2VlblRpbWUgPSAoKSAtPlxuICAgICAgICB0aW1lID0gbmV3IERhdGUoKS50b0lTT1N0cmluZygpXG4gICAgICAgICRzY29wZS5pcmlzU29jaWFsTmV0d29yay5ndW4udXNlcigpLmdldCgnaXJpcycpLmdldCgnY2hhdE1lc3NhZ2VzQnlVdWlkJykuZ2V0KCRzY29wZS5pZFZhbHVlKS5nZXQoJ21zZ3NMYXN0U2VlblRpbWUnKS5wdXQodGltZSlcbiAgICAgIG9uTWVzc2FnZSA9IChtc2csIGluZm8pIC0+XG4gICAgICAgICRzY29wZS4kYXBwbHkgLT5cbiAgICAgICAgICBpZiBtc2cuaGFzaFxuICAgICAgICAgICAgcmV0dXJuIGlmICRzY29wZS5zZWVuQ2hhdE1lc3NhZ2VzW21zZy5oYXNoXVxuICAgICAgICAgICAgJHNjb3BlLnNlZW5DaGF0TWVzc2FnZXNbbXNnLmhhc2hdID0gdHJ1ZVxuICAgICAgICAgIG1zZy5zZWxmQXV0aG9yZWQgPSBpbmZvIGFuZCBpbmZvLnNlbGZBdXRob3JlZFxuICAgICAgICAgICRzY29wZS5jaGF0TWVzc2FnZXMucHVzaChtc2cpIGlmIG1zZ1xuICAgICAgICAgIGlmICRzY29wZS5pZFR5cGUgPT0gJ3V1aWQnXG4gICAgICAgICAgICBzZXRVdWlkTGFzdFNlZW5UaW1lKClcbiAgICAgICAgICBpZiAkc2NvcGUuY2hhdFxuICAgICAgICAgICAgaWYgKG1zZy50aW1lID4gJHNjb3BlLmNoYXQubXlNc2dzTGFzdFNlZW5UaW1lKSBhbmQgbm90ICRkb2N1bWVudC5oaWRkZW5cbiAgICAgICAgICAgICAgJHNjb3BlLmNoYXQuc2V0TXlNc2dzTGFzdFNlZW5UaW1lKClcbiAgICAgICAgICAgIHVubGVzcyAkc2NvcGUuY2hhdC5yZXBsaWVkQnlUaGVtIG9yIGluZm8uc2VsZkF1dGhvcmVkXG4gICAgICAgICAgICAgICRzY29wZS5jaGF0LnJlcGxpZWRCeVRoZW0gPSB0cnVlXG4gICAgICBpZiAkc2NvcGUuaWRUeXBlID09ICdrZXlJRCdcbiAgICAgICAgaWYgJHNjb3BlLmF1dGhlbnRpY2F0aW9uLnVzZXJcbiAgICAgICAgICAkc2NvcGUuY2hhdCA9IG5ldyAkd2luZG93LmlyaXNMaWIuQ2hhdFxuICAgICAgICAgICAgb25NZXNzYWdlOiBvbk1lc3NhZ2VcbiAgICAgICAgICAgIGtleTogJHNjb3BlLnByaXZhdGVLZXlcbiAgICAgICAgICAgIGd1bjogJHNjb3BlLmd1blxuICAgICAgICAgICAgcGFydGljaXBhbnRzOiAkc2NvcGUuaWRWYWx1ZVxuICAgICAgICAgICRzY29wZS5jaGF0LnNlZW4gPSB7fVxuICAgICAgICAgIHZpc2liaWxpdHlDaGFuZ2VkID0gKCkgLT5cbiAgICAgICAgICAgIGlmICRkb2N1bWVudC52aXNpYmlsaXR5U3RhdGUgPT0gJ3Zpc2libGUnXG4gICAgICAgICAgICAgICRzY29wZS5jaGF0LnNldE15TXNnc0xhc3RTZWVuVGltZSgpXG4gICAgICAgICAgJGRvY3VtZW50Lm9uKCd2aXNpYmlsaXR5Y2hhbmdlJywgdmlzaWJpbGl0eUNoYW5nZWQpXG4gICAgICAgICAgJHNjb3BlLiRvbignJGRlc3Ryb3knLCAoKSAtPiAkZG9jdW1lbnQub2ZmKCd2aXNpYmlsaXR5Y2hhbmdlJywgdmlzaWJpbGl0eUNoYW5nZWQpKVxuICAgICAgICAgICRzY29wZS5jaGF0LnNldE15TXNnc0xhc3RTZWVuVGltZSgpXG4gICAgICAgICAgJHNjb3BlLmNoYXQuZ2V0TXlNc2dzTGFzdFNlZW5UaW1lICh0aW1lKSAtPlxuICAgICAgICAgICAgJHNjb3BlLiRhcHBseSAtPiAkc2NvcGUuY2hhdC5teU1zZ3NMYXN0U2VlblRpbWUgPSB0aW1lXG4gICAgICAgICAgJHNjb3BlLmNoYXQuZ2V0VGhlaXJNc2dzTGFzdFNlZW5UaW1lICh0aW1lKSAtPlxuICAgICAgICAgICAgJHNjb3BlLiRhcHBseSAtPiAkc2NvcGUuY2hhdC50aGVpck1zZ3NMYXN0U2VlblRpbWUgPSB0aW1lXG4gICAgICAgICAgJHNjb3BlLnNlbmRDaGF0TWVzc2FnZSA9ICh0ZXh0KSAtPlxuICAgICAgICAgICAgdCA9IG5ldyBEYXRlKCkudG9JU09TdHJpbmcoKVxuICAgICAgICAgICAgbSA9XG4gICAgICAgICAgICAgIGF1dGhvcjogJHNjb3BlLnZpZXdwb2ludC5pZGVudGl0eS5wcmltYXJ5TmFtZVxuICAgICAgICAgICAgICB0ZXh0OiB0ZXh0XG4gICAgICAgICAgICAgIHRpbWU6IHRcbiAgICAgICAgICAgICRzY29wZS5jaGF0LnNlbmQobSlcbiAgICAgICAgJHdpbmRvdy5pcmlzTGliLkNoYXQuZ2V0T25saW5lICRzY29wZS5ndW4sICRzY29wZS5pZFZhbHVlLCAocmVzKSAtPlxuICAgICAgICAgICRzY29wZS5pc09ubGluZSA9IHJlcy5pc09ubGluZVxuICAgICAgICAgICRzY29wZS5sYXN0QWN0aXZlID0gcmVzLmxhc3RBY3RpdmUgdW5sZXNzIHJlcy5pc09ubGluZVxuICAgICAgaWYgJHNjb3BlLmlkVHlwZSA9PSAndXVpZCdcbiAgICAgICAgJHNjb3BlLmlyaXNTb2NpYWxOZXR3b3JrLmdldENoYXRNc2dzKCRzY29wZS5pZFZhbHVlLCB7Y2FsbGJhY2s6IG9uTWVzc2FnZX0pXG4gICAgICAgICRzY29wZS5zZW5kQ2hhdE1lc3NhZ2UgPSAodGV4dCkgLT5cbiAgICAgICAgICBtc2cgPSB7fVxuICAgICAgICAgIG1zZy50eXBlID0gJ2NoYXQnXG4gICAgICAgICAgbXNnLnRleHQgPSB0ZXh0XG4gICAgICAgICAgbXNnLnJlY2lwaWVudCA9IHt1dWlkOiAkc2NvcGUuaWRWYWx1ZX1cbiAgICAgICAgICAkc2NvcGUuY3JlYXRlTWVzc2FnZSh1bmRlZmluZWQsIG1zZylcbiAgICAgICAgICBjb25zb2xlLmxvZyAnc2VuZCBwdWJsaWMgY2hhdCBtc2cnLCBtc2dcbiAgICAgICAgaWYgJHNjb3BlLmF1dGhlbnRpY2F0aW9uLnVzZXJcbiAgICAgICAgICB2aXNpYmlsaXR5Q2hhbmdlZCA9ICgpIC0+XG4gICAgICAgICAgICBpZiAkZG9jdW1lbnQudmlzaWJpbGl0eVN0YXRlID09ICd2aXNpYmxlJ1xuICAgICAgICAgICAgICBzZXRVdWlkTGFzdFNlZW5UaW1lKClcbiAgICAgICAgICAkZG9jdW1lbnQub24oJ3Zpc2liaWxpdHljaGFuZ2UnLCB2aXNpYmlsaXR5Q2hhbmdlZClcbiAgICAgICAgICBzZXRVdWlkTGFzdFNlZW5UaW1lKClcblxuICAgIGxvYWQgPSAtPlxuICAgICAgaWYgJHNjb3BlLmlyaXNTb2NpYWxOZXR3b3JrXG4gICAgICAgIGlmICRzdGF0ZS5pcygnaWRlbnRpdGllcy5zaG93JylcbiAgICAgICAgICAkc2NvcGUuZmluZE9uZSgpXG5cbiAgICAgICAgaWYgJHN0YXRlLmlzICdpZGVudGl0aWVzLmNyZWF0ZSdcbiAgICAgICAgICBmb2N1cygnaWROYW1lRm9jdXMnKVxuICAgICAgICAgICRzY29wZS5uZXdFbnRyeS5uYW1lID0gJHNjb3BlLmNhcGl0YWxpemVXb3Jkcygkc2NvcGUucXVlcnkudGVybSlcblxuICAgICAgICBpZiAkc3RhdGUuaXMoJ2NoYXRzLnNob3cnKVxuICAgICAgICAgICRzY29wZS5maW5kT25lKClcbiAgICAgICAgICBsb2FkQ2hhdE1lc3NhZ2VzKClcbiAgICAkc2NvcGUuJHdhdGNoICdpcmlzU29jaWFsTmV0d29yaycsIGxvYWRcblxuICAgICRzY29wZS5xclNjYW5TdWNjZXNzID0gKGRhdGEpIC0+XG4gICAgICBhID0gZGF0YS5zcGxpdCgnLycpXG4gICAgICBpZiBhLmxlbmd0aCA+IDRcbiAgICAgICAgdHlwZSA9IGRlY29kZVVSSUNvbXBvbmVudChhW2EubGVuZ3RoIC0gMl0pXG4gICAgICAgIHZhbHVlID0gZGVjb2RlVVJJQ29tcG9uZW50KGFbYS5sZW5ndGggLSAxXS5zcGxpdCgnPycpWzBdKVxuICAgICAgICBjb25zb2xlLmxvZyAndmFsdWUnLCB2YWx1ZVxuICAgICAgICBjb25zb2xlLmxvZyAnZGF0YScsIGRhdGFcbiAgICAgICAgJHN0YXRlLmdvICdpZGVudGl0aWVzLnNob3cnLCB7dHlwZSwgdmFsdWV9XG4gICAgICBlbHNlXG4gICAgICAgIGpzb24gPSBKU09OLnBhcnNlKGRhdGEpXG4gICAgICAgIGNvbnNvbGUubG9nICdyZWFkIHFyIGpzb24nLCBqc29uXG4gICAgICAgIGlmIGpzb24ucHJpdiBhbmQganNvbi5lcHJpdiBhbmQgbm90ICRzY29wZS5hdXRoZW50aWNhdGlvbi51c2VyXG4gICAgICAgICAgJHNjb3BlLmxvZ2luV2l0aEtleShkYXRhLCB1bmRlZmluZWQsIHRydWUpXG4gICAgICAgIGVsc2VcbiAgICAgICAgICBjb25zb2xlLmxvZyAnVW5yZWNvZ25pemVkIGlkZW50aXR5IHVybCcsIGRhdGFcbiAgICAkc2NvcGUucXJTY2FuRXJyb3IgPSAoZSkgLT5cbiAgICAgICMgdGhpcyBpcyBjYWxsZWQgZWFjaCB0aW1lIGEgUVIgY29kZSBpcyBub3QgZm91bmQgb24gdGhlIGNhbWVyYVxuICAgICAgIyBjb25zb2xlLmVycm9yIGVcbl1cbiJdfQ==
-
-(function() {
   angular.module('irisAngular').run(function($log, $transitions, $rootScope, $state, $stateParams, $window, localStorageService) {
     'ngInject';
     $log.debug('runBlock end');
@@ -3121,6 +3121,16 @@ $templateCache.put('app/identities/show.sent.html','<div infinite-scroll=getSent
 $templateCache.put('app/identities/show.stats.html','<div><p class="hidden-md hidden-lg" ng-hide=!stats.name><span ng-bind=idValue class=idValue></span> <small class=text-muted><span ng-hide="idType === \'url\'" ng-bind=idType class=idType></span> <a ng-href={{idValue}} ng-show="idType === \'url\'" ng-bind=idType class=idType></a></small></p><div class=stats-box><div><div><p></p><div class="hidden-md align-center"><identicon ng-click=openProfilePhotoUploadModal() identity=identity ipfs=ipfs border=4 show-distance=0 width=230 ng-if=hideProfilePhoto></identicon><identicon ng-click=openProfilePhotoUploadModal() identity=identity ipfs=ipfs border=4 show-distance=0 width=230 ng-if=!hideProfilePhoto></identicon></div><div class="visible-md align-center"><!-- because squeezed identicons don\'t scale properly --><identicon ng-click=openProfilePhotoUploadModal() identity=identity ipfs=ipfs border=4 show-distance=0 width=180 ng-if=hideProfilePhoto></identicon><identicon ng-click=openProfilePhotoUploadModal() identity=identity ipfs=ipfs border=4 show-distance=0 width=180 ng-if=!hideProfilePhoto></identicon></div><p></p></div></div><div><div><h4><span class="visible-xs-inline-block visible-sm-inline-block mar-right15"><span ng-show="idType === \'keyID\' || idType === \'uuid\'"><identicon identity=idAttr width=35></identicon></span><span ng-hide="idType === \'keyID\' || idType === \'uuid\'"><span ng-if=!(identity.data.mostVerifiedAttributes.name||identity.data.mostVerifiedAttributes.nickname)><span ng-bind=idValue class=idValue></span> <small class=text-muted><span ng-hide="idType === \'url\'" ng-bind=idType class=idType></span> <a ng-href={{idValue}} ng-show="idType === \'url\'" ng-bind=idType class=idType></a> </small></span></span></span><span ng-bind=identity.primaryName></span> <span class="glyphicon glyphicon-ok-sign" style=color:#337ab7 uib-tooltip="Verified by a trusted verifier" ng-if=identity.wellVerified></span> <span ng-hide="!identity.data.mostVerifiedAttributes.nickname || identity.data.mostVerifiedAttributes.nickname == identity.data.mostVerifiedAttributes.primaryName">(<span class=text-muted ng-bind=identity.nickname></span>) </span><button class="mar-left15 visible-xs-inline-block visible-sm-inline-block btn btn-default" ng-click=openSharePageModal()><span class="glyphicon glyphicon-share"></span></button> <button ng-if=showChatButton class="mar-left15 visible-xs-inline-block visible-sm-inline-block btn btn-default" ui-sref="chats.show({value:idValue, type:idType})"><span class="fa fa-comment"></span></button> <button ng-if="authentication.user && idType === \'keyID\'" class="visible-xs-inline-block visible-sm-inline-block mar-left15 btn btn-default" ng-click=openVideoChatModal()><span class="glyphicon glyphicon-facetime-video"></span></button> <small class="positive mar-left15 visible-xs-inline-block visible-sm-inline-block" ng-show=isOnline>online</small><div ng-show="!loggingIn && authentication.user && !isCurrentUser" class="pull-right visible-xs-inline-block visible-sm-inline-block"><button ng-if=!identity.data.trustDistance class="btn btn-primary" ng-click="follow(idType, idValue)">Follow</button> <button ng-if="identity.data.trustDistance > 0" class="btn btn-default" ng-click="unfollow(idType, idValue)">Unfollow</button></div><span ng-if="identity.data.trustDistance === 0" class="label label-default pull-right">{{authentication.user ? \'you\' : \'viewpoint\'}} </span><span ng-if="identity.data.trustDistance > 0" ng-bind="identity.data.trustDistance | ordinal" class="label label-default pull-right"></span> <span ng-if="identity.data.trustDistance === false" class="label label-default pull-right">unconnected</span></h4></div></div><div><div class="mar-bot10 mar-top10"><div class=mar-bot10 ng-if="authentication.user && !identity.hasProperName && !nameAdded"><a href="" ng-click=addName() ng-hide=addingName>Add name</a><form class=form-inline ng-show=addingName ng-submit=addName(name)><div class=form-group><input focus-on=addNameFocus type=text class=form-control ng-model=name placeholder="Add name"></div><button type=submit class="btn btn-default"><span class="glyphicon glyphicon-plus"></span></button></form></div><p><b>Received: <span ng-if="identity.data.receivedPositive || identity.data.receivedNegative"><span ng-bind="identity.data.receivedPositive / (identity.data.receivedPositive+identity.data.receivedNeutral+identity.data.receivedNegative) * 100 | number:0"></span>% positive </span><span ng-if="!(identity.data.receivedPositive || identity.data.receivedNegative)">&mdash;</span></b><br>Sent: <span ng-if="identity.data.sentPositive || identity.data.sentNegative"><span ng-bind="identity.data.sentPositive / (identity.data.sentPositive+identity.data.sentNeutral+identity.data.sentNegative) * 100 | number:0"></span>% positive </span><span ng-if="!(identity.data.sentPositive || identity.data.sentNegative)">&mdash;</span></p><!--\n          <p class="received-stats">\n          <div><strong>Received</strong></div>\n          <div>\n          <strong>\n          <span class="positive"><span class="glyphicon glyphicon-thumbs-up"></span> <span ng-bind="identity.data.receivedPositive">-</span></span>\n          <span class="neutral"><span class="glyphicon glyphicon-question-sign"></span> <span ng-bind="identity.data.receivedNeutral">-</span></span>\n          <span class="negative"><span class="glyphicon glyphicon-thumbs-down"></span> <span ng-bind="identity.data.receivedNegative">-</span></span>\n          </strong>\n          </div>\n          </p>\n          <p>\n          <div>Sent</div>\n          <div>\n          <span class="positive"><span class="glyphicon glyphicon-thumbs-up"></span> <span ng-bind="identity.data.sentPositive">-</span></span>\n          <span class="neutral"><span class="glyphicon glyphicon-question-sign"></span> <span ng-bind="identity.data.sentNeutral">-</span></span>\n          <span class="negative"><span class="glyphicon glyphicon-thumbs-down"></span> <span ng-bind="identity.data.sentNegative">-</span></span>\n          </div>\n          </p> --><div ng-if="scores.verifier && scores.verifier.score > 0" class="text-center alert alert-info"><span class="fa fa-shield" style=font-size:2em></span><p>This identity is a <b>trusted verifier</b> in this web of trust. It can grant verification checkmarks.</p></div><div ng-if=isUniqueType class="mar-top10 quick-contact"><ul class=list-unstyled><li ng-repeat="a in attributes" ng-if=a.quickContact><a ng-href={{a.link}}><span ng-class=a.iconStyle></span><span ng-bind="a.linkName || a.value"></span></a></li><li ng-if=stats.first_seen><span class="fa fa-calendar"></span>First seen: <span ng-if=stats.first_seen ng-bind="stats.first_seen|date:\'mediumDate\'"></span> <span ng-if=!stats.first_seen>&mdash;</span></li></ul></div></div><div class=mar-top10><div ng-if="isUniqueType && hasThumbsUp" class="stats-box mar-bot10"><h5>Thumbs up</h5><a ng-repeat="msg in thumbsUp | orderBy:\'authorTrustDistance\'" ng-class="{ \'hidden-xs\': $index > 3, \'hidden-sm\': $index > 4 }" class="mar-right5 mar-bot5" ui-sref="identities.show({ type: msg.linkToAuthor.type, value: msg.linkToAuthor.value })" uib-tooltip="{{ msg.author_name || msg.linkToAuthor.value }}"><identicon ipfs=ipfs identity=msg.author class=no-glow border=3 width=60></identicon></a></div><div ng-if="isUniqueType && hasThumbsDown" class="stats-box mar-bot10"><h5>Thumbs down</h5><a ng-repeat="msg in thumbsDown | orderBy:\'authorTrustDistance\'" ng-class="{ \'hidden-xs\': $index > 3, \'hidden-sm\': $index > 4 }" class="mar-right5 mar-bot5" ui-sref="identities.show({ type: msg.linkToAuthor.type, value: msg.linkToAuthor.value })" uib-tooltip="{{ msg.author_name || msg.linkToAuthor.value }}"><identicon ipfs=ipfs identity=msg.author class=no-glow border=3 width=60></identicon></a></div></div></div></div></div>');
 $templateCache.put('app/identities/upload.modal.html','<div class="col-md-10 col-md-offset-1" ng-controller=IdentitiesController><div class="panel panel-default mar-top15"><div class=panel-heading><form name=form><div class="drop-box mar-bot10" ngf-resize="squarify ? {ratio:\'1:1\',centerCrop:true} : {}" ngf-select ngf-drop ng-model=file name=file ngf-pattern="\'image/*\'" ngf-accept="\'image/*\'" ngf-max-size=5MB ngf-min-height=100 style=width:100%;min-height:300px;text-align:center><div ng-if=!file style="padding:120px 0">Drop file or click</div><img ng-if=file ngf-src=file width=70%></div><button class="btn btn-primary" ng-disabled=!file type=submit ng-click=uploadModalCallback(file)>{{ modalButtonText }}</button></form></div></div></div>');
 $templateCache.put('app/identities/video.modal.html','<div class="col-md-10 col-md-offset-1" ng-controller=IdentitiesController><div class="panel panel-default mar-top15"><div class=panel-heading><div class=mar-bot15><div style=color:red;font-weight:bold ng-if="!isCurrentUser && !stream">currently this is unencrypted livestreaming :D</div><identicon identity=identity ipfs=ipfs width=35></identicon><span class=mar-right15><span ng-show="idType === \'keyID\' || idType === \'uuid\'"><identicon identity=idAttr width=35></identicon></span><span ng-hide="idType === \'keyID\' || idType === \'uuid\'"><span ng-if=!(identity.data.mostVerifiedAttributes.name||identity.data.mostVerifiedAttributes.nickname)><span ng-bind=idValue class=idValue></span> <small class=text-muted><span ng-hide="idType === \'url\'" ng-bind=idType class=idType></span> <a ng-href={{idValue}} ng-show="idType === \'url\'" ng-bind=idType class=idType></a> </small></span></span></span><span ng-bind=identity.primaryName></span> <small class="positive mar-left15" ng-show=isOnline>online</small><div class=mar-top5><videochat ng-if="idType === \'keyID\'" watch-only=stream gun=gun pubkey=idValue></videochat></div><p ng-if="isCurrentUser || stream"><button ng-click="copyToClipboard(idUrl + \'?stream\', $event)" class="btn btn-default mar-top10">Copy link to clipboard</button></p></div></div></div></div>');
+$templateCache.put('app/main/about.html','<div class="container mar-bot30 mar-top20-xs no-padding-xs"><div class=col-md-8><div class="panel panel-default"><div class=panel-body><h3>About Iris</h3><p class=lead>Iris is a social networking application that stores everything on its users\' devices which communicate directly with each other &mdash; no corporate gatekeepers needed.</p><p>Longer description on <a href=https://github.com/irislib/iris/blob/master/README.md>GitHub</a>.</p><h4>Available at</h4><ul><li><a href=https://iris.to>iris.to</a></li><li><a href=https://iris.cx>iris.cx</a></li><li><a href=https://irislib.github.io>irislib.github.io</a></li><li>Browser extension: use Iris even if you are offline. In the future, can be used to sign in to websites.<ul><li><a href=https://chrome.google.com/webstore/detail/iris/oelmiikkaikgnmmjaonjlopkmpcahpgh>Chrome</a></li><li><a href=https://addons.mozilla.org/en-US/firefox/addon/irisapp/ >Firefox</a></li></ul></li><!-- TODO: add dynamically updated /ipfs url --><li>Upcoming: Electrum desktop app with bluetooth and LAN peerfinding!</li></ul><h4>Privacy</h4><p>It\'s important to remember that as for now, <b>all posts, ratings and verifications are public</b>.</p><p>Private chats are encrypted: they can be read only by you and the person you\'re chatting with. However, it is possible to guess who are communicating with each other by looking at Gun subscriptions and message timestamps. "Last online" status is publicly available.</p><p>See <a ui-sref=privacy>privacy policy</a> for more information.</p><h4>Support the cause?</h4><p><b>Donations</b> help keep the project going and are very much appreciated. You can donate via <a href=https://opencollective.com/iris-social>Open Collective</a> or <b>bitcoin</b>: 3GopC1ijpZktaGLXHb7atugPj9zPGyQeST</p></div></div></div></div>');
+$templateCache.put('app/main/createuser.partial.html','<div class="panel panel-default" ng-if=!authentication.user><div class=panel-body><form class="form-inline createuser-form" ng-submit=createUser(newUserName)><div class=form-group><input focus-on=newUser style=min-width:200px type=text class=form-control ng-disabled=creatingUser ng-model=newUserName placeholder="What\'s your name?"></div><i class="hidden-xs mar-right5"></i> <button type=submit id=createUserBtn class="btn btn-primary" ng-disabled="!newUserName || creatingUser">Go!</button> <i class="mar-left15 hidden-xs"></i><div class=form-group>or <a ng-click=openLoginModal() href="">Log in</a></div></form></div></div>');
+$templateCache.put('app/main/custom-search-row.html','<a class=search-result-row><identicon ipfs=$parent.$parent.$parent.$parent.ipfs identity=match.label border=3 width=46 class=mar-right10></identicon><span ng-bind-html="match.label.primaryName | uibTypeaheadHighlight:query"></span></a>');
+$templateCache.put('app/main/getstarted.partial.html','<div ng-if="authentication.user && authentication.identity.data && !authentication.identity.data.sentPositive" class="alert alert-info text-center"><p class=h3 style=margin-bottom:15px>Welcome to social networking freedom!</p><p>Start by following your friends: ask for their profile links or scan their QR codes (<b><a ui-sref=identities.create>Add contact</a></b>).</p><p>Alternatively, you can follow the maintainer of this Iris distribution as a starting point.</p><p><button ng-if=!identity.data.trustDistance class="btn btn-primary" ng-click="follow(\'keyID\', defaultSocialNetworkKeyID, $event)">Follow Iris</button></p><br></div><div ng-if="authentication.user && authentication.identity.data && authentication.identity.data.sentPositive && !authentication.identity.data.receivedPositive" class="alert alert-info text-center"><p class=h3 style=margin-bottom:15px>Great, you are a follower!</p><p>Next you should <b>ask your friends to follow you</b>, so they and their network will see your messages.</p><p><button ng-click="copyToClipboard(authentication.user.url, $event)" class="btn btn-primary mar-top10">Copy link to your profile</button></p><p>Or show them your QR code:</p><div class=mar-top20><qrcode data={{authentication.user.url}} size=360></qrcode></div><br></div><div ng-if="authentication.user && authentication.identity.data && authentication.identity.data.sentPositive && authentication.identity.data.receivedPositive && localSettings && !localSettings.profileUploadNotificationClosed && authentication.identity.mva && !authentication.identity.mva.profilePhoto" class="alert alert-info text-center"><p class=h3 style=margin-bottom:15px>You\'re good to go!</p><p style="margin-bottom: 15px">Set a profile picture?</p><p><button class="btn btn-primary mar-right15" ng-click=openProfilePhotoUploadModal()>Yes</button> <button class="btn btn-default" ng-click=closeProfileUploadNotification()>Not now</button></p><br></div>');
+$templateCache.put('app/main/login.modal.html','<div class="col-md-10 col-md-offset-1"><div class="panel panel-default mar-top15"><div class=panel-heading><!--<div class="checkbox">\n        <label>\n          <input type="checkbox" value="" checked="checked">\n          Remember me\n        </label>\n      </div>--><h3>New user</h3><form ng-submit=createUser(newUserName)><input focus-on=newUser type=text class=form-control ng-model=newUserName placeholder="Your name"><br><input type=submit value=Go! class="btn btn-primary" ng-disabled=!newUserName></form><hr style=border-color:#ddd><h3>Existing user</h3><form><textarea rows=6 class=form-control placeholder="Paste private key or drop file" ng-model=privateKeySerialized ng-change="loginWithKey(privateKeySerialized, undefined, true)"></textarea><br><button class="btn btn-primary" ng-disabled=!privateKeySerialized ng-click="loginWithKey(privateKeySerialized, undefined, true)">Log in</button> <a class=pull-right href="" ng-click="lostKey = !lostKey">Lost your key?</a></form><div ng-if=lostKey class="mar-top30 panel panel-info"><div class=panel-heading>Don\'t worry: just go with "New user" and ask your friends to verify that your new key belongs to the already existing identity.</div></div></div></div></div>');
+$templateCache.put('app/main/logout.modal.html','<div class="col-md-10 col-md-offset-1"><div class="panel panel-default mar-top15"><div class=panel-heading>Log out?</div><div class=panel-body><p>You cannot log in back to this account unless you have saved a backup of your private key.</p><a class="btn btn-default" ng-click=$dismiss()>Cancel</a> <a href=# class="btn btn-danger" id=logout ng-click=logout()>Log out</a></div></div></div>');
+$templateCache.put('app/main/notificationsprompt.partial.html','<div ng-if="authentication.user && desktopNotificationsAvailable && !(notificationsPermitted && !localSettings.desktopNotificationsDisabled) && !localSettings.desktopNotificationsNotNow" class=mar-bot15><div ng-if=enableNotificationsFailed class="alert alert-warning" style="margin-bottom: 15px;">Failed to enable notifications - please check your browser settings</div><button class="btn btn-primary" ng-click=setDesktopNotificationsDisabled(false)>Get desktop notifications</button> <button class="btn btn-default" ng-click="saveLocalSetting(\'desktopNotificationsNotNow\', true)">Not now</button></div>');
+$templateCache.put('app/main/privacy-policy.html','<div class="container mar-bot30 mar-top20-xs no-padding-xs"><div class=col-md-8><div class="panel panel-default"><div class=panel-body><h3>Privacy policy</h3><p>Iris is a peer-to-peer application like Bitcoin, not a corporate or other legal entity. All data is stored and indexed by the users who run the application. The application only makes connections to other decentralized network peers.</p><p>Please keep in mind that everything you post or add on Iris is <b>public</b> unless otherwise stated.</p><p>Iris\'s contact list feature can be compared to your mobile phone\'s address book, but with synchronization with others. Users can add contact details and attributes of arbitrary type.</p><p>Developers of the application have no control over content added by users and are not responsible for it. It is the user\'s responsibility to comply with applicable laws regarding public messaging and listing of personal information.</p><p>An Iris "account" is a cryptographic keypair generated and stored locally on the user\'s device (in browser or other application). It does not constitute a relationship with any corporate or other entity.</p></div></div></div></div>');
+$templateCache.put('app/main/settings.html','<div class="container mar-top20-xs"><div class=col-md-8><h3>Settings</h3><div ng-if=authentication.user><p><b>For normal people</b></p><div class="panel panel-default"><div class=panel-heading>Log out</div><div class=panel-body><p>You cannot log in back to this account unless you have saved a backup of your private key.</p><p><button class="btn btn-danger" ng-click=openLogoutModal()>Log out</button></p></div></div><div class="panel panel-danger"><div class=panel-heading>Private key</div><div class=panel-body><p>Private key is used to log in to your account. Keep your private key safe!</p><p><button class="btn btn-danger" ng-click="copyToClipboard(privateKey|json, $event)">Copy to clipboard</button> <button class="btn btn-danger" ng-click=downloadText(privateKey|json)>Download</button> <button class="btn btn-danger" ng-click="showPrivateKeyQr = !showPrivateKeyQr">Show QR code</button></p><p ng-if=showPrivateKeyQr><qrcode data={{privateKey|json}} size=400></qrcode></p></div></div><div class="panel panel-default"><div class=panel-heading>Notifications</div><div class=panel-body><div ng-if=enableNotificationsFailed class="alert alert-warning" style="margin-bottom: 15px;">Failed to enable notifications - please check your browser settings</div><p ng-if=desktopNotificationsAvailable><button ng-if="!(notificationsPermitted && !localSettings.desktopNotificationsDisabled)" class="btn btn-primary" ng-click=setDesktopNotificationsDisabled(false)>Get desktop notifications</button> <button ng-if="notificationsPermitted && !localSettings.desktopNotificationsDisabled" class="btn btn-default" ng-click=setDesktopNotificationsDisabled(true)>Disable desktop notifications</button></p><p><button ng-if=localSettings.audioNotificationsDisabled ng-click=setAudioNotificationsDisabled(false) class="btn btn-primary">Enable notification sounds</button> <button ng-if=!localSettings.audioNotificationsDisabled ng-click=setAudioNotificationsDisabled(true) class="btn btn-default">Disable notification sounds</button></p></div></div><div class="panel panel-default"><div class=panel-heading>Other</div><div class=panel-body><p><button ng-if=localSettings.publicOnlineStatusHidden ng-click=setPublicOnlineStatusHidden(false) class="btn btn-primary">Show online status (public)</button> <button ng-if=!localSettings.publicOnlineStatusHidden ng-click=setPublicOnlineStatusHidden(true) class="btn btn-default">Hide public online status</button></p><p ng-if=isElectron><button ng-if=localSettings.autoStartOnBootDisabled ng-click=setAutoStartOnBootDisabled(false) class="btn btn-primary">Enable autostart on boot</button> <button ng-if=!localSettings.autoStartOnBootDisabled ng-click=setAutoStartOnBootDisabled(true) class="btn btn-default">Disable autostart on boot</button></p></div></div></div><p><b>Geeky stuff</b></p><div class="panel panel-default"><div class=panel-heading>GUN peers</div><div class=panel-body><p><a href=https://gun.eco/ >GUN</a> stores dynamic content: indexes of messages and identities.</p></div><div class=table-responsive><table class="table table-striped"><tbody><tr ng-repeat="(key, value) in gun[\'_\'].opt.peers"><td><span ng-show="value.wire && value.wire.hied" class="positive fa fa-check-circle"></span> <span ng-hide="value.wire && value.wire.hied" class="negative fa fa-times-circle"></span> <small ng-bind=key></small></td><td><button ng-click=removeGunPeer(key) class="pull-right btn btn-danger"><i class="glyphicon glyphicon-trash"></i></button></td></tr><tr><td colspan=2><form class=form-inline ng-submit=addGunPeer(gunUrl)><input class=form-control type=text placeholder="Peer url" ng-model=gunUrl> <input class="btn btn-primary" type=submit value="Add GUN peer"></form></td></tr></tbody></table></div></div><div class="panel panel-default"><div class=panel-heading>IPFS peers</div><div class=panel-body><p><a href=https://ipfs.io>IPFS</a> stores static content: messages and image files.</p><p ng-hide="ipfsPeers && ipfsPeers.length"><small>No IPFS peers</small></p></div><div ng-if="ipfsPeers && ipfsPeers.length" class=table-responsive><table class="table table-striped"><tbody><tr ng-repeat="peer in ipfsPeers"><td><span class="positive fa fa-check-circle"></span> <small ng-bind=peer.addr.toString()></small></td><td><button ng-click=removeIpfsPeer(peer.addr.toString()) class="pull-right btn btn-danger"><i class="glyphicon glyphicon-trash"></i></button></td></tr><tr><td colspan=2><form class=form-inline ng-submit=addIpfsPeer(ipfsUrl)><input class=form-control type=text placeholder="Peer url" ng-model=ipfsUrl> <input class="btn btn-primary" type=submit value="Add IPFS peer"><!--<button ng-click="$event.preventDefault;addDefaultIpfsPeers()" class="btn btn-default pull-right">Add default peers</button>--></form></td></tr></tbody></table></div></div><div class="panel panel-default"><div class=panel-heading>Search indexes</div><div class=panel-body><p><small><b>query</b> = when you search for content on Iris, include results from the index</small></p><p><small><b>subscribe</b> = listen for new messages that are added to the index, potentially adding them to your own index</small></p><table class="table table-striped"><thead><tr><td>index</td><td>query</td><td>subscribe</td></tr></thead><tbody><tr ng-repeat="i in trustedSocialNetworkes"><td><identicon uib-tooltip={{i.attribute.value}} identity=i.attribute class=mar-right5 border=3 width=30></identicon><a ui-sref="identities.show({ type: i.attribute.type, value: i.attribute.value })"><identicon ipfs=ipfs identity=i.identity border=3 width=30></identicon></a></td><td><input type=checkbox checked></td><td><input type=checkbox checked></td></tr><tr><td colspan=4><form class=form-inline ng-submit=addTrustedSocialNetwork(trustedSocialNetworkKey)><input class=form-control type=text placeholder="public key" ng-model=trustedSocialNetworkKey> <input class="btn btn-primary" type=submit value="Add trusted index"></form></td></tr></tbody></table></div></div><!--\n    <div class="panel panel-default">\n      <div class="panel-heading">\n        Iris indexing settings\n      </div>\n      <div class="panel-body">\n        <p>\n          <pre ng-bind="irisSocialNetwork.options|json"></pre>\n        </p>\n      </div>\n    </div>--><p><b>Other stuff</b></p><div class="panel panel-default"><div class=panel-body><p><a ui-sref=about>About Iris</a></p><p><a ui-sref=privacy>Privacy policy</a></p></div></div></div></div>');
+$templateCache.put('app/services/notification.template.html','<div class="ui-notification panel panel-info"><div class=panel-heading><h3 ng-show=title ng-bind-html=title></h3><div class=message ng-bind-html=message></div></div></div>');
 $templateCache.put('app/messages/create.chat.partial.html','<div class="panel panel-default" ngf-drop ngf-keep="\'distinct\'" ngf-drop-disabled="addingMessage || loggingIn || !authentication.user" ng-model=newMessage.files ngf-drag-over-class="\'dragover\'" ngf-multiple=true><div class=panel-body><div class=mar-bot15><p style=color:red; class=pull-right><small><b>public chat room</b></small></p><button class="btn btn-default pull-right" ng-click=muteChat(idValue)><span class=fa ng-class="{\'fa-volume-up\': localSettings[idValue].muted, \'fa-volume-mute\': !localSettings[idValue].muted}"></span> {{localSettings[idValue].muted ? \'Unmute\' : \'Mute\'}}</button><div><span ui-sref="identities.show({type:idType, value:idValue})" style=cursor:pointer><identicon identity=identity ipfs=ipfs width=35></identicon><span class=mar-right15><span ng-show="idType === \'keyID\' || idType === \'uuid\'"><identicon identity=idAttr width=35></identicon></span><span ng-hide="idType === \'keyID\' || idType === \'uuid\'"><span ng-if=!(identity.data.mostVerifiedAttributes.name||identity.data.mostVerifiedAttributes.nickname)><span ng-bind=idValue class=idValue></span> <small class=text-muted><span ng-hide="idType === \'url\'" ng-bind=idType class=idType></span> <a ng-href={{idValue}} ng-show="idType === \'url\'" ng-bind=idType class=idType></a> </small></span></span></span><span ng-bind=identity.primaryName></span> </span><small class="positive mar-left15" ng-show=isOnline>online</small> <small class=mar-left15 ng-show="!isOnline && lastActive">last active {{ lastActive * 1000 | date : \'yyyy-M-d HH:mm\' }}</small></div></div><form autocomplete=off ng-submit="createMessage($event, { type: \'chat\', recipient: { uuid: idValue }, text: newMessage.text, pollOptions: createPoll && newMessage.pollOptions }, { files: newMessage.files });createPoll = false"><div class=row ng-if="newMessage.files && newMessage.files.length"><div class=col-xs-12><p ng-class="{\'align-center\': newMessage.files.length == 1}"><span ng-repeat="file in newMessage.files" class=attachment><button type=button class=close aria-label=Close ng-click=newMessage.files.splice($index,1)><span aria-hidden=true>&times;</span></button> <a ng-show="[\'video\',\'image\',\'audio\'].indexOf(file.type.substr(0,5)) == -1" ng-bind=file.name></a> <img ngf-thumbnail="file || \'/thumb.jpg\'" ng-style="{\'max-width\': newMessage.files.length > 1 ? \'150px\' : \'100%\', \'max-height\': newMessage.files.length > 1 ? \'150px\' : \'450px\'}"><audio controls ngf-src=file></audio><video controls ngf-src=file></video></span></p></div></div><div class=form-group><input type=text style="resize: vertical" ng-disabled="addingMessage || loggingIn || !authentication.user" name=text class=form-control id=text ng-model=newMessage.text placeholder="Type a message"></div><div class=row><div class=col-xs-12><button ng-disabled="addingMessage || loggingIn || !authentication.user || !(newMessage.text || newMessage.files.length)" type=submit class="btn btn-primary" data-style=zoom-out><span class="glyphicon glyphicon-send"></span></button> <button ngf-select ng-model=newMessage.files ngf-multiple=true href="" ng-disabled="addingMessage || loggingIn || !authentication.user" class="btn btn-default pull-right" data-style=zoom-out><span class="fa fa-paperclip"></span> Add files</button></div></div></form></div></div>');
 $templateCache.put('app/messages/create.partial.html','<div class="panel panel-default" ngf-drop ngf-keep="\'distinct\'" ngf-drop-disabled="addingMessage || loggingIn || !authentication.user" ng-model=newMessage.files ngf-drag-over-class="\'dragover\'" ngf-multiple=true><div class=panel-body><form ng-submit="createMessage($event, { type: \'post\', text: newMessage.text, pollOptions: createPoll && newMessage.pollOptions }, { files: newMessage.files });createPoll = false"><div class=row ng-if="newMessage.files && newMessage.files.length"><div class=col-xs-12><p class=attachments ng-class="{\'align-center\': newMessage.files.length == 1}"><span ng-repeat="file in newMessage.files" class=attachment><button type=button class=close aria-label=Close ng-click=newMessage.files.splice($index,1)><span aria-hidden=true>&times;</span></button> <a ng-show="[\'video\',\'image\',\'audio\'].indexOf(file.type.substr(0,5)) == -1" ng-bind=file.name></a> <img ngf-thumbnail="file || \'/thumb.jpg\'" ng-style="{\'max-width\': newMessage.files.length > 1 ? \'150px\' : \'100%\', \'max-height\': newMessage.files.length > 1 ? \'150px\' : \'450px\'}"><audio controls ngf-src=file></audio><video controls ngf-src=file></video></span></p></div></div><div class=form-group><textarea style="resize: vertical" ng-disabled="addingMessage || loggingIn || !authentication.user" name=text class=form-control id=text ng-model=newMessage.text placeholder="What\'s on your mind?"></textarea></div><div ng-if=createPoll ng-include="\'app/messages/poll.create.html\'"></div><div class=row><div class=col-xs-12><button ng-disabled="addingMessage || loggingIn || !authentication.user || !(newMessage.text || newMessage.files.length)" type=submit class="btn btn-primary" data-style=zoom-out>Publish</button> <button ngf-select ng-model=newMessage.files ngf-multiple=true href="" ng-disabled="addingMessage || loggingIn || !authentication.user" class="btn btn-default pull-right" data-style=zoom-out><span class="fa fa-paperclip"></span> Add files</button> <button class="btn btn-default pull-right" ng-click="$event.preventDefault();newMessage.pollOptions=[{text: \'\'}, {text: \'\'}];createPoll = !createPoll"><span class="glyphicon glyphicon-stats"></span> Create poll</button></div></div></form></div></div>');
 $templateCache.put('app/messages/create.rating.partial.html','<div ng-style=newMessage.style class="panel panel-default panel-success" id=newRatingPanel><div class=panel-body id=write-feedback><form ng-controller=MessagesController ng-submit="createMessage($event, { type: \'rating\', rating: newMessage.rating, comment: newMessage.comment }, {addTo: received})"><div class=form-group><textarea name=comment class=form-control id=comment ng-model=newMessage.comment ng-disabled=addingMessage placeholder="Comment (optional)"></textarea></div><div class=row><div class="col-sm-10 col-xs-12 rating-slider" id=write-msg-slider><rzslider rz-slider-model=newMessage.rating rz-slider-options=slider.options min=-3 max=3 step=1></rzslider><span class="hidden-xs write-msg-icons mar-left5"><span ng-repeat="i in iconCount(newMessage.rating) track by $index" class="write-msg-icon glyphicon glyphicon-thumbs-up mar-left5" ng-class="[iconStyle(newMessage.rating), iconClass(newMessage.rating)]"></span></span></div><div class="col-sm-2 col-xs-12" style=text-align:right><span class="visible-xs pull-left write-msg-icons"><span ng-repeat="i in iconCount(newMessage.rating) track by $index" class="write-msg-icon glyphicon glyphicon-thumbs-up mar-left5" ng-class="[iconStyle(newMessage.rating), iconClass(newMessage.rating)]"></span> </span><button ng-disabled=addingMessage type=submit class="pull-right btn btn-primary" data-style=zoom-out><span ng-show="newMessage.rating == 0">Neutral</span> <span ng-show="newMessage.rating > 0">Upvote</span> <span ng-show="newMessage.rating < 0">Downvote</span></button></div></div></form></div></div>');
@@ -3132,14 +3142,4 @@ $templateCache.put('app/messages/share.modal.html','<div class="panel panel-defa
 $templateCache.put('app/messages/show.html','<div class="container no-padding-xs"><div class="col-md-8 col-md-offset-2 msg-col no-padding-xs" ng-include="\'app/messages/single.html\'"></div></div>');
 $templateCache.put('app/messages/show.modal.html','<div ng-include="\'app/messages/single.html\'"></div>');
 $templateCache.put('app/messages/single.html','<message auth=authentication msg-utils=msgUtils ipfs=ipfs show-recipient=true msg=msg page-info=info ng-repeat="msg in [message]"></message><div class="panel panel-info"><div class=panel-heading ng-if=!message>Looking for message...</div><div class=panel-heading ng-if=message>Message origin verified by <span ng-show=message.verifiedByAttr><identicon identity=message.verifiedByAttr class=mar-right5 border=3 width=35></identicon></span>which is associated with <a ng-if=false ng-bind=message.signerName||message.signerKeyID ui-sref="identities.show({type: \'keyID\', value: message.signerKeyID })"></a> <strong><a ui-sref="identities.show({ type: \'keyID\', value: message.signerKeyID })" class=id-link><identicon ipfs=ipfs identity=message.verifiedBy class=mar-right5 border=3 width=35></identicon><span ng-bind=message.verifiedBy.primaryName></span></a></strong></div></div><p ng-if=message.data.context><small>Context: {{message.data.context}}</small></p><p><button class="btn btn-default mar-right5" ng-click="collapseRawData = !collapseRawData">Show raw data</button> <button class="btn btn-default" ng-click=copyCurrentLocationToClipboard($event)>Copy link</button></p><pre uib-collapse=!collapseRawData ng-bind=message.strData></pre><message ng-repeat="msg in message.repliesArr" auth=authentication msg-utils=msgUtils ipfs=ipfs show-recipient=true msg=msg page-info=info></message><!-- <div class="mar-top15 mar-bot10"><button ng-click="chatModal.close()" class="btn btn-default">Close</button></div> -->');
-$templateCache.put('app/main/about.html','<div class="container mar-bot30 mar-top20-xs no-padding-xs"><div class=col-md-8><div class="panel panel-default"><div class=panel-body><h3>About Iris</h3><p class=lead>Iris is a social networking application that stores everything on its users\' devices which communicate directly with each other &mdash; no corporate gatekeepers needed.</p><p>Longer description on <a href=https://github.com/irislib/iris/blob/master/README.md>GitHub</a>.</p><h4>Available at</h4><ul><li><a href=https://iris.to>iris.to</a></li><li><a href=https://iris.cx>iris.cx</a></li><li><a href=https://irislib.github.io>irislib.github.io</a></li><li>Browser extension: use Iris even if you are offline. In the future, can be used to sign in to websites.<ul><li><a href=https://chrome.google.com/webstore/detail/iris/oelmiikkaikgnmmjaonjlopkmpcahpgh>Chrome</a></li><li><a href=https://addons.mozilla.org/en-US/firefox/addon/irisapp/ >Firefox</a></li></ul></li><!-- TODO: add dynamically updated /ipfs url --><li>Upcoming: Electrum desktop app with bluetooth and LAN peerfinding!</li></ul><h4>Privacy</h4><p>It\'s important to remember that as for now, <b>all posts, ratings and verifications are public</b>.</p><p>Private chats are encrypted: they can be read only by you and the person you\'re chatting with. However, it is possible to guess who are communicating with each other by looking at Gun subscriptions and message timestamps. "Last online" status is publicly available.</p><p>See <a ui-sref=privacy>privacy policy</a> for more information.</p><h4>Support the cause?</h4><p><b>Donations</b> help keep the project going and are very much appreciated. You can donate via <a href=https://opencollective.com/iris-social>Open Collective</a> or <b>bitcoin</b>: 3GopC1ijpZktaGLXHb7atugPj9zPGyQeST</p></div></div></div></div>');
-$templateCache.put('app/main/createuser.partial.html','<div class="panel panel-default" ng-if=!authentication.user><div class=panel-body><form class="form-inline createuser-form" ng-submit=createUser(newUserName)><div class=form-group><input focus-on=newUser style=min-width:200px type=text class=form-control ng-disabled=creatingUser ng-model=newUserName placeholder="What\'s your name?"></div><i class="hidden-xs mar-right5"></i> <button type=submit id=createUserBtn class="btn btn-primary" ng-disabled="!newUserName || creatingUser">Go!</button> <i class="mar-left15 hidden-xs"></i><div class=form-group>or <a ng-click=openLoginModal() href="">Log in</a></div></form></div></div>');
-$templateCache.put('app/main/custom-search-row.html','<a class=search-result-row><identicon ipfs=$parent.$parent.$parent.$parent.ipfs identity=match.label border=3 width=46 class=mar-right10></identicon><span ng-bind-html="match.label.primaryName | uibTypeaheadHighlight:query"></span></a>');
-$templateCache.put('app/main/getstarted.partial.html','<div ng-if="authentication.user && authentication.identity.data && !authentication.identity.data.sentPositive" class="alert alert-info text-center"><p class=h3 style=margin-bottom:15px>Welcome to social networking freedom!</p><p>Start by following your friends: ask for their profile links or scan their QR codes (<b><a ui-sref=identities.create>Add contact</a></b>).</p><p>Alternatively, you can follow the maintainer of this Iris distribution as a starting point.</p><p><button ng-if=!identity.data.trustDistance class="btn btn-primary" ng-click="follow(\'keyID\', defaultSocialNetworkKeyID, $event)">Follow Iris</button></p><br></div><div ng-if="authentication.user && authentication.identity.data && authentication.identity.data.sentPositive && !authentication.identity.data.receivedPositive" class="alert alert-info text-center"><p class=h3 style=margin-bottom:15px>Great, you are a follower!</p><p>Next you should <b>ask your friends to follow you</b>, so they and their network will see your messages.</p><p><button ng-click="copyToClipboard(authentication.user.url, $event)" class="btn btn-primary mar-top10">Copy link to your profile</button></p><p>Or show them your QR code:</p><div class=mar-top20><qrcode data={{authentication.user.url}} size=360></qrcode></div><br></div><div ng-if="authentication.user && authentication.identity.data && authentication.identity.data.sentPositive && authentication.identity.data.receivedPositive && localSettings && !localSettings.profileUploadNotificationClosed && authentication.identity.mva && !authentication.identity.mva.profilePhoto" class="alert alert-info text-center"><p class=h3 style=margin-bottom:15px>You\'re good to go!</p><p style="margin-bottom: 15px">Set a profile picture?</p><p><button class="btn btn-primary mar-right15" ng-click=openProfilePhotoUploadModal()>Yes</button> <button class="btn btn-default" ng-click=closeProfileUploadNotification()>Not now</button></p><br></div>');
-$templateCache.put('app/main/login.modal.html','<div class="col-md-10 col-md-offset-1"><div class="panel panel-default mar-top15"><div class=panel-heading><!--<div class="checkbox">\n        <label>\n          <input type="checkbox" value="" checked="checked">\n          Remember me\n        </label>\n      </div>--><h3>New user</h3><form ng-submit=createUser(newUserName)><input focus-on=newUser type=text class=form-control ng-model=newUserName placeholder="Your name"><br><input type=submit value=Go! class="btn btn-primary" ng-disabled=!newUserName></form><hr style=border-color:#ddd><h3>Existing user</h3><form><textarea rows=6 class=form-control placeholder="Paste private key or drop file" ng-model=privateKeySerialized ng-change="loginWithKey(privateKeySerialized, undefined, true)"></textarea><br><button class="btn btn-primary" ng-disabled=!privateKeySerialized ng-click="loginWithKey(privateKeySerialized, undefined, true)">Log in</button> <a class=pull-right href="" ng-click="lostKey = !lostKey">Lost your key?</a></form><div ng-if=lostKey class="mar-top30 panel panel-info"><div class=panel-heading>Don\'t worry: just go with "New user" and ask your friends to verify that your new key belongs to the already existing identity.</div></div></div></div></div>');
-$templateCache.put('app/main/logout.modal.html','<div class="col-md-10 col-md-offset-1"><div class="panel panel-default mar-top15"><div class=panel-heading>Log out?</div><div class=panel-body><p>You cannot log in back to this account unless you have saved a backup of your private key.</p><a class="btn btn-default" ng-click=$dismiss()>Cancel</a> <a href=# class="btn btn-danger" id=logout ng-click=logout()>Log out</a></div></div></div>');
-$templateCache.put('app/main/notificationsprompt.partial.html','<div ng-if="authentication.user && desktopNotificationsAvailable && !(notificationsPermitted && !localSettings.desktopNotificationsDisabled) && !localSettings.desktopNotificationsNotNow" class=mar-bot15><div ng-if=enableNotificationsFailed class="alert alert-warning" style="margin-bottom: 15px;">Failed to enable notifications - please check your browser settings</div><button class="btn btn-primary" ng-click=setDesktopNotificationsDisabled(false)>Get desktop notifications</button> <button class="btn btn-default" ng-click="saveLocalSetting(\'desktopNotificationsNotNow\', true)">Not now</button></div>');
-$templateCache.put('app/main/privacy-policy.html','<div class="container mar-bot30 mar-top20-xs no-padding-xs"><div class=col-md-8><div class="panel panel-default"><div class=panel-body><h3>Privacy policy</h3><p>Iris is a peer-to-peer application like Bitcoin, not a corporate or other legal entity. All data is stored and indexed by the users who run the application. The application only makes connections to other decentralized network peers.</p><p>Please keep in mind that everything you post or add on Iris is <b>public</b> unless otherwise stated.</p><p>Iris\'s contact list feature can be compared to your mobile phone\'s address book, but with synchronization with others. Users can add contact details and attributes of arbitrary type.</p><p>Developers of the application have no control over content added by users and are not responsible for it. It is the user\'s responsibility to comply with applicable laws regarding public messaging and listing of personal information.</p><p>An Iris "account" is a cryptographic keypair generated and stored locally on the user\'s device (in browser or other application). It does not constitute a relationship with any corporate or other entity.</p></div></div></div></div>');
-$templateCache.put('app/main/settings.html','<div class="container mar-top20-xs"><div class=col-md-8><h3>Settings</h3><div ng-if=authentication.user><p><b>For normal people</b></p><div class="panel panel-default"><div class=panel-heading>Log out</div><div class=panel-body><p>You cannot log in back to this account unless you have saved a backup of your private key.</p><p><button class="btn btn-danger" ng-click=openLogoutModal()>Log out</button></p></div></div><div class="panel panel-danger"><div class=panel-heading>Private key</div><div class=panel-body><p>Private key is used to log in to your account. Keep your private key safe!</p><p><button class="btn btn-danger" ng-click="copyToClipboard(privateKey|json, $event)">Copy to clipboard</button> <button class="btn btn-danger" ng-click=downloadText(privateKey|json)>Download</button> <button class="btn btn-danger" ng-click="showPrivateKeyQr = !showPrivateKeyQr">Show QR code</button></p><p ng-if=showPrivateKeyQr><qrcode data={{privateKey|json}} size=400></qrcode></p></div></div><div class="panel panel-default"><div class=panel-heading>Notifications</div><div class=panel-body><div ng-if=enableNotificationsFailed class="alert alert-warning" style="margin-bottom: 15px;">Failed to enable notifications - please check your browser settings</div><p ng-if=desktopNotificationsAvailable><button ng-if="!(notificationsPermitted && !localSettings.desktopNotificationsDisabled)" class="btn btn-primary" ng-click=setDesktopNotificationsDisabled(false)>Get desktop notifications</button> <button ng-if="notificationsPermitted && !localSettings.desktopNotificationsDisabled" class="btn btn-default" ng-click=setDesktopNotificationsDisabled(true)>Disable desktop notifications</button></p><p><button ng-if=localSettings.audioNotificationsDisabled ng-click=setAudioNotificationsDisabled(false) class="btn btn-primary">Enable notification sounds</button> <button ng-if=!localSettings.audioNotificationsDisabled ng-click=setAudioNotificationsDisabled(true) class="btn btn-default">Disable notification sounds</button></p></div></div><div class="panel panel-default"><div class=panel-heading>Other</div><div class=panel-body><p><button ng-if=localSettings.publicOnlineStatusHidden ng-click=setPublicOnlineStatusHidden(false) class="btn btn-primary">Show online status (public)</button> <button ng-if=!localSettings.publicOnlineStatusHidden ng-click=setPublicOnlineStatusHidden(true) class="btn btn-default">Hide public online status</button></p><p ng-if=isElectron><button ng-if=localSettings.autoStartOnBootDisabled ng-click=setAutoStartOnBootDisabled(false) class="btn btn-primary">Enable autostart on boot</button> <button ng-if=!localSettings.autoStartOnBootDisabled ng-click=setAutoStartOnBootDisabled(true) class="btn btn-default">Disable autostart on boot</button></p></div></div></div><p><b>Geeky stuff</b></p><div class="panel panel-default"><div class=panel-heading>GUN peers</div><div class=panel-body><p><a href=https://gun.eco/ >GUN</a> stores dynamic content: indexes of messages and identities.</p></div><div class=table-responsive><table class="table table-striped"><tbody><tr ng-repeat="(key, value) in gun[\'_\'].opt.peers"><td><span ng-show="value.wire && value.wire.hied" class="positive fa fa-check-circle"></span> <span ng-hide="value.wire && value.wire.hied" class="negative fa fa-times-circle"></span> <small ng-bind=key></small></td><td><button ng-click=removeGunPeer(key) class="pull-right btn btn-danger"><i class="glyphicon glyphicon-trash"></i></button></td></tr><tr><td colspan=2><form class=form-inline ng-submit=addGunPeer(gunUrl)><input class=form-control type=text placeholder="Peer url" ng-model=gunUrl> <input class="btn btn-primary" type=submit value="Add GUN peer"></form></td></tr></tbody></table></div></div><div class="panel panel-default"><div class=panel-heading>IPFS peers</div><div class=panel-body><p><a href=https://ipfs.io>IPFS</a> stores static content: messages and image files.</p><p ng-hide="ipfsPeers && ipfsPeers.length"><small>No IPFS peers</small></p></div><div ng-if="ipfsPeers && ipfsPeers.length" class=table-responsive><table class="table table-striped"><tbody><tr ng-repeat="peer in ipfsPeers"><td><span class="positive fa fa-check-circle"></span> <small ng-bind=peer.addr.toString()></small></td><td><button ng-click=removeIpfsPeer(peer.addr.toString()) class="pull-right btn btn-danger"><i class="glyphicon glyphicon-trash"></i></button></td></tr><tr><td colspan=2><form class=form-inline ng-submit=addIpfsPeer(ipfsUrl)><input class=form-control type=text placeholder="Peer url" ng-model=ipfsUrl> <input class="btn btn-primary" type=submit value="Add IPFS peer"><!--<button ng-click="$event.preventDefault;addDefaultIpfsPeers()" class="btn btn-default pull-right">Add default peers</button>--></form></td></tr></tbody></table></div></div><div class="panel panel-default"><div class=panel-heading>Search indexes</div><div class=panel-body><p><small><b>query</b> = when you search for content on Iris, include results from the index</small></p><p><small><b>subscribe</b> = listen for new messages that are added to the index, potentially adding them to your own index</small></p><table class="table table-striped"><thead><tr><td>index</td><td>query</td><td>subscribe</td></tr></thead><tbody><tr ng-repeat="i in trustedSocialNetworkes"><td><identicon uib-tooltip={{i.attribute.value}} identity=i.attribute class=mar-right5 border=3 width=30></identicon><a ui-sref="identities.show({ type: i.attribute.type, value: i.attribute.value })"><identicon ipfs=ipfs identity=i.identity border=3 width=30></identicon></a></td><td><input type=checkbox checked></td><td><input type=checkbox checked></td></tr><tr><td colspan=4><form class=form-inline ng-submit=addTrustedSocialNetwork(trustedSocialNetworkKey)><input class=form-control type=text placeholder="public key" ng-model=trustedSocialNetworkKey> <input class="btn btn-primary" type=submit value="Add trusted index"></form></td></tr></tbody></table></div></div><!--\n    <div class="panel panel-default">\n      <div class="panel-heading">\n        Iris indexing settings\n      </div>\n      <div class="panel-body">\n        <p>\n          <pre ng-bind="irisSocialNetwork.options|json"></pre>\n        </p>\n      </div>\n    </div>--><p><b>Other stuff</b></p><div class="panel panel-default"><div class=panel-body><p><a ui-sref=about>About Iris</a></p><p><a ui-sref=privacy>Privacy policy</a></p></div></div></div></div>');
-$templateCache.put('app/services/notification.template.html','<div class="ui-notification panel panel-info"><div class=panel-heading><h3 ng-show=title ng-bind-html=title></h3><div class=message ng-bind-html=message></div></div></div>');
 $templateCache.put('app/components/message/message.template.html','<div class="panel msg" ng-class="{\'panel-info\':msg.isVerification, \'panel-default\':msg.isPost}" style={{msg.bgColor}} ng-if=msg.signedData><div class=message-panel ng-class="{ \'panel-body\': !msg.isVerification, \'panel-heading\': msg.isVerification || msg.isUnverification }"><p><span class="mar-left5 pull-right" ng-class=msg.iconStyle ng-repeat="n in msg.iconCount track by $index"></span> <span class="mar-left5 pull-right fa fa-refresh" uib-tooltip=Pending ng-if=msg.local></span> <strong><a ui-sref="identities.show({ type: msg.linkToAuthor.type, value: msg.linkToAuthor.value })" class=id-link><identicon ipfs=ipfs identity=msg.author class=mar-right5 border=3 width=35></identicon><span ng-bind=msg.author_name></span> </a></strong><span ng-show="msg.signedData.type != \'chat\' && !msg.sameAuthorAndRecipient"><small><i class="glyphicon glyphicon-play"></i></small> <a ui-sref="identities.show({ type: msg.linkToRecipient.type, value: msg.linkToRecipient.value })" class=id-link><identicon ng-if=showRecipient ipfs=ipfs identity=msg.recipient class=mar-right5 border=3 width=35></identicon><span ng-bind="(msg.recipientIsSelf && pageInfo.primaryName)||msg.recipient_name"></span> </a></span>- <a ui-sref="messages.show({ id: (msg.ipfsUri || msg.hash) })" ng-bind="(msg.signedData.time||msg.signedData.timestamp)|date:\'medium\'" class="text-muted small" style=display:inline-block;></a></p><div ng-if="msg.isVerification || msg.isUnverification"><div ng-repeat="a in msg.recipientArray"><small><b ng-bind=a.type></b>: <span ng-if="a.type == \'email\' || a.type == \'url\'" ng-bind-html="a.value | linky"></span> <span ng-if="!(a.type == \'email\' || a.type == \'url\')" ng-bind=a.value></span></small></div></div><p ng-class="{\'align-center\': msg.attachments.length == 1}" class=attachments><span ng-repeat="attachment in msg.attachments" class=attachment><a ng-if="[\'video\',\'image\',\'audio\'].indexOf(attachment.typeSubstr) == -1" download={{attachment.name}} ng-click="download(attachment.name, null, null, null, attachment.src)"><i class="fa fa-download mar-right5"></i> {{attachment.name}} </a><img ng-if="attachment.type && attachment.typeSubstr == \'image\'" ng-click="msg.openAttachment = (attachment.uri != msg.openAttachment ? attachment.uri : null);msg.attachments.length > 1 ? $event.stopPropagation() : null" alt={{attachment.uri}} ng-src={{attachment.src}} ng-style="{\'max-width\': (msg.attachments.length > 1 && msg.openAttachment != attachment.uri) ? \'150px\' : \'100%\', \'max-height\': (msg.attachments.length > 1 && msg.openAttachment != attachment.uri) ? \'150px\' : \'80vh\'}"><videostream ng-if="attachment.typeSubstr == \'video\' || attachment.typeSubstr == \'audio\'" ipfs=ipfs uri=attachment.uri></videostream><span ng-bind-html=attachment.element ng-if=attachment.element></span></span></p><p style="white-space: pre-line;" ng-if="(msg.signedData.text || msg.signedData.comment)" ng-class="{big: msg.emojisOnly}" hm-read-more hm-limit=280 hm-text="{{ (msg.signedData.text || msg.signedData.comment)|linky }}" hm-more-text="Show more" hm-less-text="Show less"></p><form ng-if="msg.signedData.pollOptions && !msg.myVote" ng-submit="vote(msg, msg.choice)" ng-init="choice = \'asdf\'"><div class=radio ng-repeat="o in msg.signedData.pollOptions"><label><input ng-hide=msg.myVote ng-disabled=!authentication.user type=radio ng-model=msg.choice ng-value=o.text> <span ng-show=msg.myVote ng-bind=o.voteCount></span> {{o.text}}</label></div><button ng-disabled="!authentication.user || !msg.choice" class="btn btn-primary mar-right5">Vote</button> <small>{{msg.voteCount || 0}} votes</small></form><div ng-if=msg.voteResults><div ng-repeat="(k, v) in msg.voteResults"><b ng-bind=v style="width: 50px; display:inline-block"></b> <span ng-bind=k></span></div><small>{{msg.voteCount || 0}} votes</small></div><message ng-if="msg.sharedMsg && msgUtils" msg=msg.sharedMsg></message><span ng-class="{disabled: !authentication.user}" class=pull-right ng-if="msgUtils && msg.signedData.type == \'post\'"><a class=msg-reaction href="" ng-class="{active: msg.showCommentField}" ng-click="authentication.user && (msg.showCommentField = !msg.showCommentField)"><b ng-if=msg.repliesArr.length>{{msg.repliesArr.length}} </b><i class="glyphicon glyphicon-comment"></i> </a><a class=msg-reaction href="" ng-click="authentication.user && msgUtils.share(msg)"><b ng-if=msg.sharesArr.length>{{msg.sharesArr.length}} </b><i class="glyphicon glyphicon-retweet"></i> </a><a class=msg-reaction ng-class="{active: msg.liked}" href="" ng-click="authentication.user && msgUtils.like(msg)"><b ng-if="msg.likes || msg.liked">{{msg.likes || 1}} </b><i class=glyphicon ng-class="{\'glyphicon-heart-empty\': !msg.liked, \'glyphicon-heart\': msg.liked,}"></i></a></span><form class=form-inline ng-submit="msgUtils.replyTo(msg, reply)" ng-show="authentication.user && msg.showCommentField"><div class=form-group><input focus-on=addNameFocus type=text class=form-control ng-model=reply placeholder="Write a reply"></div><button type=submit class="btn btn-primary">Post</button></form></div></div>');}]);
