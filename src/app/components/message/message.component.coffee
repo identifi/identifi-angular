@@ -15,8 +15,8 @@ angular.module 'irisAngular'
             liked = true if k == scope.viewpoint.value and v == 'like'
         msg.likes = likes
         msg.liked = liked
-      if msg.signedData.sharedMsg and not attrs.noRecursion
-        scope.irisSocialNetwork.getMessageByHash(msg.signedData.sharedMsg).then (m) ->
+      if msg.signedData.sharedMsg and not options.noRecursion
+        scope.irisIndex.getMessageByHash(msg.signedData.sharedMsg).then (m) ->
           msg.sharedMsg = m
       updateReactions(msg.reactions) if msg.reactions
       msg.repliesArr = msg.repliesArr or []
@@ -55,18 +55,18 @@ angular.module 'irisAngular'
         msg.gun.get('reactions').on updateReactions
         msg.gun.get('shares').open updateShares
       unless msg.author
-        msg.author = msg.getAuthor(scope.irisSocialNetwork)
+        msg.author = msg.getAuthor(scope.irisIndex)
         msg.author.gun.get('trustDistance').on (d) -> msg.authorTrustDistance = d
       msg.author.gun.get('attrs').open (d) ->
-        mva = window.irisLib.Contact.getMostVerifiedAttributes(d)
+        mva = window.irisLib.Identity.getMostVerifiedAttributes(d)
         if mva.name
           scope.$apply -> msg.author_name = mva.name.attribute.value
         else if mva.nickname
           scope.$apply -> msg.author_name = mva.nickname.attribute.value
       if msg.signedData.recipient
-        msg.recipient = msg.getRecipient(scope.irisSocialNetwork)
+        msg.recipient = msg.getRecipient(scope.irisIndex)
         msg.recipient.gun.get('attrs').open (d) ->
-          mva = window.irisLib.Contact.getMostVerifiedAttributes(d)
+          mva = window.irisLib.Identity.getMostVerifiedAttributes(d)
           if mva.name
             scope.$apply -> msg.recipient_name = mva.name.attribute.value
           else if mva.nickname
@@ -88,19 +88,19 @@ angular.module 'irisAngular'
       # TODO: make sure message signature is checked
       i = undefined
       i = 0
-      smallestSocialNetwork = 1000
+      smallestIndex = 1000
       msg.authorArray = msg.getAuthorArray()
       for a in msg.authorArray
         msg.linkToAuthor = a unless msg.linkToAuthor
         index = Object.keys(window.irisLib.Attribute.getUniqueIdValidators()).indexOf(a.type)
-        if index > -1 and index < smallestSocialNetwork
-          smallestSocialNetwork = index
+        if index > -1 and index < smallestIndex
+          smallestIndex = index
           msg.linkToAuthor = a
         else if !msg.author_name and a.type in ['name', 'nickname']
           msg.author_name = a.value
         i++
       i = 0
-      smallestSocialNetwork = 1000
+      smallestIndex = 1000
       if not msg.signedData.recipient
         msg.sameAuthorAndRecipient = true
       else
@@ -108,8 +108,8 @@ angular.module 'irisAngular'
         for a in msg.recipientArray
           msg.linkToRecipient = a unless msg.linkToAuthor
           index = Object.keys(window.irisLib.Attribute.getUniqueIdValidators()).indexOf(a.type)
-          if index > -1 and index < smallestSocialNetwork
-            smallestSocialNetwork = index
+          if index > -1 and index < smallestIndex
+            smallestIndex = index
             msg.linkToRecipient = a
           else if !msg.recipient_name and a.type in ['name', 'nickname']
             msg.recipient_name = a.value

@@ -3,7 +3,7 @@
     <div class="mar-top45-xs"></div>
     <div ng-if="!query.term" ng-include="'app/main/getstarted.partial.html'"></div>
 
-    <table ng-init="filters.limit = 10" id="search-results" class="table table-hover" infinite-scroll="filters.limit = filters.limit + 1" infinite-scroll-distance="1" infinite-scroll-disabled="!irisSocialNetwork || !ids || !ids.list || ids.list.length < filters.limit || filteredIds.length < filters.limit">
+    <table ng-init="filters.limit = 10" id="search-results" class="table table-hover" infinite-scroll="filters.limit = filters.limit + 1" infinite-scroll-distance="1" infinite-scroll-disabled="!irisIndex || !ids || !ids.list || ids.list.length < filters.limit || filteredIds.length < filters.limit">
       <tbody>
         <tr id="createIdRow" ng-class="{active: ids.activeKey == -1}" ui-sref="identities.create" class="search-result-row">
           <td class="gravatar-col align-center"><span style="line-height:46px" class="glyphicon glyphicon-plus"></span></td>
