@@ -81981,12 +81981,14 @@ Gun.chain.unset = function(node){
 	      throw new Error('You must supply either opt.name or opt.class');
 	    }
 	    this.class = opt.class;
-	    if (this.class && !this.class.deserialize) {
-	      throw new Error('opt.class must have deserialize() method');
+	    this.serializer = opt.serializer;
+	    if (this.class && !this.class.deserialize && !this.serializer) {
+	      throw new Error('opt.class must have deserialize() method or opt.serializer must be defined');
 	    }
 	    this.name = opt.name || opt.class.name;
 	    this.gun = opt.gun;
 	    this.indexes = opt.indexes || [];
+	    this.indexer = opt.indexer;
 	    this.askPeers = typeof opt.askPeers === 'undefined' ? true : opt.askPeers;
 	  }
 
@@ -81996,14 +81998,20 @@ Gun.chain.unset = function(node){
 
 
 	  Collection.prototype.put = function put(object) {
+	    var opt = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
 	    var data = object;
-	    if (this.class) {
+	    if (this.serializer) {
+	      data = this.serializer.serialize(object);
+	    }if (this.class) {
 	      data = object.serialize();
 	    }
 	    // TODO: optionally use gun hash table
 	    var node = void 0;
-	    if (data.id) {
-	      node = this.gun.get(this.name).get('id').get(data.id).put(data); // TODO: use .top()
+	    if (opt.id || data.id) {
+	      node = this.gun.get(this.name).get('id').get(opt.id || data.id).put(data); // TODO: use .top()
+	    } else if (object.getId) {
+	      node = this.gun.get(this.name).get('id').get(object.getId()).put(data);
 	    } else {
 	      node = this.gun.get(this.name).get('id').set(data);
 	    }
@@ -82011,11 +82019,27 @@ Gun.chain.unset = function(node){
 	    return data.id || Gun.node.soul(node) || node._.link;
 	  };
 
-	  Collection.prototype._addToIndexes = function _addToIndexes(serializedObject, node) {
-	    for (var i = 0; i < this.indexes.length; i++) {
-	      if (Object.prototype.hasOwnProperty.call(serializedObject, this.indexes[i])) {
-	        var indexName = this.indexes[i];
-	        this.gun.get(this.name).get(indexName).get(serializedObject[indexName]).put(node);
+	  Collection.prototype._addToIndexes = async function _addToIndexes(serializedObject, node) {
+	    var _this = this;
+
+	    if (Gun.node.is(serializedObject)) {
+	      serializedObject = await serializedObject.open();
+	    }
+	    var addToIndex = function addToIndex(indexName, indexKey) {
+	      _this.gun.get(_this.name).get(indexName).get(indexKey).put(node);
+	    };
+	    if (this.indexer) {
+	      var customIndexes = await this.indexer(serializedObject);
+	      var customIndexKeys = _Object$keys(customIndexes);
+	      for (var i = 0; i < customIndexKeys; i++) {
+	        var key = customIndexKeys[i];
+	        addToIndex(key, customIndexes[key]);
+	      }
+	    }
+	    for (var _i = 0; _i < this.indexes.length; _i++) {
+	      var indexName = this.indexes[_i];
+	      if (Object.prototype.hasOwnProperty.call(serializedObject, indexName)) {
+	        addToIndex(indexName, serializedObject[indexName]);
 	      }
 	    }
 	  };
@@ -82028,7 +82052,7 @@ Gun.chain.unset = function(node){
 
 
 	  Collection.prototype.get = function get() {
-	    var _this = this;
+	    var _this2 = this;
 
 	    var opt = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
@@ -82036,7 +82060,7 @@ Gun.chain.unset = function(node){
 	      return;
 	    }
 	    var results = 0;
-	    var matcher = function matcher(data) {
+	    var matcher = function matcher(data, id, node) {
 	      if (!data) {
 	        return;
 	      }
@@ -82068,8 +82092,8 @@ Gun.chain.unset = function(node){
 	      if (opt.query) {
 	        // TODO: use gun.get() lt / gt operators
 	        var _keys = _Object$keys(opt.query);
-	        for (var _i = 0; _i < _keys.length; _i++) {
-	          var _key = _keys[_i];
+	        for (var _i2 = 0; _i2 < _keys.length; _i2++) {
+	          var _key = _keys[_i2];
 	          if (!Object.prototype.hasOwnProperty.call(data, _key)) {
 	            return;
 	          }
@@ -82087,8 +82111,10 @@ Gun.chain.unset = function(node){
 	          }
 	        }
 	      }
-	      if (_this.class) {
-	        opt.callback(_this.class.deserialize(data));
+	      if (_this2.serializer) {
+	        opt.callback(_this2.serializer.deserialize(data, { id: id, gun: node.$ }));
+	      } else if (_this2.class) {
+	        opt.callback(_this2.class.deserialize(data, { id: id, gun: node.$ }));
 	      } else {
 	        opt.callback(data);
 	      }
@@ -82109,7 +82135,7 @@ Gun.chain.unset = function(node){
 	    this.gun.get(this.name).get(indexName).map().on(matcher); // TODO: limit .open recursion
 	    if (this.askPeers) {
 	      this.gun.get('trustedIndexes').on(function (val, key) {
-	        _this.gun.user(key).get(_this.name).get(indexName).map().on(matcher);
+	        _this2.gun.user(key).get(_this2.name).get(indexName).map().on(matcher);
 	      });
 	    }
 	  };
@@ -92689,6 +92715,17 @@ Gun.chain.unset = function(node){
 	} catch (e) {
 	}
 
+	function gunOnceDefined(node) {
+	  return new _Promise(function (resolve) {
+	    node.on(function (val, k, a, eve) {
+	      if (val) {
+	        eve.off();
+	        resolve(val);
+	      }
+	    });
+	  });
+	}
+
 	async function loadGunDepth(chain) {
 	  var maxDepth = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 2;
 	  var opts = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
@@ -92941,6 +92978,8 @@ Gun.chain.unset = function(node){
 	var util$1 = {
 	  loadGunDepth: loadGunDepth,
 
+	  gunOnceDefined: gunOnceDefined,
+
 	  GunNets: GunNets,
 
 	  getHash: function getHash(str) {
@@ -92968,13 +93007,77 @@ Gun.chain.unset = function(node){
 	    }
 	    var sheet = document.createElement('style');
 	    sheet.id = elementId;
-	    sheet.innerHTML = '\n      .iris-identicon * {\n        box-sizing: border-box;\n      }\n\n      .iris-identicon {\n        vertical-align: middle;\n        margin: auto;\n        border-radius: 50%;\n        text-align: center;\n        display: inline-block;\n        position: relative;\n        margin: auto;\n        max-width: 100%;\n      }\n\n      .iris-distance {\n        z-index: 2;\n        position: absolute;\n        left:0%;\n        top:2px;\n        width: 100%;\n        text-align: right;\n        color: #fff;\n        text-shadow: 0 0 1px #000;\n        font-size: 75%;\n        line-height: 75%;\n        font-weight: bold;\n      }\n\n      .iris-pie {\n        border-radius: 50%;\n        position: absolute;\n        top: 0;\n        left: 0;\n        box-shadow: 0px 0px 0px 0px #82FF84;\n        padding-bottom: 100%;\n        max-width: 100%;\n        -webkit-transition: all 0.2s ease-in-out;\n        -moz-transition: all 0.2s ease-in-out;\n        transition: all 0.2s ease-in-out;\n      }\n\n      .iris-card {\n        padding: 10px;\n        background-color: #f7f7f7;\n        color: #777;\n        border: 1px solid #ddd;\n        display: flex;\n        flex-direction: row;\n        overflow: hidden;\n      }\n\n      .iris-card a {\n        -webkit-transition: color 150ms;\n        transition: color 150ms;\n        text-decoration: none;\n        color: #337ab7;\n      }\n\n      .iris-card a:hover, .iris-card a:active {\n        text-decoration: underline;\n        color: #23527c;\n      }\n\n      .iris-pos {\n        color: #3c763d;\n      }\n\n      .iris-neg {\n        color: #a94442;\n      }\n\n      .iris-identicon img {\n        position: absolute;\n        top: 0;\n        left: 0;\n        max-width: 100%;\n        border-radius: 50%;\n        border-color: transparent;\n        border-style: solid;\n      }';
+	    sheet.innerHTML = '\n      .iris-identicon * {\n        box-sizing: border-box;\n      }\n\n      .iris-identicon {\n        vertical-align: middle;\n        border-radius: 50%;\n        text-align: center;\n        display: inline-block;\n        position: relative;\n        max-width: 100%;\n      }\n\n      .iris-distance {\n        z-index: 2;\n        position: absolute;\n        left:0%;\n        top:2px;\n        width: 100%;\n        text-align: right;\n        color: #fff;\n        text-shadow: 0 0 1px #000;\n        font-size: 75%;\n        line-height: 75%;\n        font-weight: bold;\n      }\n\n      .iris-pie {\n        border-radius: 50%;\n        position: absolute;\n        top: 0;\n        left: 0;\n        box-shadow: 0px 0px 0px 0px #82FF84;\n        padding-bottom: 100%;\n        max-width: 100%;\n        -webkit-transition: all 0.2s ease-in-out;\n        -moz-transition: all 0.2s ease-in-out;\n        transition: all 0.2s ease-in-out;\n      }\n\n      .iris-card {\n        padding: 10px;\n        background-color: #f7f7f7;\n        color: #777;\n        border: 1px solid #ddd;\n        display: flex;\n        flex-direction: row;\n        overflow: hidden;\n      }\n\n      .iris-card a {\n        -webkit-transition: color 150ms;\n        transition: color 150ms;\n        text-decoration: none;\n        color: #337ab7;\n      }\n\n      .iris-card a:hover, .iris-card a:active {\n        text-decoration: underline;\n        color: #23527c;\n      }\n\n      .iris-pos {\n        color: #3c763d;\n      }\n\n      .iris-neg {\n        color: #a94442;\n      }\n\n      .iris-identicon img {\n        position: absolute;\n        top: 0;\n        left: 0;\n        max-width: 100%;\n        border-radius: 50%;\n        border-color: transparent;\n        border-style: solid;\n      }';
 	    document.body.appendChild(sheet);
+	  },
+	  getUrlParameter: function getUrlParameter(sParam, sParams) {
+	    var sPageURL = sParams || window.location.search.substring(1);
+	    var sURLVariables = sPageURL.split('&');
+	    var sParameterName = void 0,
+	        i = void 0;
+
+	    for (i = 0; i < sURLVariables.length; i++) {
+	      sParameterName = sURLVariables[i].split('=');
+	      if (sParameterName[0] === sParam) {
+	        return sParameterName[1] === undefined ? true : decodeURIComponent(sParameterName[1]);
+	      }
+	    }
 	  },
 
 
 	  isNode: isNode$2
 	};
+
+	// 19.1.2.1 Object.assign(target, source, ...)
+
+
+
+
+
+
+	var $assign = Object.assign;
+
+	// should work with symbols and should have deterministic property order (V8 bug)
+	var _objectAssign = !$assign || _fails(function () {
+	  var A = {};
+	  var B = {};
+	  // eslint-disable-next-line no-undef
+	  var S = Symbol();
+	  var K = 'abcdefghijklmnopqrst';
+	  A[S] = 7;
+	  K.split('').forEach(function (k) { B[k] = k; });
+	  return $assign({}, A)[S] != 7 || Object.keys($assign({}, B)).join('') != K;
+	}) ? function assign(target, source) { // eslint-disable-line no-unused-vars
+	  var T = _toObject(target);
+	  var aLen = arguments.length;
+	  var index = 1;
+	  var getSymbols = _objectGops.f;
+	  var isEnum = _objectPie.f;
+	  while (aLen > index) {
+	    var S = _iobject(arguments[index++]);
+	    var keys = getSymbols ? _objectKeys(S).concat(getSymbols(S)) : _objectKeys(S);
+	    var length = keys.length;
+	    var j = 0;
+	    var key;
+	    while (length > j) {
+	      key = keys[j++];
+	      if (!_descriptors || isEnum.call(S, key)) T[key] = S[key];
+	    }
+	  } return T;
+	} : $assign;
+
+	// 19.1.3.1 Object.assign(target, source)
+
+
+	_export(_export.S + _export.F, 'Object', { assign: _objectAssign });
+
+	var assign = _core.Object.assign;
+
+	var assign$1 = createCommonjsModule(function (module) {
+	module.exports = { "default": assign, __esModule: true };
+	});
+
+	var _Object$assign = unwrapExports(assign$1);
 
 	var pnglib = createCommonjsModule(function (module) {
 	/**
@@ -93550,8 +93653,12 @@ Gun.chain.unset = function(node){
 
 
 	  Attribute.prototype.identicon = function identicon$$1() {
-	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : { width: 50 };
+	    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
+	    options = _Object$assign({
+	      width: 50,
+	      showType: true
+	    }, options);
 	    util$1.injectCss(); // some other way that is not called on each identicon generation?
 
 	    var div = document.createElement('div');
@@ -93567,11 +93674,13 @@ Gun.chain.unset = function(node){
 	    var identicon$$1 = new identicon(hash, { width: options.width, format: 'svg' });
 	    img.src = 'data:image/svg+xml;base64,' + identicon$$1.toString();
 
-	    var name = document.createElement('span');
-	    name.className = 'iris-distance';
-	    name.style.fontSize = options.width > 50 ? options.width / 4 + 'px' : '10px';
-	    name.textContent = this.type.slice(0, 5);
-	    div.appendChild(name);
+	    if (options.showType) {
+	      var name = document.createElement('span');
+	      name.className = 'iris-distance';
+	      name.style.fontSize = options.width > 50 ? options.width / 4 + 'px' : '10px';
+	      name.textContent = this.type.slice(0, 5);
+	      div.appendChild(name);
+	    }
 
 	    div.appendChild(img);
 
@@ -94203,6 +94312,10 @@ Gun.chain.unset = function(node){
 	    return this.hash;
 	  };
 
+	  Message.prototype.getId = function getId() {
+	    return this.getHash();
+	  };
+
 	  Message.fromSig = async function fromSig(obj) {
 	    if (!obj.sig) {
 	      throw new Error('Missing signature in object:', obj);
@@ -94312,57 +94425,6 @@ Gun.chain.unset = function(node){
 	  return Message;
 	}();
 
-	// 19.1.2.1 Object.assign(target, source, ...)
-
-
-
-
-
-
-	var $assign = Object.assign;
-
-	// should work with symbols and should have deterministic property order (V8 bug)
-	var _objectAssign = !$assign || _fails(function () {
-	  var A = {};
-	  var B = {};
-	  // eslint-disable-next-line no-undef
-	  var S = Symbol();
-	  var K = 'abcdefghijklmnopqrst';
-	  A[S] = 7;
-	  K.split('').forEach(function (k) { B[k] = k; });
-	  return $assign({}, A)[S] != 7 || Object.keys($assign({}, B)).join('') != K;
-	}) ? function assign(target, source) { // eslint-disable-line no-unused-vars
-	  var T = _toObject(target);
-	  var aLen = arguments.length;
-	  var index = 1;
-	  var getSymbols = _objectGops.f;
-	  var isEnum = _objectPie.f;
-	  while (aLen > index) {
-	    var S = _iobject(arguments[index++]);
-	    var keys = getSymbols ? _objectKeys(S).concat(getSymbols(S)) : _objectKeys(S);
-	    var length = keys.length;
-	    var j = 0;
-	    var key;
-	    while (length > j) {
-	      key = keys[j++];
-	      if (!_descriptors || isEnum.call(S, key)) T[key] = S[key];
-	    }
-	  } return T;
-	} : $assign;
-
-	// 19.1.3.1 Object.assign(target, source)
-
-
-	_export(_export.S + _export.F, 'Object', { assign: _objectAssign });
-
-	var assign = _core.Object.assign;
-
-	var assign$1 = createCommonjsModule(function (module) {
-	module.exports = { "default": assign, __esModule: true };
-	});
-
-	var _Object$assign = unwrapExports(assign$1);
-
 	/**
 	* An Iris Contact, such as person, organization or group. More abstractly speaking: an Identity.
 	*
@@ -94374,12 +94436,11 @@ Gun.chain.unset = function(node){
 	  /**
 	  * @param {Object} gun node where the Contact data lives
 	  */
-	  function Contact(gun, linkTo, index) {
+	  function Contact(gun, linkTo) {
 	    _classCallCheck(this, Contact);
 
 	    this.gun = gun;
 	    this.linkTo = linkTo;
-	    this.index = index;
 	  }
 
 	  Contact.create = function create(gun, data, index) {
@@ -94446,24 +94507,30 @@ Gun.chain.unset = function(node){
 	    return attrs || {};
 	  };
 
+	  Contact.prototype.getId = function getId() {
+	    return this.linkTo.value;
+	  };
+
 	  /**
 	  * Get sent Messages
+	  * @param {Object} index
 	  * @param {Object} options
 	  */
 
 
-	  Contact.prototype.sent = function sent(options) {
-	    this.index._getSentMsgs(this, options);
+	  Contact.prototype.sent = function sent(index, options) {
+	    index._getSentMsgs(this, options);
 	  };
 
 	  /**
 	  * Get received Messages
+	  * @param {Object} index
 	  * @param {Object} options
 	  */
 
 
-	  Contact.prototype.received = function received(options) {
-	    this.index._getReceivedMsgs(this, options);
+	  Contact.prototype.received = function received(index, options) {
+	    index._getReceivedMsgs(this, options);
 	  };
 
 	  /**
@@ -94718,6 +94785,15 @@ Gun.chain.unset = function(node){
 	    return identicon$$1;
 	  };
 
+	  Contact.prototype.serialize = function serialize() {
+	    return this.gun;
+	  };
+
+	  Contact.deserialize = function deserialize(data, opt) {
+	    var linkTo = new Attribute({ type: 'uuid', value: opt.id });
+	    return new Contact(opt.gun, linkTo);
+	  };
+
 	  return Contact;
 	}();
 
@@ -94797,12 +94873,17 @@ Gun.chain.unset = function(node){
 	* Messages are encrypted and chat ids obfuscated, but it is possible to guess
 	* who are communicating with each other by looking at Gun timestamps and subscriptions.
 	*
-	* @param {Object} options {key, gun, onMessage, participants}
+	* options.onMessage callback is not guaranteed to receive messages ordered by timestamp.
+	* You should sort them in the presentation layer.
+	*
+	* @param {Object} options {key, gun, chatLink, onMessage, participants}
 	* @example https://github.com/irislib/iris-lib/blob/master/__tests__/chat.js
 	*/
 
 	var Chat = function () {
 	  function Chat(options) {
+	    var _this = this;
+
 	    _classCallCheck(this, Chat);
 
 	    this.key = options.key;
@@ -94815,6 +94896,28 @@ Gun.chain.unset = function(node){
 	    this.theirSecretChatIds = {}; // maps participant public key to their secret chat id
 	    this.onMessage = options.onMessage;
 
+	    if (options.chatLink) {
+	      var s = options.chatLink.split('?');
+	      if (s.length === 2) {
+	        var pub = util$1.getUrlParameter('chatWith', s[1]);
+	        options.participants = pub;
+	        var sharedSecret = util$1.getUrlParameter('s', s[1]);
+	        var linkId = util$1.getUrlParameter('k', s[1]);
+	        if (sharedSecret && linkId) {
+	          this.gun.user(pub).get('chatLinks').get(linkId).get('encryptedSharedKey').on(async function (encrypted) {
+	            var sharedKey = await Gun.SEA.decrypt(encrypted, sharedSecret);
+	            var encryptedChatRequest = await Gun.SEA.encrypt(_this.key.pub, sharedSecret);
+	            var chatRequestId = await Gun.SEA.work(encryptedChatRequest, null, null, { name: 'SHA-256' });
+	            var u = _this.gun.user();
+	            u.auth(sharedKey);
+	            u.get('chatRequests').get(chatRequestId.slice(0, 12)).put(encryptedChatRequest).then(function () {
+	              u.auth(_this.key); // this may be somewhat buggy
+	            });
+	          });
+	        }
+	      }
+	    }
+
 	    if (typeof options.participants === 'string') {
 	      this.addPub(options.participants);
 	    } else if (Array.isArray(options.participants)) {
@@ -94826,11 +94929,12 @@ Gun.chain.unset = function(node){
 	        }
 	      }
 	    }
+	    this.save();
 	  }
 
 	  Chat.prototype.getSecret = async function getSecret(pub) {
 	    if (!this.secrets[pub]) {
-	      var epub = await this.gun.user(pub).get('epub').once().then();
+	      var epub = await util$1.gunOnceDefined(this.gun.user(pub).get('epub'));
 	      this.secrets[pub] = await Gun.SEA.secret(epub, this.key);
 	    }
 	    return this.secrets[pub];
@@ -94842,7 +94946,7 @@ Gun.chain.unset = function(node){
 
 
 	  Chat.getOurSecretChatId = async function getOurSecretChatId(gun, pub, pair) {
-	    var epub = await gun.user(pub).get('epub').once().then();
+	    var epub = await util$1.gunOnceDefined(gun.user(pub).get('epub'));
 	    var secret = await Gun.SEA.secret(epub, pair);
 	    return Gun.SEA.work(secret + pub, null, null, { name: 'SHA-256' });
 	  };
@@ -94853,7 +94957,7 @@ Gun.chain.unset = function(node){
 
 
 	  Chat.getTheirSecretChatId = async function getTheirSecretChatId(gun, pub, pair) {
-	    var epub = await gun.user(pub).get('epub').once().then();
+	    var epub = await util$1.gunOnceDefined(gun.user(pub).get('epub'));
 	    var secret = await Gun.SEA.secret(epub, pair);
 	    return Gun.SEA.work(secret + pair.pub, null, null, { name: 'SHA-256' });
 	  };
@@ -94872,10 +94976,9 @@ Gun.chain.unset = function(node){
 	    var mySecret = await Gun.SEA.secret(keypair.epub, keypair);
 	    gun.user().get('chats').map().on(async function (value, ourSecretChatId) {
 	      if (value) {
-	        gun.user().get('chats').get(ourSecretChatId).get('pub').once(async function (encryptedPub) {
-	          var pub = await Gun.SEA.decrypt(encryptedPub, mySecret);
-	          callback(pub);
-	        });
+	        var encryptedPub = await util$1.gunOnceDefined(gun.user().get('chats').get(ourSecretChatId).get('pub'));
+	        var pub = await Gun.SEA.decrypt(encryptedPub, mySecret);
+	        callback(pub);
 	      }
 	    });
 	  };
@@ -94913,14 +95016,14 @@ Gun.chain.unset = function(node){
 
 
 	  Chat.prototype.getLatestMsg = async function getLatestMsg(callback) {
-	    var _this = this;
+	    var _this2 = this;
 
 	    var keys = _Object$keys(this.secrets);
 
 	    var _loop = async function _loop(i) {
-	      var ourSecretChatId = await _this.getOurSecretChatId(keys[i]);
-	      _this.user.get('chats').get(ourSecretChatId).get('latestMsg').on(async function (data) {
-	        var decrypted = await Gun.SEA.decrypt(data, (await _this.getSecret(keys[i])));
+	      var ourSecretChatId = await _this2.getOurSecretChatId(keys[i]);
+	      _this2.user.get('chats').get(ourSecretChatId).get('latestMsg').on(async function (data) {
+	        var decrypted = await Gun.SEA.decrypt(data, (await _this2.getSecret(keys[i])));
 	        if (typeof decrypted !== 'object') {
 	          // console.log(`chat data received`, decrypted);
 	          return;
@@ -94956,16 +95059,16 @@ Gun.chain.unset = function(node){
 
 
 	  Chat.prototype.getMyMsgsLastSeenTime = async function getMyMsgsLastSeenTime(callback) {
-	    var _this2 = this;
+	    var _this3 = this;
 
 	    var keys = _Object$keys(this.secrets);
 
 	    var _loop2 = async function _loop2(i) {
-	      var ourSecretChatId = await _this2.getOurSecretChatId(keys[i]);
-	      _this2.gun.user().get('chats').get(ourSecretChatId).get('msgsLastSeenTime').on(async function (data) {
-	        _this2.myMsgsLastSeenTime = await Gun.SEA.decrypt(data, (await _this2.getSecret(keys[i])));
+	      var ourSecretChatId = await _this3.getOurSecretChatId(keys[i]);
+	      _this3.gun.user().get('chats').get(ourSecretChatId).get('msgsLastSeenTime').on(async function (data) {
+	        _this3.myMsgsLastSeenTime = await Gun.SEA.decrypt(data, (await _this3.getSecret(keys[i])));
 	        if (callback) {
-	          callback(_this2.myMsgsLastSeenTime);
+	          callback(_this3.myMsgsLastSeenTime);
 	        }
 	      });
 	    };
@@ -94981,16 +95084,16 @@ Gun.chain.unset = function(node){
 
 
 	  Chat.prototype.getTheirMsgsLastSeenTime = async function getTheirMsgsLastSeenTime(callback) {
-	    var _this3 = this;
+	    var _this4 = this;
 
 	    var keys = _Object$keys(this.secrets);
 
 	    var _loop3 = async function _loop3(i) {
-	      var theirSecretChatId = await _this3.getTheirSecretChatId(keys[i]);
-	      _this3.gun.user(keys[i]).get('chats').get(theirSecretChatId).get('msgsLastSeenTime').on(async function (data) {
-	        _this3.theirMsgsLastSeenTime = await Gun.SEA.decrypt(data, (await _this3.getSecret(keys[i])));
+	      var theirSecretChatId = await _this4.getTheirSecretChatId(keys[i]);
+	      _this4.gun.user(keys[i]).get('chats').get(theirSecretChatId).get('msgsLastSeenTime').on(async function (data) {
+	        _this4.theirMsgsLastSeenTime = await Gun.SEA.decrypt(data, (await _this4.getSecret(keys[i])));
 	        if (callback) {
-	          callback(_this3.theirMsgsLastSeenTime, keys[i]);
+	          callback(_this4.theirMsgsLastSeenTime, keys[i]);
 	        }
 	      });
 	    };
@@ -95007,7 +95110,7 @@ Gun.chain.unset = function(node){
 
 
 	  Chat.prototype.addPub = async function addPub(pub) {
-	    var _this4 = this;
+	    var _this5 = this;
 
 	    this.secrets[pub] = null;
 	    this.getSecret(pub);
@@ -95018,11 +95121,11 @@ Gun.chain.unset = function(node){
 	    // Subscribe to their messages
 	    var theirSecretChatId = await this.getTheirSecretChatId(pub);
 	    this.gun.user(pub).get('chats').get(theirSecretChatId).get('msgs').map().once(function (data) {
-	      _this4.messageReceived(data, pub);
+	      _this5.messageReceived(data, pub);
 	    });
 	    // Subscribe to our messages
 	    this.user.get('chats').get(ourSecretChatId).get('msgs').map().once(function (data) {
-	      _this4.messageReceived(data, pub, true);
+	      _this5.messageReceived(data, pub, true);
 	    });
 	  };
 
@@ -95052,6 +95155,19 @@ Gun.chain.unset = function(node){
 	  };
 
 	  /**
+	  * Save the chat to our chats list without sending a message
+	  */
+
+
+	  Chat.prototype.save = async function save() {
+	    var keys = _Object$keys(this.secrets);
+	    for (var i = 0; i < keys.length; i++) {
+	      var ourSecretChatId = await this.getOurSecretChatId(keys[i]);
+	      this.user.get('chats').get(ourSecretChatId).put({ a: 1 });
+	    }
+	  };
+
+	  /**
 	  * Set the user's online status
 	  * @param {object} gun
 	  * @param {boolean} isOnline true: update the user's lastActive time every 3 seconds, false: stop updating
@@ -95060,6 +95176,9 @@ Gun.chain.unset = function(node){
 
 	  Chat.setOnline = function setOnline(gun, isOnline) {
 	    if (isOnline) {
+	      if (gun.setOnlineInterval) {
+	        return;
+	      }
 	      var update = function update() {
 	        gun.user().get('lastActive').put(Math.round(Gun.state() / 1000));
 	      };
@@ -95067,6 +95186,7 @@ Gun.chain.unset = function(node){
 	      gun.setOnlineInterval = setInterval(update, 3000);
 	    } else {
 	      clearInterval(gun.setOnlineInterval);
+	      gun.setOnlineInterval = undefined;
 	    }
 	  };
 
@@ -95088,10 +95208,103 @@ Gun.chain.unset = function(node){
 	      callback({ isOnline: isOnline, lastActive: lastActive });
 	      if (isOnline) {
 	        timeout = setTimeout(function () {
-	          return callback(false);
+	          return callback({ isOnline: false, lastActive: lastActive });
 	        }, 10000);
 	      }
 	    });
+	  };
+
+	  /**
+	  * In order to receive messages from others, this method must be called for newly created
+	  * users that have not started a chat with an existing user yet.
+	  *
+	  * It saves the user's key.epub (public key for encryption) into their gun user space,
+	  * so others can find it and write encrypted messages to them.
+	  *
+	  * If you start a chat with an existing user, key.epub is saved automatically and you don't need
+	  * to call this method.
+	  */
+
+
+	  Chat.initUser = function initUser(gun, key) {
+	    var user = gun.user();
+	    user.auth(key);
+	    user.put({ epub: key.epub });
+	  };
+
+	  Chat.formatChatLink = function formatChatLink(urlRoot, pub, sharedSecret, linkId) {
+	    return urlRoot + '?chatWith=' + encodeURIComponent(pub) + '&s=' + encodeURIComponent(sharedSecret) + '&k=' + encodeURIComponent(linkId);
+	  };
+
+	  /**
+	  * Creates a chat link that can be used for two-way communication, i.e. only one link needs to be exchanged.
+	  */
+
+
+	  Chat.createChatLink = async function createChatLink(gun, key) {
+	    var urlRoot = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'https://chat.iris.to/';
+
+	    var user = gun.user();
+	    user.auth(key);
+
+	    var sharedKey = await Gun.SEA.pair();
+	    var sharedKeyString = _JSON$stringify(sharedKey);
+	    var sharedSecret = await Gun.SEA.secret(sharedKey.epub, sharedKey);
+	    var encryptedSharedKey = await Gun.SEA.encrypt(sharedKeyString, sharedSecret);
+	    var ownerSecret = await Gun.SEA.secret(key.epub, key);
+	    var ownerEncryptedSharedKey = await Gun.SEA.encrypt(sharedKeyString, ownerSecret);
+	    var linkId = await Gun.SEA.work(encryptedSharedKey, undefined, undefined, { name: 'SHA-256' });
+	    linkId = linkId.slice(0, 12);
+
+	    user.get('chatLinks').get(linkId).get('encryptedSharedKey').put(encryptedSharedKey);
+	    user.get('chatLinks').get(linkId).get('ownerEncryptedSharedKey').put(ownerEncryptedSharedKey);
+
+	    return Chat.formatChatLink(urlRoot, key.pub, sharedSecret, linkId);
+	  };
+
+	  Chat.getMyChatLinks = async function getMyChatLinks(gun, key) {
+	    var urlRoot = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'https://chat.iris.to/';
+	    var callback = arguments[3];
+	    var subscribe = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : true;
+
+	    var user = gun.user();
+	    user.auth(key);
+	    var mySecret = await Gun.SEA.secret(key.epub, key);
+	    var chatLinks = [];
+	    user.get('chatLinks').map().on(function (data, linkId) {
+	      if (!data || chatLinks.indexOf(linkId) !== -1) {
+	        return;
+	      }
+	      var chats = [];
+	      user.get('chatLinks').get(linkId).get('ownerEncryptedSharedKey').on(async function (enc) {
+	        if (!enc || chatLinks.indexOf(linkId) !== -1) {
+	          return;
+	        }
+	        chatLinks.push(linkId);
+	        var sharedKey = await Gun.SEA.decrypt(enc, mySecret);
+	        var sharedSecret = await Gun.SEA.secret(sharedKey.epub, sharedKey);
+	        var url = Chat.formatChatLink(urlRoot, key.pub, sharedSecret, linkId);
+	        if (callback) {
+	          callback({ url: url, id: linkId });
+	        }
+	        if (subscribe) {
+	          gun.user(sharedKey.pub).get('chatRequests').map().on(async function (encPub) {
+	            var s = _JSON$stringify(encPub);
+	            if (chats.indexOf(s) === -1) {
+	              chats.push(s);
+	              var pub = await Gun.SEA.decrypt(encPub, sharedSecret);
+	              var chat = new Chat({ gun: gun, key: key, participants: pub });
+	              chat.save();
+	            }
+	          });
+	        }
+	      });
+	    });
+	  };
+
+	  Chat.removeChatLink = function removeChatLink(gun, key, linkId) {
+	    gun.user().auth(key);
+	    gun.user().get('chatLinks').get(linkId).put(null);
 	  };
 
 	  return Chat;
@@ -95258,7 +95471,7 @@ Gun.chain.unset = function(node){
 	    this.gun.get('messagesByHash').put(user.top('messagesByHash'));
 	    this.gun.get('messagesByDistance').put(user.top('messagesByDistance'));
 
-	    this.messages = new Collection({ gun: this.gun, class: Message });
+	    this.messages = new Collection({ gun: this.gun, class: Message, indexes: ['time', 'trustDistance'] });
 	    this.contacts = new Collection({ gun: this.gun, class: Contact });
 
 	    var uri = this.rootContact.uri();
@@ -95597,16 +95810,16 @@ Gun.chain.unset = function(node){
 	  SocialNetwork.prototype.getContacts = function getContacts() {
 	    var _this5 = this;
 
-	    var opts = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+	    var opt = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 	    // cursor // TODO: param 'exact', type param
-	    if (opts.value) {
-	      if (opts.type) {
-	        return this.getContact(opts.type, opts.value, opts.reload);
+	    if (opt.value) {
+	      if (opt.type) {
+	        return this.getContact(opt.type, opt.value, opt.reload);
 	      } else {
-	        return this.getContact(opts.value);
+	        return this.getContact(opt.value);
 	      }
 	    }
-	    opts.query = opts.query || '';
+	    opt.query = opt.query || '';
 	    var seen = {};
 	    function searchTermCheck(key) {
 	      var arr = key.split(':');
@@ -95615,17 +95828,17 @@ Gun.chain.unset = function(node){
 	      }
 	      var keyValue = arr[0];
 	      var keyType = arr[1];
-	      if (keyValue.indexOf(encodeURIComponent(opts.query)) !== 0) {
+	      if (keyValue.indexOf(encodeURIComponent(opt.query)) !== 0) {
 	        return false;
 	      }
-	      if (opts.type && keyType !== opts.type) {
+	      if (opt.type && keyType !== opt.type) {
 	        return false;
 	      }
 	      return true;
 	    }
 	    var node = this.gun.get('identitiesBySearchKey');
 	    node.map().on(function (id, key) {
-	      if (_Object$keys(seen).length >= opts.limit) {
+	      if (_Object$keys(seen).length >= opt.limit) {
 	        // TODO: turn off .map cb
 	        return;
 	      }
@@ -95637,14 +95850,14 @@ Gun.chain.unset = function(node){
 	        seen[soul] = true;
 	        var contact = new Contact(node.get(key), undefined, _this5);
 	        contact.cursor = key;
-	        opts.callback(contact);
+	        opt.callback(contact);
 	      }
 	    });
 	    if (this.options.indexSync.query.enabled) {
 	      this.gun.get('trustedIndexes').map().once(function (val, key) {
 	        if (val) {
 	          _this5.gun.user(key).get('iris').get('identitiesBySearchKey').map().on(function (id, k) {
-	            if (_Object$keys(seen).length >= opts.limit) {
+	            if (_Object$keys(seen).length >= opt.limit) {
 	              // TODO: turn off .map cb
 	              return;
 	            }
@@ -95654,7 +95867,7 @@ Gun.chain.unset = function(node){
 	            var soul = Gun.node.soul(id);
 	            if (soul && !Object.prototype.hasOwnProperty.call(seen, soul)) {
 	              seen[soul] = true;
-	              opts.callback(new Contact(_this5.gun.user(key).get('iris').get('identitiesBySearchKey').get(k), undefined, _this5));
+	              opt.callback(new Contact(_this5.gun.user(key).get('iris').get('identitiesBySearchKey').get(k), undefined, _this5));
 	            }
 	          });
 	        }
@@ -96005,8 +96218,7 @@ Gun.chain.unset = function(node){
 	    var _this10 = this;
 
 	    var maxMsgsToCrawl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.options.indexSync.importOnAdd.maxMsgCount;
-	    var maxMsgDistance = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : this.options.indexSync.importOnAdd.maxMsgDistance;
-
+	    // maxMsgDistance = this.options.indexSync.importOnAdd.maxMsgDistance
 	    if (gunUri === this.rootContact.value) {
 	      return;
 	    }
@@ -96018,17 +96230,15 @@ Gun.chain.unset = function(node){
 	    var msgs = [];
 	    if (this.options.indexSync.importOnAdd.enabled) {
 	      await util$1.timeoutPromise(new _Promise(function (resolve) {
-	        _this10.gun.user(gunUri).get('iris').get('messagesByDistance').map(function (val, key) {
-	          var d = _Number$parseInt(key.split(':')[0]);
-	          if (!isNaN(d) && d <= maxMsgDistance) {
-	            Message.fromSig(val).then(function (msg) {
-	              msgs.push(msg);
-	              if (msgs.length >= maxMsgsToCrawl) {
-	                resolve();
-	              }
-	            });
+	        var gun = _this10.gun.user(gunUri).get('iris');
+	        var callback = function callback(msg) {
+	          msgs.push(msg);
+	          if (msgs.length >= maxMsgsToCrawl) {
+	            resolve();
 	          }
-	        });
+	        };
+	        var messages = new Collection({ gun: gun, class: Message, indexes: ['trustDistance'] });
+	        messages.get({ callback: callback, orderBy: 'trustDistance', desc: false });
 	      }), 10000);
 	      this.debug('adding', msgs.length, 'msgs');
 	      this.addMessages(msgs);
@@ -96196,6 +96406,10 @@ Gun.chain.unset = function(node){
 	      this.gun.back(-1).get('messagesByHash').get(msg.signedData.sharedMsg).get('shares').get(hash).put(node);
 	    }
 	    start = new Date();
+
+	    this.messages.put(msg);
+
+	    // TODO: this should be moved to Collection
 	    var indexKeys = SocialNetwork.getMsgIndexKeys(msg);
 	    this.debug(new Date() - start, 'ms getMsgIndexKeys');
 	    for (var index in indexKeys) {
@@ -96213,6 +96427,7 @@ Gun.chain.unset = function(node){
 	        }
 	      }
 	    }
+
 	    if (this.options.ipfs) {
 	      try {
 	        var ipfsUri = await msg.saveToIpfs(this.options.ipfs);
@@ -96232,18 +96447,17 @@ Gun.chain.unset = function(node){
 	  };
 
 	  /**
-	  * @param {Object} opts {hash, orderBy, callback, limit, cursor, desc, filter}
+	  * Alias to socialNetwork.messages.get(opt) (but with opt.orderBy = 'time')
+	  * @param {Object} opt {hash, orderBy, callback, limit, cursor, desc, filter}
 	  */
 
 
-	  SocialNetwork.prototype.getMessages = async function getMessages(opts) {
-	    if (opts.hash) {
-	      return this.getMessageByHash(opts.hash);
+	  SocialNetwork.prototype.getMessages = async function getMessages(opt) {
+	    if (opt.hash) {
+	      return this.messages.get({ id: opt.hash });
 	    }
-	    if (opts.orderBy && opts.orderBy === 'trustDistance') {
-	      return this.getMessagesByDistance(opts.callback, opts.limit, opts.cursor, opts.desc, opts.filter);
-	    }
-	    return this.getMessagesByTimestamp(opts.callback, opts.limit, opts.cursor, opts.desc || true, opts.filter);
+	    opt.orderBy = opt.orderBy || 'time';
+	    return this.messages.get(opt);
 	  };
 
 	  /*
@@ -96475,7 +96689,7 @@ Gun.chain.unset = function(node){
 	  return SocialNetwork;
 	}();
 
-	var version$2 = "0.0.131";
+	var version$2 = "0.0.132";
 
 	/*eslint no-useless-escape: "off", camelcase: "off" */
 

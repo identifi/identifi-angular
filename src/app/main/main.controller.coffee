@@ -251,7 +251,7 @@ angular.module('irisAngular').controller 'MainController', [
             $scope.chatKeys['keyID' + key] = true
             setTimeout ->
               $scope.$apply ->
-                identity = $scope.irisSocialNetwork.get('keyID', key)
+                identity = $scope.irisSocialNetwork.getContact('keyID', key)
                 $scope.setContactNames identity
                 chat =
                   idValue: key
@@ -268,7 +268,7 @@ angular.module('irisAngular').controller 'MainController', [
             $scope.trustedSocialNetworkes.push
               index: k
               attribute: new $window.irisLib.Attribute('keyID', k)
-              identity: $scope.irisSocialNetwork.get('keyID', k)
+              identity: $scope.irisSocialNetwork.getContact('keyID', k)
         setTimeout () ->
           $scope.$broadcast('rzSliderForceRender')
         , 1000
@@ -315,7 +315,7 @@ angular.module('irisAngular').controller 'MainController', [
       setSocialNetwork(i)
       i.ready.then ->
         $scope.loggingIn = false
-        $scope.authentication.identity = $scope.irisSocialNetwork.get('keyID', keyID)
+        $scope.authentication.identity = $scope.irisSocialNetwork.getContact('keyID', keyID)
         $scope.authentication.identity.gun.get('attrs').open (val, key, msg, eve) ->
           mva = $window.irisLib.Contact.getMostVerifiedAttributes(val)
           $scope.authentication.identity.mva = mva
@@ -555,7 +555,6 @@ angular.module('irisAngular').controller 'MainController', [
           return r
       ###
       resultFound = (msg) ->
-        console.log 'found', msg
         found += 1
         $scope.loadingMsgs = false if found >= limit
         return if $scope.msgs.seen[msg.getHash()]
@@ -715,7 +714,7 @@ angular.module('irisAngular').controller 'MainController', [
           else if mva.nickname
             $scope.$apply -> $scope.message.recipient_name = mva.nickname.attribute.value
       $scope.message.signerKeyID = $scope.message.getSignerKeyID()
-      $scope.message.verifiedBy = $scope.irisSocialNetwork.get('keyID', $scope.message.signerKeyID)
+      $scope.message.verifiedBy = $scope.irisSocialNetwork.getContact('keyID', $scope.message.signerKeyID)
       $scope.message.verifiedByAttr = new $window.irisLib.Attribute('keyID', $scope.message.signerKeyID)
       $scope.openModal('chatModal', {templateUrl: 'app/messages/show.modal.html', size})
 

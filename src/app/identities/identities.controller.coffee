@@ -236,7 +236,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
         $scope.processMessages [msg], { authorIsSelf: true }
         $scope.sent.push msg
 
-      $scope.identity.sent({callback})
+      $scope.identity.sent($scope.irisSocialNetwork, {callback})
 
     $scope.getReceivedMsgs = ->
       return unless $scope.identity and $scope.irisSocialNetwork
@@ -263,7 +263,7 @@ angular.module('irisAngular').controller 'IdentitiesController', [
             $scope.hasThumbsDown = true
           $scope.received.list.push msg
           $scope.received.seen[msg.getHash()] = true
-      $scope.identity.received({callback, cursor})
+      $scope.identity.received($scope.irisSocialNetwork, {callback, cursor})
 
     $scope.setFilters = (filters) ->
       angular.extend $scope.filters, filters
