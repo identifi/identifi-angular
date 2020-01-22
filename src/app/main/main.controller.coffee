@@ -533,6 +533,7 @@ angular.module('irisAngular').controller 'MainController', [
     $scope.msgs.seen = {}
     $scope.filteredMsgs = []
     $scope.showMoreMsgs = (cursor) ->
+      return if $scope.loadingMsgs
       limit = 20 # 10
       if cursor == undefined and $scope.msgs.last
         cursor = $scope.msgs.last
@@ -554,6 +555,7 @@ angular.module('irisAngular').controller 'MainController', [
           return r
       ###
       resultFound = (msg) ->
+        console.log 'found', msg
         found += 1
         $scope.loadingMsgs = false if found >= limit
         return if $scope.msgs.seen[msg.getHash()]
@@ -565,8 +567,8 @@ angular.module('irisAngular').controller 'MainController', [
           $scope.msgs.list.push msg
 
       $scope.filters.limit += limit
-      if $scope.filters.limit > $scope.filteredMsgs.length
-        $scope.irisSocialNetwork.getMessagesByTimestamp(resultFound, undefined, cursor)
+      if $scope.filters.limit > $scope.msgs.list.length
+        $scope.irisSocialNetwork.getMessagesByTimestamp(resultFound, limit, cursor)
 
     $scope.uploadFile = (blob) ->
       return new Promise (resolve, reject) ->
