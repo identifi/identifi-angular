@@ -61,8 +61,8 @@ self.addEventListener('fetch', function(event) {
         // Cache hit - return response
         if (self.location.host.indexOf('localhost') === 0) {
           console.log('not sw caching localhost');
-        }
-        else if (response) {
+          return fetch(event.request);
+        } else if (response) { // response OK
           console.log('cache hit', event.request);
           fetchAndUpdate(event.request);
           return response;
