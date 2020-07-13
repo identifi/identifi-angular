@@ -1,3 +1,5 @@
+Not maintained anymore. Please check out [iris-messenger](https://github.com/irislib/iris-messenger).
+
 # iris-angular
 
 [![Travis](https://img.shields.io/travis/irislib/iris-angular/master.svg?style=flat-square)](https://travis-ci.org/irislib/iris-angular)
