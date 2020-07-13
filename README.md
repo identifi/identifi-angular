@@ -8,11 +8,7 @@ Not maintained anymore. Please check out [iris-messenger](https://github.com/iri
 > Decentralized social networking application built on AngularJS & [Iris-lib](https://github.com/irislib/iris-lib)
 
 Available at:
-* https://iris.to
-* https://iris.cx
 * https://iris.github.io/
-* [Chrome extension](https://chrome.google.com/webstore/detail/iris/oelmiikkaikgnmmjaonjlopkmpcahpgh)
-* [Firefox extension](https://addons.mozilla.org/en-US/firefox/addon/irisapp/)
 
 ## Development
 ### Requirements
