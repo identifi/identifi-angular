@@ -56,7 +56,7 @@
     "karma-ng-html2js-preprocessor": "~1.0.0",
     "karma-phantomjs-launcher": "^1.0.4",
     "karma-phantomjs-shim": "^1.5.0",
-    "lodash": "~4.17.2",
+    "lodash": "~4.17.19",
     "main-bower-files": "~2.13.1",
     "protractor": "^5.4.2",
     "uglify-save-license": "~0.4.1",
